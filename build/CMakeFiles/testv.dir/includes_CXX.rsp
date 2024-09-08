@@ -1,0 +1,1 @@
+-I"D:/projects/learning-opengl/gvo/dependencies/glfw/include" -I"D:/projects/learning-opengl/build/Vulkan-Headers/include" -I"D:/projects/learning-opengl/gvo/dependencies/glad/include" -I"D:/projects/learning-opengl/gvo/dependencies/c-logger/src"

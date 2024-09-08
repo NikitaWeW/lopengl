@@ -1,0 +1,2 @@
+C:\msys64\mingw64\bin\ar.exe qc liblogger.a CMakeFiles/logger_static.dir/src/logger.c.obj CMakeFiles/logger_static.dir/src/loggerconf.c.obj
+C:\msys64\mingw64\bin\ranlib.exe liblogger.a
