@@ -134,7 +134,7 @@ int main()
 {
     //setup
     std::filesystem::create_directory("logs");
-    std::fstream createLogFile("logs/lastest.log");
+    std::fstream createLogFile("logs/main.log");
     
     logger_initConsoleLogger(stdout);
     logger_initFileLogger("logs/main.log", 1024 * 1024, 5);
@@ -145,7 +145,10 @@ int main()
         LOG_FATAL("failed to init glfw!");
         cleanupAndTerminate(-1);
     }
-    glfwWindowHint(GLFW_FOCUS_ON_SHOW, false);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
 
     window = glfwCreateWindow(640, 480, "-- FPS", NULL, NULL);
     if (window) LOG_INFO("window initialised successfully at adress %i", window);
@@ -213,6 +216,10 @@ int main()
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    unsigned VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
 
     unsigned EBO;
     glGenBuffers(1, &EBO);
