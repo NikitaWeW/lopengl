@@ -233,12 +233,15 @@ int main()
     double displayRenderTimeSeconds = 0;
     double displayDeltaTime = 0;
     int refreshRate = 500;
+    bool wireframe;
     while (!glfwWindowShouldClose(window))
     {
         frameBeginTimeSeconds = getTimeSeconds();
 
         //render here
         glClear(GL_COLOR_BUFFER_BIT);
+        if(wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
@@ -252,6 +255,7 @@ int main()
         ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
         ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
         ImGui::InputInt("refresh rate", &refreshRate);
+        ImGui::Checkbox("wireframe", &wireframe);
         ImGui::End();
 
         ImGui::Render();
@@ -276,6 +280,5 @@ int main()
             glfwSetWindowTitle(window, (std::to_string((int) FPS) + " FPS").c_str());
         }
     }
-
-    cleanupAndTerminate();
+    cleanupAndTerminate(0);
 }
