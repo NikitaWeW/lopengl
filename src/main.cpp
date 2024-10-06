@@ -21,11 +21,10 @@ const bool debug = false;
 const bool debug = true;
 #endif
 
-#define checkGLError \
-errorgl = glGetError();                                                             \
-if(errorgl != GL_NO_ERROR) LOG_ERROR("opengl error: %s", getGLErrorString(errorgl));\
-
-GLenum errorgl;
+#define checkGLError {\
+    GLenum errorgl = glGetError();\
+    if(errorgl != GL_NO_ERROR) LOG_ERROR("opengl error: %s", getGLErrorString(errorgl));\
+}
 GLFWwindow* window;
 size_t iteration = 0;
 
