@@ -8,10 +8,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 project(learning-opengl C CXX)
 set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/imgui)
 set(IMGUI_BACKEND_SOURCES ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp)
+set(DEPS OpenGL GLFW Logger GLM imgui)
 
-if(NOT DEFINED DEPS)
-    set(DEPS OpenGL GLFW Logger GLM imgui)
-endif()
 include(gvo/gvo.cmake)
 gvo_find_dependencies(DEPENDENCIES ${DEPS} SCRIPT_DIRS ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/gvo/scripts)
 
