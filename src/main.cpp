@@ -1,7 +1,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#include <glm.hpp>
+#include <glm/glm.hpp>
 #include <logger.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -36,32 +36,6 @@ unsigned const indicies[] = {
 
 ShaderProgram shaderProg;
 
-
-void GLErrorCallback(GLenum error) {
-    char const *errorString;
-    switch (error) {
-        case GL_NO_ERROR:
-            errorString = "No error";
-        case GL_INVALID_ENUM:
-            errorString = "Invalid enum";
-        case GL_INVALID_VALUE:
-            errorString = "Invalid value";
-        case GL_INVALID_OPERATION:
-            errorString = "Invalid operation";
-        case GL_STACK_OVERFLOW:
-            errorString = "Stack overflow";
-        case GL_STACK_UNDERFLOW:
-            errorString = "Stack underflow";
-        case GL_OUT_OF_MEMORY:
-            errorString = "Out of memory";
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            errorString = "Invalid framebuffer operation";
-        default:
-            errorString = "Unknown error";
-    }
-    LOG_ERROR("opengl error: %s", errorString);
-}
-
 double getTimeSeconds() {
     auto now = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::duration<double>>(now.time_since_epoch()).count(); 
@@ -77,20 +51,13 @@ int main()
     }
     GLCALL(glUseProgram(shaderProg.ShaderProgramID));
 
-    VertexBuffer VB(vertices, sizeof(vertices)); // already bound
-
-
-    unsigned VAO;
-    GLCALL(glGenVertexArrays(1, &VAO));
-    GLCALL(glBindVertexArray(VAO));
-
-    unsigned EBO;
-    GLCALL(glGenBuffers(1, &EBO));
-    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
-    GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned), indicies, GL_STATIC_DRAW));
-
-    GLCALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr));
-    GLCALL(glEnableVertexAttribArray(0));
+    VertexBuffer VB(vertices, sizeof(vertices));
+    VertexBufferlayout layout;
+    layout.push<float>(3);
+    IndexBuffer IB(indicies, 6);
+    VertexArray VA;
+    VA.bind();
+    VA.addBuffer(VB, layout);
 
     GLCALL(glClearColor(0, 0.1f, 0.1f, 0));
     double displayRenderTimeSeconds = 0;
@@ -108,6 +75,7 @@ int main()
         } else {
             GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
         }
+        VA.bind();
         GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
@@ -118,6 +86,7 @@ int main()
 
         ImGui::Begin("debug");
         ImGui::Text("FPS: %f", FPS);
+        ImGui::Text("renderFPS: %f", renderFPS);
         ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
         ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
         ImGui::InputInt("refresh rate", &refreshRate);
@@ -140,6 +109,7 @@ int main()
         deltaTime = getTimeSeconds() - frameBeginTimeSeconds;
         if(iteration++ % (refreshRate > 0 ? refreshRate : 1) == 0) {
             FPS = deltaTime > 0 ? 1 / deltaTime : 0;
+            renderFPS = renderTimeSeconds > 0 ? 1 / renderTimeSeconds : 0;
             displayRenderTimeSeconds = renderTimeSeconds;
             displayDeltaTime = deltaTime;
             glfwSetWindowTitle(window, (std::to_string((int) FPS) + " FPS").c_str());

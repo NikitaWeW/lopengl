@@ -5,6 +5,8 @@
 #include <glad/gl.h>
 #include <logger.h>
 #include <array>
+#include <vector>
+#include <cassert>
 
 bool compileShader(unsigned &shader, const char *shaderSource, const int mode, std::string &log) {
     shader = glCreateShader(mode);
@@ -41,6 +43,15 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
         return false;
     }
     return true;
+}
+size_t getSizeOfGLType(unsigned type) {
+    switch (type) {
+        case GL_FLOAT: return sizeof(GLfloat);
+        case GL_UNSIGNED_INT: return sizeof(GLuint);
+        case GL_UNSIGNED_BYTE: return sizeof(GLbyte);
+        default: 
+            assert(false && "type not supported");
+    }
 }
 
 ShaderProgram::ShaderProgram() = default;
@@ -90,15 +101,81 @@ VertexBuffer::VertexBuffer(const void *data, size_t size) {
     GLCALL(glBindBuffer(GL_ARRAY_BUFFER, m_RenderID));
     GLCALL(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
 }
-
 VertexBuffer::~VertexBuffer() {
     GLCALL(glDeleteBuffers(1, &m_RenderID));
 }
-
 void VertexBuffer::bind() const {
     GLCALL(glBindBuffer(GL_ARRAY_BUFFER, m_RenderID));
 }
-
 void VertexBuffer::unbind() const {
     GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
+
+IndexBuffer::IndexBuffer(const GLuint *data, size_t count) {
+    GLCALL(glGenBuffers(1, &m_RenderID));
+    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID));
+    GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned), data, GL_STATIC_DRAW));
+}
+IndexBuffer::~IndexBuffer() {
+    GLCALL(glDeleteBuffers(1, &m_RenderID));
+}
+void IndexBuffer::bind() const {
+    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID));
+}
+void IndexBuffer::unbind() const {
+    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+}
+
+VertexBufferlayout::VertexBufferlayout() : m_stride(0) {}
+VertexBufferlayout::~VertexBufferlayout() = default;
+inline unsigned VertexBufferlayout::getStride() const {
+    return m_stride;
+}
+inline std::vector<VertexBufferlayoutElement> const &VertexBufferlayout::getElements() const {
+    return m_elements;
+}
+template <typename T>
+void VertexBufferlayout::push(unsigned const count) {
+    static_assert(false && "type not supported");
+}
+template <>
+void VertexBufferlayout::push<float>(unsigned const count) {
+    m_elements.push_back({GL_FLOAT, count, true});
+    m_stride += getSizeOfGLType(GL_FLOAT) * count;
+}
+template <>
+void VertexBufferlayout::push<unsigned>(unsigned const count) {
+    m_elements.push_back({GL_UNSIGNED_INT, count, false});
+    m_stride += getSizeOfGLType(GL_UNSIGNED_INT) * count;
+}
+template <>
+void VertexBufferlayout::push<unsigned char>(unsigned const count) {
+    m_elements.push_back({GL_UNSIGNED_BYTE, count, true});
+    m_stride += getSizeOfGLType(GL_UNSIGNED_BYTE) * count;
+}
+
+VertexArray::VertexArray() {
+    GLCALL(glGenVertexArrays(1, &m_RenderID));
+}
+VertexArray::~VertexArray() {
+    glDeleteVertexArrays(1, &m_RenderID);
+}
+void VertexArray::bind() const {
+    GLCALL(glBindVertexArray(m_RenderID));
+}
+void VertexArray::unbind() const {
+    GLCALL(glBindVertexArray(0));
+}
+
+void VertexArray::addBuffer(VertexBuffer const &VB, VertexBufferlayout const &layout) {
+    bind();
+    VB.bind();
+    auto const& elements = layout.getElements(); 
+    unsigned offset = 0;
+    for(unsigned i = 0; i < elements.size(); ++i) {
+        auto const& element = elements.at(i);
+        GLCALL(glVertexAttribPointer(i, element.count, element.type, element.normalised, layout.getStride(), reinterpret_cast<void const *>(offset)));
+        GLCALL(glEnableVertexAttribArray(i));
+        offset += element.count * getSizeOfGLType(element.type);
+    }
 }

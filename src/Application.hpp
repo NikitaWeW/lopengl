@@ -8,6 +8,7 @@ extern double frameBeginTimeSeconds;
 extern double renderTimeSeconds;
 extern double deltaTime;
 extern double FPS;
+extern double renderFPS;
 
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);

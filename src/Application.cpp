@@ -1,7 +1,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#include <glm.hpp>
+#include <glm/glm.hpp>
 #include <logger.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -21,6 +21,7 @@ double frameBeginTimeSeconds;
 double renderTimeSeconds = 0;
 double deltaTime = 0;
 double FPS = 0;
+double renderFPS = 0;
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     windowSize.x = width;
