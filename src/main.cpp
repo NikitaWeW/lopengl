@@ -8,7 +8,11 @@
 #include <imgui_impl_glfw.h>
 
 #include "Application.hpp"
-#include "render.hpp"
+#include "Renderer.hpp"
+#include "Shader.hpp"
+#include "VertexBuffer.hpp"
+#include "IndexBuffer.hpp"
+#include "VertexArray.hpp"
 
 #include <iostream> //standart includes
 #include <string>
@@ -43,20 +47,21 @@ int main()
 {
     Application app;
     ShaderProgram shaderProg;
-    shaderProg.ParceShaderFile("src/basic.glsl");
-    if(!shaderProg.CompileShaders()) {
-        LOG_FATAL("failed to compile shaders.");
-        return -1;
-    }
-    GLCALL(glUseProgram(shaderProg.ShaderProgramID));
-
     VertexBuffer VB(vertices, sizeof(vertices));
     IndexBuffer IB(indicies, 6);
     VertexArray VA;
 
+    if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
+        LOG_FATAL("failed to parce shader.");
+        return -1;
+    }
+    if(!shaderProg.CompileShaders()) {
+        LOG_FATAL("failed to compile shaders.");
+        return -1;
+    }
+    shaderProg.bind();
     VertexBufferlayout layout;
     layout.push<float>(3);
-    
     VA.bind();
     VA.addBuffer(VB, layout);
 
@@ -78,7 +83,7 @@ int main()
         }
         IB.bind();
         VA.bind();
-        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // error here
+        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
         //dear imgui here
