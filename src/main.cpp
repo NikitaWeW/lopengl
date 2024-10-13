@@ -51,10 +51,12 @@ int main()
     GLCALL(glUseProgram(shaderProg.ShaderProgramID));
 
     VertexBuffer VB(vertices, sizeof(vertices));
-    VertexBufferlayout layout;
-    layout.push<float>(3);
     IndexBuffer IB(indicies, 6);
     VertexArray VA;
+
+    VertexBufferlayout layout;
+    layout.push<float>(3);
+    
     VA.bind();
     VA.addBuffer(VB, layout);
 
@@ -74,8 +76,9 @@ int main()
         } else {
             GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
         }
+        IB.bind();
         VA.bind();
-        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // error here
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
         //dear imgui here
