@@ -34,7 +34,6 @@ unsigned const indicies[] = {
     0, 2, 3
 };
 
-ShaderProgram shaderProg;
 
 double getTimeSeconds() {
     auto now = std::chrono::high_resolution_clock::now();
@@ -43,7 +42,7 @@ double getTimeSeconds() {
 int main()
 {
     Application app;
-    ImGuiIO const &io = ImGui::GetIO();
+    ShaderProgram shaderProg;
     shaderProg.ParceShaderFile("src/basic.glsl");
     if(!shaderProg.CompileShaders()) {
         LOG_FATAL("failed to compile shaders.");
@@ -95,13 +94,10 @@ int main()
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            GLFWwindow* backup_current_context = glfwGetCurrentContext();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup_current_context);
-        }
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_current_context);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
