@@ -4,15 +4,15 @@
 bool compileShader(unsigned &shader, const char *shaderSource, const int mode,  std::string &log);
 bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log);
 
-struct ShaderProgram {
+struct Shader {
 public:
     std::string VertexShaderSource;
     std::string FragmentShaderSource;
     unsigned VertexShaderID = 0;
     unsigned FragmentShaderID = 0;
     unsigned ShaderProgramID = 0;
-    ShaderProgram();
-    ~ShaderProgram();
+    Shader();
+    ~Shader();
     void bind() const;
     void unbind() const;
     unsigned getUniform(const char *name) const;

@@ -1,6 +1,10 @@
 #pragma once
 #include <logger.h>
 
+#include "VertexArray.hpp"
+#include "IndexBuffer.hpp"
+#include "Shader.hpp"
+
 #define GLCALL(x) \
     x; \
     while (GLenum GLerror = glGetError()) { \
@@ -39,3 +43,11 @@
 
 
 size_t getSizeOfGLType(unsigned type);
+
+class Renderer {
+private:
+
+public:
+    void Clear(float r = 0, float g = 0, float b = 0) const;
+    void Draw(VertexArray const &va, IndexBuffer const &ib, Shader const &shader) const;
+};

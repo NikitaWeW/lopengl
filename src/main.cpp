@@ -46,10 +46,13 @@ double getTimeSeconds() {
 int main()
 {
     Application app;
-    ShaderProgram shaderProg;
+    Renderer renderer;
+    Shader shaderProg;
     VertexBuffer VB(vertices, sizeof(vertices));
     IndexBuffer IB(indicies, 6);
     VertexArray VA;
+    VertexBufferlayout layout;
+    layout.push<float>(3);
 
     if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
         LOG_FATAL("failed to parce shader.");
@@ -59,31 +62,32 @@ int main()
         LOG_FATAL("failed to compile shaders.");
         return -1;
     }
+
     shaderProg.bind();
-    VertexBufferlayout layout;
-    layout.push<float>(3);
     VA.bind();
     VA.addBuffer(VB, layout);
-
-    GLCALL(glClearColor(0, 0.1f, 0.1f, 0));
+    
     double displayRenderTimeSeconds = 0;
     double displayDeltaTime = 0;
     int refreshRate = 500;
     bool wireframe = false;
+    unsigned colorUniformLocation = shaderProg.getUniform("color");
+    float color[3] = {3, 136, 252};
+    bool showDemoWindow = true;
     while (!glfwWindowShouldClose(window))
     {
         frameBeginTimeSeconds = getTimeSeconds();
 
+        renderer.Clear(0.05, 0.1, 0.12);
+
         //render here
-        GLCALL(glClear(GL_COLOR_BUFFER_BIT));
         if(wireframe) {
             GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         } else {
             GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
         }
-        IB.bind();
-        VA.bind();
-        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        GLCALL(glUniform4f(colorUniformLocation, color[0], color[1], color[2], 0));
+        renderer.Draw(VA, IB, shaderProg);
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
         //dear imgui here
@@ -91,13 +95,20 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        if(showDemoWindow) ImGui::ShowDemoWindow();
+
         ImGui::Begin("debug");
         ImGui::Text("FPS: %f", FPS);
         ImGui::Text("renderFPS: %f", renderFPS);
         ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
         ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
         ImGui::InputInt("refresh rate", &refreshRate);
+        ImGui::End();
+
+        ImGui::Begin("properties");
+        ImGui::ColorEdit3("color", color);
         ImGui::Checkbox("wireframe", &wireframe);
+        ImGui::Checkbox("demo window", &showDemoWindow);
         ImGui::End();
 
         ImGui::Render();

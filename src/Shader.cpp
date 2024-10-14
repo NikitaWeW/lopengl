@@ -43,24 +43,24 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
     }
     return true;
 }
-ShaderProgram::ShaderProgram() = default;
-ShaderProgram::~ShaderProgram() {
+Shader::Shader() = default;
+Shader::~Shader() {
     if(VertexShaderID) GLCALL(glDeleteShader(VertexShaderID));
     if(FragmentShaderID) GLCALL(glDeleteShader(FragmentShaderID));
     if(ShaderProgramID) GLCALL(glDeleteProgram(ShaderProgramID));
 }
-void ShaderProgram::bind() const {
+void Shader::bind() const {
     GLCALL(glUseProgram(ShaderProgramID));
 }
-void ShaderProgram::unbind() const {
+void Shader::unbind() const {
     GLCALL(glUseProgram(0));
 }
-unsigned ShaderProgram::getUniform(const char *name) const
+unsigned Shader::getUniform(const char *name) const
 {
     unsigned location = GLCALL(glGetUniformLocation(ShaderProgramID, name));
     return location;
 }
-bool ShaderProgram::ParceShaderFile(std::string const &filepath)
+bool Shader::ParceShaderFile(std::string const &filepath)
 {
     std::ifstream fileStream(filepath, std::ios::in);
     if(!fileStream) {
@@ -92,7 +92,7 @@ bool ShaderProgram::ParceShaderFile(std::string const &filepath)
     FragmentShaderSource = shaderSourceStreams[1].str();
     return true;
 }
-bool ShaderProgram::CompileShaders() {
+bool Shader::CompileShaders() {
     std::string log;
     if(!compileShader(VertexShaderID, VertexShaderSource.c_str(), GL_VERTEX_SHADER, log)) {
         LOG_ERROR("failed to compile vertex shader! log:\n%s", log.c_str());
