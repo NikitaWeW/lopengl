@@ -1,3 +1,5 @@
+# This line will be changed if reconfiguration is required. 
+
 include(CMakePrintHelpers)
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_CXX_STANDARD 17)
@@ -8,7 +10,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 project(learning-opengl C CXX)
 set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/imgui)
 set(IMGUI_BACKEND_SOURCES ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp)
-set(DEPS OpenGL GLFW Logger GLM imgui)
+set(DEPS OpenGL GLFW Logger GLM imgui STB)
 
 include(gvo/gvo.cmake)
 gvo_find_dependencies(DEPENDENCIES ${DEPS} SCRIPT_DIRS ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/gvo/scripts)

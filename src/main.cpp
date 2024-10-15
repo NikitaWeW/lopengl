@@ -13,8 +13,9 @@
 #include "VertexBuffer.hpp"
 #include "IndexBuffer.hpp"
 #include "VertexArray.hpp"
+#include "Texture.hpp"
 
-#include <iostream> //standart includes
+#include <iostream> //std includes
 #include <string>
 #include <chrono>
 #include <thread>
@@ -28,10 +29,10 @@ extern const bool debug = true;
 #endif
 
 float const vertices[] = {
-    -0.5f, -0.5f, 0.0f, // 0
-     0.5f, -0.5f, 0.0f, // 1
-     0.5f,  0.5f, 0.0f, // 2
-    -0.5f,  0.5f, 0.0f, // 3
+    -0.5f, -0.5f,  0.0f,    0.0f, 0.0f, // 0
+     0.5f, -0.5f,  0.0f,    1.0f, 0.0f, // 1
+     0.5f,  0.5f,  0.0f,    1.0f, 1.0f, // 2
+    -0.5f,  0.5f,  0.0f,    0.0f, 1.0f  // 3
 };
 unsigned const indicies[] = {
     0, 1, 2,
@@ -52,8 +53,7 @@ int main()
     IndexBuffer IB(indicies, 6);
     VertexArray VA;
     VertexBufferlayout layout;
-    layout.push<float>(3);
-
+    Texture brickWallTexture("res/textures/wall.png");
     if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
         LOG_FATAL("failed to parce shader.");
         return -1;
@@ -63,7 +63,11 @@ int main()
         return -1;
     }
 
+    layout.push<float>(3);
+    layout.push<float>(2);
     shaderProg.bind();
+    GLCALL(glUniform1i(shaderProg.getUniform("u_Texture"), 0));
+    brickWallTexture.bind();
     VA.bind();
     VA.addBuffer(VB, layout);
     
@@ -71,9 +75,9 @@ int main()
     double displayDeltaTime = 0;
     int refreshRate = 500;
     bool wireframe = false;
-    unsigned colorUniformLocation = shaderProg.getUniform("color");
-    float color[3] = {3, 136, 252};
-    bool showDemoWindow = true;
+    unsigned colorUniformLocation = shaderProg.getUniform("u_color");
+    float color[3] = {1, 1, 1};
+    bool showDemoWindow = false;
     while (!glfwWindowShouldClose(window))
     {
         frameBeginTimeSeconds = getTimeSeconds();

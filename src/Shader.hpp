@@ -1,10 +1,13 @@
 #pragma once
 #include <string>
+#include <map>
 
 bool compileShader(unsigned &shader, const char *shaderSource, const int mode,  std::string &log);
 bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log);
 
 struct Shader {
+private:
+    std::map<std::string, int> m_UniformLocationCache;
 public:
     std::string VertexShaderSource;
     std::string FragmentShaderSource;
@@ -15,7 +18,7 @@ public:
     ~Shader();
     void bind() const;
     void unbind() const;
-    unsigned getUniform(const char *name) const;
+    int getUniform(std::string const &name);
     bool ParceShaderFile(std::string const &filepath);
     bool CompileShaders();
 };

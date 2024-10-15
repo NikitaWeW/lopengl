@@ -55,9 +55,11 @@ void Shader::bind() const {
 void Shader::unbind() const {
     GLCALL(glUseProgram(0));
 }
-unsigned Shader::getUniform(const char *name) const
+int Shader::getUniform(std::string const &name)
 {
-    unsigned location = GLCALL(glGetUniformLocation(ShaderProgramID, name));
+    if(m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) return m_UniformLocationCache[name];
+    GLCALL(int location = glGetUniformLocation(ShaderProgramID, name.c_str()));
+    m_UniformLocationCache[name] = location;
     return location;
 }
 bool Shader::ParceShaderFile(std::string const &filepath)
