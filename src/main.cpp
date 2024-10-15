@@ -54,6 +54,7 @@ int main()
     VertexArray VA;
     VertexBufferlayout layout;
     Texture brickWallTexture("res/textures/wall.png");
+    Texture smileTexture("res/textures/smile.png");
     if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
         LOG_FATAL("failed to parce shader.");
         return -1;
@@ -78,6 +79,7 @@ int main()
     unsigned colorUniformLocation = shaderProg.getUniform("u_color");
     float color[3] = {1, 1, 1};
     bool showDemoWindow = false;
+    
     while (!glfwWindowShouldClose(window))
     {
         frameBeginTimeSeconds = getTimeSeconds();
