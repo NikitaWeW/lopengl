@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <logger.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -49,7 +50,7 @@ int main()
 {
     Application app;
     Renderer renderer;
-    Shader shaderProg;
+    Shader shader;
     VertexBuffer VB(vertices, sizeof(vertices));
     IndexBuffer IB(indicies, 6);
     VertexArray VA;
@@ -57,29 +58,32 @@ int main()
 
     Texture brickWallTexture("res/textures/wall.png");
     Texture smileTexture("res/textures/smile.png");
-    if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
+    if(!shader.ParceShaderFile("src/basic.glsl")) {
         LOG_FATAL("failed to parce shader.");
         return -1;
     }
-    if(!shaderProg.CompileShaders()) {
+    if(!shader.CompileShaders()) {
         LOG_FATAL("failed to compile shaders.");
         return -1;
     }
 
     layout.push<float>(3);
     layout.push<float>(2);
-    shaderProg.bind();
+    shader.bind();
     brickWallTexture.bind();
-    GLCALL(glUniform1i(shaderProg.getUniform("u_Texture"), 0));
-    VA.bind();
+    GLCALL(glUniform1i(shader.getUniform("u_Texture"), 0));
+    VA.bind();  
     VA.addBuffer(VB, layout);
+
+    glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+    GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &proj[0][0]));
     
     double displayRenderTimeSeconds = 0;
     double displayDeltaTime = 0;
     int refreshRate = 500;
     bool wireframe = false;
-    unsigned color1UniformLocation = shaderProg.getUniform("u_color1");
-    unsigned color2UniformLocation = shaderProg.getUniform("u_color2");
+    unsigned color1UniformLocation = shader.getUniform("u_color1");
+    unsigned color2UniformLocation = shader.getUniform("u_color2");
     float color1[3] = {0, 0, 0};
     float color2[3] = {1, 1, 1};
     bool showDemoWindow = false;
@@ -100,7 +104,7 @@ int main()
         }
         GLCALL(glUniform4f(color1UniformLocation, color1[0], color1[1], color1[2], 0));
         GLCALL(glUniform4f(color2UniformLocation, color2[0], color2[1], color2[2], 1));
-        renderer.Draw(VA, IB, shaderProg);
+        renderer.Draw(VA, IB, shader);
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
         //dear imgui here
