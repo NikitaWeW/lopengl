@@ -16,11 +16,12 @@ out vec4 color;
 
 in vec2 v_texCoord;
 
-uniform vec4 u_color;
+uniform vec4 u_color1;
+uniform vec4 u_color2;
 uniform sampler2D u_Texture;
 
 void main()
 {
     vec4 texColor = texture(u_Texture, v_texCoord);
-    color = texColor + u_color;
+    color = texColor * u_color2 + u_color1;
 }

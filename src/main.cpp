@@ -56,7 +56,7 @@ int main()
     VertexBufferlayout layout;
 
     Texture brickWallTexture("res/textures/wall.png");
-    // Texture smileTexture("res/textures/smile.png");
+    Texture smileTexture("res/textures/smile.png");
     if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
         LOG_FATAL("failed to parce shader.");
         return -1;
@@ -78,9 +78,13 @@ int main()
     double displayDeltaTime = 0;
     int refreshRate = 500;
     bool wireframe = false;
-    unsigned colorUniformLocation = shaderProg.getUniform("u_color");
-    float color[3] = {1, 1, 1};
+    unsigned color1UniformLocation = shaderProg.getUniform("u_color1");
+    unsigned color2UniformLocation = shaderProg.getUniform("u_color2");
+    float color1[3] = {0, 0, 0};
+    float color2[3] = {1, 1, 1};
     bool showDemoWindow = false;
+    const char* items[] = { "brick wall", "smile", "no texture"};
+    int current_item = 0; // Index to store the selected item
     
     while (!glfwWindowShouldClose(window))
     {
@@ -94,7 +98,8 @@ int main()
         } else {
             GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
         }
-        GLCALL(glUniform4f(colorUniformLocation, color[0], color[1], color[2], 0));
+        GLCALL(glUniform4f(color1UniformLocation, color1[0], color1[1], color1[2], 0));
+        GLCALL(glUniform4f(color2UniformLocation, color2[0], color2[1], color2[2], 1));
         renderer.Draw(VA, IB, shaderProg);
         renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
@@ -114,9 +119,23 @@ int main()
         ImGui::End();
 
         ImGui::Begin("properties");
-        ImGui::ColorEdit3("color", color);
+        ImGui::ColorEdit3("first color", color1);
+        ImGui::ColorEdit3("second color", color2);
         ImGui::Checkbox("wireframe", &wireframe);
         ImGui::Checkbox("demo window", &showDemoWindow);
+        if(ImGui::Combo("texture", &current_item, items, IM_ARRAYSIZE(items))) {
+            switch (current_item) {
+            case 0:
+                brickWallTexture.bind();
+                break;
+            case 1:
+                smileTexture.bind();
+                break;
+            default:
+                brickWallTexture.unbind();
+                break;
+            }
+        }
         ImGui::End();
 
         ImGui::Render();
