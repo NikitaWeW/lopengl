@@ -57,6 +57,7 @@ Application::Application() {
         throw std::runtime_error("gladLoadGL: Failed to initialize GLAD!");
     }
 
+    GLCALL(glEnable(GL_BLEND));
     GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     ImGui::CreateContext();

@@ -19,6 +19,7 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <future>
 #include <fstream>
 #include <filesystem>
 
@@ -53,8 +54,9 @@ int main()
     IndexBuffer IB(indicies, 6);
     VertexArray VA;
     VertexBufferlayout layout;
+
     Texture brickWallTexture("res/textures/wall.png");
-    Texture smileTexture("res/textures/smile.png");
+    // Texture smileTexture("res/textures/smile.png");
     if(!shaderProg.ParceShaderFile("src/basic.glsl")) {
         LOG_FATAL("failed to parce shader.");
         return -1;
@@ -67,8 +69,8 @@ int main()
     layout.push<float>(3);
     layout.push<float>(2);
     shaderProg.bind();
-    GLCALL(glUniform1i(shaderProg.getUniform("u_Texture"), 0));
     brickWallTexture.bind();
+    GLCALL(glUniform1i(shaderProg.getUniform("u_Texture"), 0));
     VA.bind();
     VA.addBuffer(VB, layout);
     

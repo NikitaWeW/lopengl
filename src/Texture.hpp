@@ -15,16 +15,13 @@ public:
     void bind(unsigned slot = 0) const;
     void unbind() const;
 
-    inline int getWidth() const
-    {
+    inline int getWidth() const {
         return m_Width;
     }
-    inline int getHeight() const
-    {
+    inline int getHeight() const {
         return m_Height;
     }
-    inline int getBitsPerPixel() const
-    {
+    inline int getBitsPerPixel() const {
         return m_BPP;
     }
 };
