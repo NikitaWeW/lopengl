@@ -22,14 +22,10 @@ extern const bool debug = true;
 #endif
 
 float const vertices[] = {
-    //  100.0f,  100.0f,  0.0f,    0.0f, 0.0f, // 0
-    //  200.0f,  100.0f,  0.0f,    1.0f, 0.0f, // 1
-    //  200.0f,  200.0f,  0.0f,    1.0f, 1.0f, // 2
-    //  100.0f,  200.0f,  0.0f,    0.0f, 1.0f  // 3
-    -0.5f, -0.5f,  0.0f,    0.0f, 0.0f, // 0
-     0.5f, -0.5f,  0.0f,    1.0f, 0.0f, // 1
-     0.5f,  0.5f,  0.0f,    1.0f, 1.0f, // 2
-    -0.5f,  0.5f,  0.0f,    0.0f, 1.0f  // 3
+    -1.0f, -1.0f,  0.0f,    0.0f, 0.0f, // 0
+     1.0f, -1.0f,  0.0f,    1.0f, 0.0f, // 1
+     1.0f,  1.0f,  0.0f,    1.0f, 1.0f, // 2
+    -1.0f,  1.0f,  0.0f,    0.0f, 1.0f  // 3
 
 };
 unsigned const indicies[] = {
@@ -48,7 +44,6 @@ int main()
     VertexArray VA;
     VertexBufferlayout layout;
     Texture brickWallTexture("res/textures/wall.png");
-    Texture smileTexture("res/textures/smile.png");
 
     if(!shader.ParceShaderFile("src/basic.glsl")) return -1;
     if(!shader.CompileShaders()) return -1;
@@ -65,26 +60,31 @@ int main()
     glm::mat4 view(1.0f);
     glm::mat4 model(1.0f);
 
-    model = glm::translate(model, glm::vec3(0.75f, 0, 0));
-    // model = glm::rotate(model, 1.0f, glm::vec3(0, 0, 45));
-
-    view = glm::translate(view, glm::vec3(-1, 0, 0));
-    // view = glm::rotate(view, 1.0f, glm::vec3(0, 0, 45));
-
     glm::mat4 MVP = proj * view * model;
-    GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
 
+    glm::vec3 translation(0);
+    glm::vec3 rotation(0);
+    glm::vec3 scale(1);
     bool wireframe = false;
     unsigned color1UniformLocation = shader.getUniform("u_color");
     float color[4] = {0, 0, 0, 1};
     bool showDemoWindow = false;
-    const char* items[] = { "brick wall", "smile", "no texture"};
+    const char* items[] = { "brick wall", "no texture"};
     int current_item = 0; // Index to store the selected item
     ImGuiIO &io = ImGui::GetIO();
     bool show_another_window = false;
 
     while (!glfwWindowShouldClose(window))
     {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, translation);
+        model = glm::rotate(model, rotation.x, glm::vec3(1, 0, 0));
+        model = glm::rotate(model, rotation.y, glm::vec3(0, 1, 0));
+        model = glm::rotate(model, rotation.z, glm::vec3(0, 0, 1));
+        model = glm::scale(model, scale);
+
+        MVP = proj * view * model;
+        GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
         GLCALL(glUniform4f(color1UniformLocation, color[0], color[1], color[2], color[3]));
 
         renderer.Clear(0.05, 0.1, 0.12);
@@ -108,13 +108,20 @@ int main()
                 case 0:
                     brickWallTexture.bind();
                     break;
-                case 1:
-                    smileTexture.bind();
-                    break;
                 default:
                     brickWallTexture.unbind();
                     break;
                 }
+            }
+            ImGui::End();
+            ImGui::Begin("square");
+            ImGui::DragFloat3("translation", &translation.x, 0.01f);
+            ImGui::DragFloat3("rotation", &rotation.x, 0.01f);
+            ImGui::DragFloat3("scale", &scale.x, 0.01f);
+            if(ImGui::Button("reset")) {
+                translation = glm::vec3(0);
+                rotation = glm::vec3(0);
+                scale = glm::vec3(1);
             }
             ImGui::End();
             ImGui::Render();
