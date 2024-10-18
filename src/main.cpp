@@ -40,6 +40,7 @@ unsigned const indicies[] = {
 int main()
 {
     Application app;
+    GLFWwindow *window = app.window;
     Renderer renderer;
     Shader shader;
     VertexBuffer VB(vertices, sizeof(vertices));
@@ -73,74 +74,61 @@ int main()
     glm::mat4 MVP = proj * view * model;
     GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
 
-    double displayRenderTimeSeconds = 0;
-    double displayDeltaTime = 0;
-    int refreshRate = 500;
     bool wireframe = false;
-    unsigned color1UniformLocation = shader.getUniform("u_color1");
-    unsigned color2UniformLocation = shader.getUniform("u_color2");
-    float color1[3] = {0, 0, 0};
-    float color2[3] = {1, 1, 1};
+    unsigned color1UniformLocation = shader.getUniform("u_color");
+    float color[4] = {0, 0, 0, 1};
     bool showDemoWindow = false;
     const char* items[] = { "brick wall", "smile", "no texture"};
     int current_item = 0; // Index to store the selected item
+    ImGuiIO &io = ImGui::GetIO();
+    bool show_another_window = false;
 
-    while (!glfwWindowShouldClose(app.window))
+    while (!glfwWindowShouldClose(window))
     {
+        GLCALL(glUniform4f(color1UniformLocation, color[0], color[1], color[2], color[3]));
 
         renderer.Clear(0.05, 0.1, 0.12);
         renderer.Draw(VA, IB, shader);
 
-        if(wireframe) {
-            GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
-        } else {
-            GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-        }
-        GLCALL(glUniform4f(color1UniformLocation, color1[0], color1[1], color1[2], 0));
-        GLCALL(glUniform4f(color2UniformLocation, color2[0], color2[1], color2[2], 1));
+        { //imgui goes here
+            if(wireframe) {
+                GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+            } else {
+                GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+            }
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
 
-    {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        if(showDemoWindow) ImGui::ShowDemoWindow();
-
-        ImGui::Begin("debug");
-        ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
-        ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
-        ImGui::InputInt("refresh rate", &refreshRate);
-        ImGui::End();
-
-        ImGui::Begin("properties");
-        ImGui::ColorEdit3("first color", color1);
-        ImGui::ColorEdit3("second color", color2);
-        ImGui::Checkbox("wireframe", &wireframe);
-        ImGui::Checkbox("demo window", &showDemoWindow);
-        if(ImGui::Combo("texture", &current_item, items, IM_ARRAYSIZE(items))) {
-            switch (current_item) {
-            case 0:
-                brickWallTexture.bind();
-                break;
-            case 1:
-                smileTexture.bind();
-                break;
-            default:
-                brickWallTexture.unbind();
-                break;
+            ImGui::Begin("properties");
+            ImGui::ColorEdit4("color", color);
+            ImGui::Checkbox("wireframe", &wireframe);
+            if(ImGui::Combo("texture", &current_item, items, IM_ARRAYSIZE(items))) {
+                switch (current_item) {
+                case 0:
+                    brickWallTexture.bind();
+                    break;
+                case 1:
+                    smileTexture.bind();
+                    break;
+                default:
+                    brickWallTexture.unbind();
+                    break;
+                }
+            }
+            ImGui::End();
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            {
+                GLFWwindow* backup_current_context = glfwGetCurrentContext();
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+                glfwMakeContextCurrent(backup_current_context);
             }
         }
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        GLFWwindow* backup_current_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backup_current_context);
-    }
     
-        glfwSwapBuffers(app.window);
+        glfwSwapBuffers(window);
         glfwPollEvents();
     }
 }
