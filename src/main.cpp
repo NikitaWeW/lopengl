@@ -3,6 +3,9 @@
 #include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_glfw.h>
 
 #include "Application.hpp"
 #include "Renderer.hpp"
@@ -44,6 +47,7 @@ int main()
     VertexArray VA;
     VertexBufferlayout layout;
     Texture brickWallTexture("res/textures/wall.png");
+    Texture smileTexture("res/textures/smile.png");
 
     if(!shader.ParceShaderFile("src/basic.glsl")) return -1;
     if(!shader.CompileShaders()) return -1;
@@ -69,6 +73,18 @@ int main()
     glm::mat4 MVP = proj * view * model;
     GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
 
+    double displayRenderTimeSeconds = 0;
+    double displayDeltaTime = 0;
+    int refreshRate = 500;
+    bool wireframe = false;
+    unsigned color1UniformLocation = shader.getUniform("u_color1");
+    unsigned color2UniformLocation = shader.getUniform("u_color2");
+    float color1[3] = {0, 0, 0};
+    float color2[3] = {1, 1, 1};
+    bool showDemoWindow = false;
+    const char* items[] = { "brick wall", "smile", "no texture"};
+    int current_item = 0; // Index to store the selected item
+
     while (!glfwWindowShouldClose(app.window))
     {
 
@@ -91,8 +107,6 @@ int main()
         if(showDemoWindow) ImGui::ShowDemoWindow();
 
         ImGui::Begin("debug");
-        ImGui::Text("FPS: %f", FPS);
-        ImGui::Text("renderFPS: %f", renderFPS);
         ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
         ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
         ImGui::InputInt("refresh rate", &refreshRate);
@@ -125,6 +139,7 @@ int main()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+    
         glfwSwapBuffers(app.window);
         glfwPollEvents();
     }

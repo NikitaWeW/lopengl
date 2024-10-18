@@ -24,7 +24,7 @@ Application::Application() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    window = glfwCreateWindow(640, 480, "-- FPS", NULL, NULL);
+    window = glfwCreateWindow(640, 480, "opengl", NULL, NULL);
     if (window) LOG_INFO("window initialised successfully at adress %i", window);
     else {
         LOG_FATAL("failed to initialise window.");
