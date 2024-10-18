@@ -45,6 +45,11 @@ int main()
     VertexBufferlayout layout;
     Texture brickWallTexture("res/textures/wall.png");
 
+    int windowWidth;
+    int windowHeight;
+    // float aspect = (float) windowWidth / windowHeight;
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
     if(!shader.ParceShaderFile("src/basic.glsl")) return -1;
     if(!shader.CompileShaders()) return -1;
 
@@ -57,14 +62,14 @@ int main()
     VA.addBuffer(VB, layout);
 
     glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+    // glm::mat4 proj = glm::perspective(1.0f, (float) windowWidth / windowHeight, -1.0f, 100.0f);
     glm::mat4 view(1.0f);
-    glm::mat4 model(1.0f);
-
-    glm::mat4 MVP = proj * view * model;
 
     glm::vec3 translation(0);
     glm::vec3 rotation(0);
     glm::vec3 scale(1);
+    glm::vec3 viewTranslation(0);
+    glm::vec3 viewRotation(0);
     bool wireframe = false;
     unsigned color1UniformLocation = shader.getUniform("u_color");
     float color[4] = {0, 0, 0, 1};
@@ -76,19 +81,34 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, translation);
-        model = glm::rotate(model, rotation.x, glm::vec3(1, 0, 0));
-        model = glm::rotate(model, rotation.y, glm::vec3(0, 1, 0));
-        model = glm::rotate(model, rotation.z, glm::vec3(0, 0, 1));
-        model = glm::scale(model, scale);
-
-        MVP = proj * view * model;
-        GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
-        GLCALL(glUniform4f(color1UniformLocation, color[0], color[1], color[2], color[3]));
+        view = glm::mat4(1.0f);
+        view = glm::translate(view, -viewTranslation);
 
         renderer.Clear(0.05, 0.1, 0.12);
-        renderer.Draw(VA, IB, shader);
+        GLCALL(glUniform4f(color1UniformLocation, color[0], color[1], color[2], color[3]));
+
+        { // object 1
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, translation);
+            model = glm::rotate(model, rotation.x, glm::vec3(1, 0, 0));
+            model = glm::rotate(model, rotation.y, glm::vec3(0, 1, 0));
+            model = glm::rotate(model, rotation.z, glm::vec3(0, 0, 1));
+            model = glm::scale(model, scale);
+            glm::mat4  MVP = proj * view * model;
+            GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
+            renderer.Draw(VA, IB, shader);
+        }
+        { // object 2
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(1.5, 0, 0));
+            model = glm::rotate(model, 0.0f, glm::vec3(1, 0, 0));
+            model = glm::rotate(model, 0.0f, glm::vec3(0, 1, 0));
+            model = glm::rotate(model, 0.0f, glm::vec3(0, 0, 1));
+            model = glm::scale(model, glm::vec3(1, 1, 1));
+            glm::mat4  MVP = proj * view * model;
+            GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
+            renderer.Draw(VA, IB, shader);
+        }
 
         { //imgui goes here
             if(wireframe) {
@@ -114,6 +134,7 @@ int main()
                 }
             }
             ImGui::End();
+
             ImGui::Begin("square");
             ImGui::DragFloat3("translation", &translation.x, 0.01f);
             ImGui::DragFloat3("rotation", &rotation.x, 0.01f);
@@ -124,6 +145,16 @@ int main()
                 scale = glm::vec3(1);
             }
             ImGui::End();
+
+            ImGui::Begin("view");
+            ImGui::DragFloat3("translation", &viewTranslation.x, 0.01f);
+            ImGui::DragFloat3("rotation", &viewRotation.x, 0.01f);
+            if(ImGui::Button("reset")) {
+                viewTranslation = glm::vec3(0);
+                viewRotation = glm::vec3(0);
+            }
+            ImGui::End();
+
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -137,5 +168,6 @@ int main()
     
         glfwSwapBuffers(window);
         glfwPollEvents();
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
     }
 }
