@@ -9,12 +9,8 @@
 
 extern const bool debug;
 
-GLFWwindow* window;
-glm::vec<2, int> windowSize;
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
-    windowSize.x = width;
-    windowSize.y = height;
     GLCALL(glViewport(0, 0, width, height));
 }
 Application::Application() {

@@ -56,10 +56,6 @@ int main()
     VA.bind();  
     VA.addBuffer(VB, layout);
 
-    // went insane with these matricies
-    // glm::mat4 proj = glm::ortho(-320.0f, 320.0f, -240.0f, 240.0f, -1.0f, 1.0f);
-    // glm::mat4 proj = glm::ortho(-640.0f, 640.0f, -480.0f, 480.0f, -1.0f, 1.0f);
-    // glm::mat4 proj = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
     glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
     glm::mat4 view(1.0f);
     glm::mat4 model(1.0f);
@@ -73,73 +69,63 @@ int main()
     glm::mat4 MVP = proj * view * model;
     GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
 
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(app.window))
     {
-        // frameBeginTimeSeconds = getTimeSeconds();
 
         renderer.Clear(0.05, 0.1, 0.12);
-
-        // if(wireframe) {
-        //     GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
-        // } else {
-        //     GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-        // }
-        // GLCALL(glUniform4f(color1UniformLocation, color1[0], color1[1], color1[2], 0));
-        // GLCALL(glUniform4f(color2UniformLocation, color2[0], color2[1], color2[2], 1));
         renderer.Draw(VA, IB, shader);
-        // renderTimeSeconds = getTimeSeconds() - frameBeginTimeSeconds;
 
-        // ImGui_ImplOpenGL3_NewFrame();
-        // ImGui_ImplGlfw_NewFrame();
-        // ImGui::NewFrame();
+        if(wireframe) {
+            GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+        } else {
+            GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        }
+        GLCALL(glUniform4f(color1UniformLocation, color1[0], color1[1], color1[2], 0));
+        GLCALL(glUniform4f(color2UniformLocation, color2[0], color2[1], color2[2], 1));
 
-        // if(showDemoWindow) ImGui::ShowDemoWindow();
+    {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-        // ImGui::Begin("debug");
-        // ImGui::Text("FPS: %f", FPS);
-        // ImGui::Text("renderFPS: %f", renderFPS);
-        // ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
-        // ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
-        // ImGui::InputInt("refresh rate", &refreshRate);
-        // ImGui::End();
+        if(showDemoWindow) ImGui::ShowDemoWindow();
 
-        // ImGui::Begin("properties");
-        // ImGui::ColorEdit3("first color", color1);
-        // ImGui::ColorEdit3("second color", color2);
-        // ImGui::Checkbox("wireframe", &wireframe);
-        // ImGui::Checkbox("demo window", &showDemoWindow);
-        // if(ImGui::Combo("texture", &current_item, items, IM_ARRAYSIZE(items))) {
-        //     switch (current_item) {
-        //     case 0:
-        //         brickWallTexture.bind();
-        //         break;
-        //     case 1:
-        //         smileTexture.bind();
-        //         break;
-        //     default:
-        //         brickWallTexture.unbind();
-        //         break;
-        //     }
-        // }
-        // ImGui::End();
+        ImGui::Begin("debug");
+        ImGui::Text("FPS: %f", FPS);
+        ImGui::Text("renderFPS: %f", renderFPS);
+        ImGui::Text("delta time: %fms", displayDeltaTime * 1000);
+        ImGui::Text("render time: %fms", displayRenderTimeSeconds * 1000);
+        ImGui::InputInt("refresh rate", &refreshRate);
+        ImGui::End();
 
-        // ImGui::Render();
-        // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        // GLFWwindow* backup_current_context = glfwGetCurrentContext();
-        // ImGui::UpdatePlatformWindows();
-        // ImGui::RenderPlatformWindowsDefault();
-        // glfwMakeContextCurrent(backup_current_context);
+        ImGui::Begin("properties");
+        ImGui::ColorEdit3("first color", color1);
+        ImGui::ColorEdit3("second color", color2);
+        ImGui::Checkbox("wireframe", &wireframe);
+        ImGui::Checkbox("demo window", &showDemoWindow);
+        if(ImGui::Combo("texture", &current_item, items, IM_ARRAYSIZE(items))) {
+            switch (current_item) {
+            case 0:
+                brickWallTexture.bind();
+                break;
+            case 1:
+                smileTexture.bind();
+                break;
+            default:
+                brickWallTexture.unbind();
+                break;
+            }
+        }
+        ImGui::End();
 
-        glfwSwapBuffers(window);
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_current_context);
+    }
+        glfwSwapBuffers(app.window);
         glfwPollEvents();
-
-        // deltaTime = getTimeSeconds() - frameBeginTimeSeconds;
-        // if(iteration++ % (refreshRate > 0 ? refreshRate : 1) == 0) {
-        //     FPS = deltaTime > 0 ? 1 / deltaTime : 0;
-        //     renderFPS = renderTimeSeconds > 0 ? 1 / renderTimeSeconds : 0;
-        //     displayRenderTimeSeconds = renderTimeSeconds;
-        //     displayDeltaTime = deltaTime;
-        //     glfwSetWindowTitle(window, (std::to_string((int) FPS) + " FPS").c_str());
-        // }
     }
 }
