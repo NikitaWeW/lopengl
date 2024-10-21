@@ -13,7 +13,7 @@ all shitty bad initialization/uninitialization goes here
 #include <stdexcept>
 
 #include "Application.hpp"
-#include "GlCall.h"
+#include "opengl/GlCall.h"
 
 extern const bool debug;
 

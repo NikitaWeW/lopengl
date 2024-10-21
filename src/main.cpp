@@ -8,13 +8,13 @@
 #include <backends/imgui_impl_glfw.h>
 
 #include "Application.hpp"
-#include "Renderer.hpp"
-#include "GlCall.h"
-#include "Shader.hpp"
-#include "VertexBuffer.hpp"
-#include "IndexBuffer.hpp"
-#include "VertexArray.hpp"
-#include "Texture.hpp"
+#include "opengl/Renderer.hpp"
+#include "opengl/GlCall.h"
+#include "opengl/Shader.hpp"
+#include "opengl/VertexBuffer.hpp"
+#include "opengl/IndexBuffer.hpp"
+#include "opengl/VertexArray.hpp"
+#include "opengl/Texture.hpp"
 
 #ifdef NDEBUG
 extern const bool debug = false;
