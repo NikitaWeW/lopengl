@@ -1,8 +1,9 @@
-#include <glad/gl.h>
+#include "glad/gl.h"
 #include <cassert>
 
 #include "VertexBuffer.hpp"
 #include "VertexArray.hpp"
+#include "GlCall.h"
 #include "Renderer.hpp"
 
 VertexArray::VertexArray() {

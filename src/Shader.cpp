@@ -1,11 +1,11 @@
-#include <glad/gl.h>
+#include "glad/gl.h"
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <array>
 
 #include "Shader.hpp"
-#include "Renderer.hpp"
+#include "GlCall.h"
 
 bool compileShader(unsigned &shader, const char *shaderSource, const int mode, std::string &log) {
     shader = glCreateShader(mode);

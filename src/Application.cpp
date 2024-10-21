@@ -2,17 +2,18 @@
 all shitty bad initialization/uninitialization goes here
 */
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <logger.h>
+#include "glad/gl.h"
+#include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
+#include "logger.h"
+#include "imgui.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "backends/imgui_impl_glfw.h"
+
 #include <stdexcept>
-#include <imgui.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <backends/imgui_impl_glfw.h>
 
 #include "Application.hpp"
-#include "Renderer.hpp"
+#include "GlCall.h"
 
 extern const bool debug;
 
@@ -59,6 +60,7 @@ Application::Application() {
 
     GLCALL(glEnable(GL_BLEND));
     GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    GLCALL(glEnable(GL_DEPTH_TEST));
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");

@@ -1,9 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <glad/gl.h>
+#include "stb_image.h"
+#include "glad/gl.h"
 
 #include "Texture.hpp"
-#include "Renderer.hpp"
+#include "GlCall.h"
 
 Texture::Texture(std::string const &filepath) :
     m_RenderID(0), m_FilePath(filepath), m_Buffer(nullptr), m_Width(0), m_Height(0), m_BPP(0) {

@@ -1,6 +1,7 @@
-#include <glad/gl.h>
+#include "glad/gl.h"
 
 #include "VertexBuffer.hpp"
+#include "GlCall.h"
 #include "Renderer.hpp"
 
 VertexBufferlayout::VertexBufferlayout() : m_stride(0) {}

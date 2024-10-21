@@ -1,4 +1,4 @@
-# This line will be changed if reconfiguration is required. 
+# This line will be changed if reconfiguration is required: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ligula.
 
 include(CMakePrintHelpers)
 cmake_minimum_required(VERSION 3.5)
@@ -18,6 +18,7 @@ gvo_find_dependencies(DEPENDENCIES ${DEPS} SCRIPT_DIRS ${PROJECT_SOURCE_DIR} ${P
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(main ${SOURCES})
 target_link_libraries(main PRIVATE gvo)
+target_include_directories(main PRIVATE "src")
 
 message(STATUS "Sources: ")
 foreach(SOURCE ${SOURCES})

@@ -1,6 +1,6 @@
-#include <glad/gl.h>
+#include "glad/gl.h"
 
-#include "Renderer.hpp"
+#include "GlCall.h"
 #include "IndexBuffer.hpp"
 
 IndexBuffer::IndexBuffer(const GLuint *data, size_t count) : m_count(count) {
