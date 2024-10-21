@@ -1,11 +1,11 @@
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <imgui.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <backends/imgui_impl_glfw.h>
+#include "glad/gl.h"
+#include "GLFW/glfw3.h"
+#include "GLFW/glfw3native.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "imgui.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "backends/imgui_impl_glfw.h"
 
 #include "Application.hpp"
 #include "opengl/Renderer.hpp"
@@ -15,6 +15,7 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/VertexArray.hpp"
 #include "opengl/Texture.hpp"
+#include "Camera.hpp"
 
 #ifdef NDEBUG
 extern const bool debug = false;
@@ -39,6 +40,7 @@ int main()
     Application app;
     GLFWwindow *window = app.window;
     Renderer renderer;
+    Camera cam(glm::vec3(0, 0, 2.5), glm::vec3(-90, 0, 0));
     Shader shader;
     VertexBuffer VB(vertices, sizeof(vertices));
     IndexBuffer IB(indicies, 6);
@@ -62,16 +64,12 @@ int main()
     VA.bind();  
     VA.addBuffer(VB, layout);
 
-    glm::mat4 proj;
-    glm::mat4 view(1.0f);
     glm::vec3 translation1(0);
     glm::vec3 rotation1(0);
     glm::vec3 scale1(1);
     glm::vec3 translation2(0);
     glm::vec3 rotation2(0);
     glm::vec3 scale2(1);
-    glm::vec3 viewTranslation(0, 0, 2.5f);
-    glm::vec3 viewRotation(0);
     bool wireframe = false;
     unsigned color1UniformLocation = shader.getUniform("u_color");
     float color[4] = {0, 0, 0, 1};
@@ -80,12 +78,13 @@ int main()
     int current_item = 0; // Index to store the selected item
     ImGuiIO &io = ImGui::GetIO();
     bool show_another_window = false;
+    bool object2 = false;
 
     while (!glfwWindowShouldClose(window))
     {
-        proj = glm::perspective(45.0f, (float) windowWidth / windowHeight, 0.001f, -100.0f);
-        view = glm::mat4(1.0f);
-        view = glm::translate(view, -viewTranslation);
+        cam.update();
+        glm::mat4 proj = cam.getProjectionMatrix(windowWidth, windowHeight);
+        glm::mat4 view = cam.getViewMatrix();
 
         renderer.Clear(0.05, 0.1, 0.12);
         GLCALL(glUniform4f(color1UniformLocation, color[0], color[1], color[2], color[3]));
@@ -101,7 +100,7 @@ int main()
             GLCALL(glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]));
             renderer.Draw(VA, IB, shader);
         }
-        { // object 2
+        if(object2) { // object 2
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, translation2);
             model = glm::rotate(model, glm::radians(rotation2.x), glm::vec3(1, 0, 0));
@@ -126,6 +125,7 @@ int main()
             ImGui::Begin("properties");
             ImGui::ColorEdit4("color", color);
             ImGui::Checkbox("wireframe", &wireframe);
+            ImGui::Checkbox("object 2", &object2);
             if(ImGui::Combo("texture", &current_item, items, IM_ARRAYSIZE(items))) {
                 switch (current_item) {
                 case 0:
@@ -139,7 +139,7 @@ int main()
             ImGui::End();
 
             ImGui::Begin("square 1");
-            ImGui::DragFloat3("translation", &translation1.x, 0.01f);
+            ImGui::DragFloat3("position", &translation1.x, 0.01f);
             ImGui::DragFloat3("rotation", &rotation1.x, 0.5f);
             ImGui::DragFloat3("scale", &scale1.x, 0.01f);
             if(ImGui::Button("reset")) {
@@ -149,23 +149,25 @@ int main()
             }
             ImGui::End();
 
-            ImGui::Begin("square 2");
-            ImGui::DragFloat3("translation", &translation2.x, 0.01f);
-            ImGui::DragFloat3("rotation", &rotation2.x, 0.5f);
-            ImGui::DragFloat3("scale", &scale2.x, 0.01f);
-            if(ImGui::Button("reset")) {
-                translation2 = glm::vec3(0);
-                rotation2 = glm::vec3(0);
-                scale2 = glm::vec3(1);
+            if(object2) {
+                ImGui::Begin("square 2");
+                ImGui::DragFloat3("position", &translation2.x, 0.01f);
+                ImGui::DragFloat3("rotation", &rotation2.x, 0.5f);
+                ImGui::DragFloat3("scale", &scale2.x, 0.01f);
+                if(ImGui::Button("reset")) {
+                    translation2 = glm::vec3(0);
+                    rotation2 = glm::vec3(0);
+                    scale2 = glm::vec3(1);
+                }
+                ImGui::End();
             }
-            ImGui::End();
 
             ImGui::Begin("view");
-            ImGui::DragFloat3("translation", &viewTranslation.x, 0.01f);
-            ImGui::DragFloat3("rotation", &viewRotation.x, 0.01f);
+            ImGui::DragFloat3("position", &cam.position.x, 0.01f);
+            ImGui::DragFloat3("rotation", &cam.rotation.x, 0.5f);
             if(ImGui::Button("reset")) {
-                viewTranslation = glm::vec3(0);
-                viewRotation = glm::vec3(0);
+                cam.position = glm::vec3(0, 0, 2.5);
+                cam.rotation = glm::vec3(0);
             }
             ImGui::End();
 

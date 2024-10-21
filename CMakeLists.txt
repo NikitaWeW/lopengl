@@ -1,4 +1,4 @@
-# This line will be changed if reconfiguration is required: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ligula. word: headache
+# This line will be changed if reconfiguration is required: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ligula. word: headache 
 
 include(CMakePrintHelpers)
 cmake_minimum_required(VERSION 3.5)
