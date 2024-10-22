@@ -8,18 +8,18 @@ Camera::Camera(glm::vec3 pos, glm::vec3 rotation) : position(pos), rotation(rota
 
 void Camera::update()
 {
-    Front = glm::normalize(glm::vec3(
+    front = glm::normalize(glm::vec3(
         cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y)),
         sin(glm::radians(rotation.y)),
         sin(glm::radians(rotation.x)) * cos(glm::radians(rotation.y))
     ));
-    Right = glm::normalize(glm::cross(Front, glm::vec3(0, 1, 0)));
-    Up    = glm::normalize(glm::cross(Right, Front));
+    right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+    up    = glm::normalize(glm::cross(right, front));
 }
 
 glm::mat4 Camera::getViewMatrix() const
 {
-    return glm::lookAt(position, position + Front, Up);
+    return glm::lookAt(position, position + front, up);
 }
 
 glm::mat4 Camera::getProjectionMatrix(int windowWidth, int windowHeight) const

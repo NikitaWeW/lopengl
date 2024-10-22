@@ -17,6 +17,8 @@
 #include "opengl/Texture.hpp"
 #include "Camera.hpp"
 
+#include <chrono>
+
 #ifdef NDEBUG
 extern const bool debug = false;
 #else
@@ -35,12 +37,88 @@ unsigned const indicies[] = {
     0, 2, 3
 };
 
+bool mouseLocked = true;
+float prevx = 0;
+float prevy = 0;
+float sensitivity = 0.01f;
+float cameraSpeed = 0.05f;
+bool firstCursorMove = true;
+float deltatime = 0;
+Camera cam(glm::vec3(0, 0, 2.5), glm::vec3(-90, 0, 0));
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if(action == GLFW_PRESS) {
+        switch (key)
+        {
+        case GLFW_KEY_ESCAPE:
+            mouseLocked = !mouseLocked;
+            if(mouseLocked) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            } else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+            break;
+        default:
+            break;
+        }
+    }
+}
+void processCameraMovement(GLFWwindow* window) {
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        cam.position += cameraSpeed * cam.getFront() * deltatime;
+    } 
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        cam.position -= cameraSpeed * glm::cross(cam.getFront(), cam.getUp()) * deltatime;
+    } 
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        cam.position -= cameraSpeed * cam.getFront() * deltatime;
+    } 
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        cam.position += cameraSpeed * glm::cross(cam.getFront(), cam.getUp()) * deltatime;
+    }
+}
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    if(mouseLocked) {
+        if (firstCursorMove)
+        {
+            prevx = xpos;
+            prevy = ypos;
+            firstCursorMove = false;
+        }
+
+        float xoffset = xpos - prevx;
+        float yoffset = prevy - ypos; // reversed since y-coordinates go from bottom to top
+
+        prevx = xpos;
+        prevy = ypos;
+
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        cam.rotation.x += xoffset;
+        cam.rotation.y += yoffset;
+
+        if (cam.rotation.y > 89.0f)
+            cam.rotation.y = 89.0f;
+        if (cam.rotation.y < -89.0f)
+            cam.rotation.y = -89.0f;
+        
+        cam.update();
+    }
+}
+float GetTime() {
+    typedef std::chrono::high_resolution_clock clock;
+    typedef std::chrono::duration<float, std::milli> duration;
+
+    static clock::time_point start = clock::now();
+    duration elapsed = clock::now() - start;
+    return elapsed.count();
+}
 int main()
 {
     Application app;
     GLFWwindow *window = app.window;
     Renderer renderer;
-    Camera cam(glm::vec3(0, 0, 2.5), glm::vec3(-90, 0, 0));
     Shader shader;
     VertexBuffer VB(vertices, sizeof(vertices));
     IndexBuffer IB(indicies, 6);
@@ -50,8 +128,10 @@ int main()
 
     int windowWidth;
     int windowHeight;
-    // float aspect = (float) windowWidth / windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
 
     if(!shader.ParceShaderFile("src/basic.glsl")) return -1;
     if(!shader.CompileShaders()) return -1;
@@ -82,6 +162,8 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        auto start = GetTime();
+        processCameraMovement(window);
         cam.update();
         glm::mat4 proj = cam.getProjectionMatrix(windowWidth, windowHeight);
         glm::mat4 view = cam.getViewMatrix();
@@ -123,6 +205,7 @@ int main()
             ImGui::NewFrame();
 
             ImGui::Begin("properties");
+            ImGui::Text("delta time: %f", &deltatime);
             ImGui::ColorEdit4("color", color);
             ImGui::Checkbox("wireframe", &wireframe);
             ImGui::Checkbox("object 2", &object2);
@@ -163,12 +246,14 @@ int main()
             }
 
             ImGui::Begin("view");
-            ImGui::DragFloat3("position", &cam.position.x, 0.01f);
-            ImGui::DragFloat3("rotation", &cam.rotation.x, 0.5f);
+            // ImGui::DragFloat3("position", &cam.position.x, 0.01f);
+            // ImGui::DragFloat3("rotation", &cam.rotation.x, 0.5f);
             if(ImGui::Button("reset")) {
                 cam.position = glm::vec3(0, 0, 2.5);
-                cam.rotation = glm::vec3(0);
+                cam.rotation = glm::vec3(-90, 0, 0);
             }
+            ImGui::InputFloat("camera speed", &cameraSpeed);
+            ImGui::InputFloat("sensitivity", &sensitivity);
             ImGui::End();
 
             ImGui::Render();
@@ -185,5 +270,6 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
         glfwGetWindowSize(window, &windowWidth, &windowHeight);
+        deltatime = GetTime() - start;
     }
 }
