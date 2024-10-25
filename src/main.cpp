@@ -26,11 +26,11 @@ extern const bool debug = true;
 #endif
 
 float const vertices[] = {
+//  coordinate              texture
     -1.0f, -1.0f,  0.0f,    0.0f, 0.0f, // 0
      1.0f, -1.0f,  0.0f,    1.0f, 0.0f, // 1
      1.0f,  1.0f,  0.0f,    1.0f, 1.0f, // 2
     -1.0f,  1.0f,  0.0f,    0.0f, 1.0f  // 3
-
 };
 unsigned const indicies[] = {
     0, 1, 2,
@@ -41,11 +41,17 @@ bool mouseLocked = true;
 float prevx = 0;
 float prevy = 0;
 float sensitivity = 0.01f;
-float cameraSpeed = 0.05f;
+float cameraSpeed = 0.01f;
 bool firstCursorMove = true;
 float deltatime = 0;
 Camera cam(glm::vec3(0, 0, 2.5), glm::vec3(-90, 0, 0));
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+    cam.fov -= (float) yoffset;
+    if(cam.fov < 1.0f) cam.fov = 1.0f; 
+    if(cam.fov > 45.0f) cam.fov = 45.0f; 
+}
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if(action == GLFW_PRESS) {
         switch (key)
@@ -76,8 +82,15 @@ void processCameraMovement(GLFWwindow* window) {
     if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         cam.position += cameraSpeed * glm::cross(cam.getFront(), cam.getUp()) * deltatime;
     }
+    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        cam.position += cameraSpeed * cam.getUp() * deltatime;
+    }
+    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        cam.position += cameraSpeed * -cam.getUp() * deltatime;
+    }
 }
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
     if(mouseLocked) {
         if (firstCursorMove)
         {
@@ -132,6 +145,7 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     if(!shader.ParceShaderFile("src/basic.glsl")) return -1;
     if(!shader.CompileShaders()) return -1;
@@ -205,6 +219,9 @@ int main()
             ImGui::NewFrame();
 
             ImGui::Begin("properties");
+            ImGui::Text("W, A, S, D, E, Q -- move");
+            ImGui::Text("<mouse> -- rotate");
+            ImGui::Text("<esc> -- (un)capture mouse");
             ImGui::Text("delta time: %f", &deltatime);
             ImGui::ColorEdit4("color", color);
             ImGui::Checkbox("wireframe", &wireframe);

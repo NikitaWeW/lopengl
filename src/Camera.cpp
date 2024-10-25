@@ -2,7 +2,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-Camera::Camera(glm::vec3 pos, glm::vec3 rotation) : position(pos), rotation(rotation)
+Camera::Camera(glm::vec3 pos, glm::vec3 rotation) : position(pos), rotation(rotation), fov(45)
 {
 }
 
@@ -24,5 +24,5 @@ glm::mat4 Camera::getViewMatrix() const
 
 glm::mat4 Camera::getProjectionMatrix(int windowWidth, int windowHeight) const
 {
-    return glm::mat4(glm::perspective(45.0f, (float) windowWidth / windowHeight, 0.001f, -100.0f));
+    return glm::mat4(glm::perspective(glm::radians(fov), (float) windowWidth / windowHeight, 0.001f, -100.0f));
 }

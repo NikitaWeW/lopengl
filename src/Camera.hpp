@@ -9,6 +9,7 @@ private:
 public:
     glm::vec3 position;
     glm::vec3 rotation;
+    float fov;
 public:
     Camera(glm::vec3 pos = glm::vec3(0), glm::vec3 rotation = glm::vec3(0));
     void update();
