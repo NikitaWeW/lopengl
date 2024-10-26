@@ -24,9 +24,7 @@ float GetTime() {
     typedef std::chrono::high_resolution_clock clock;
     typedef std::chrono::duration<float, std::milli> duration;
 
-    static clock::time_point start = clock::now();
-    duration elapsed = clock::now() - start;
-    return elapsed.count();
+    return clock::now().time_since_epoch().count();
 }
 int main()
 {
@@ -50,6 +48,7 @@ int main()
         ImGui::NewFrame();
 
         currentTest->onImGuiRender(deltatime);
+        ImGui::Begin("properties");
         if(ImGui::Combo("test", &testIndex, testNames, IM_ARRAYSIZE(testNames))) {
             switch (testIndex) {
             case 0:
@@ -62,7 +61,7 @@ int main()
                 break;
             }
         }
-
+        ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
