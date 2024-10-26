@@ -3,12 +3,12 @@
 
 namespace test
 {
-    class TestClearcolor : public Test {
+    class TestClearColor : public Test {
     private:
         std::array<float, 4> color;
     public:
-        TestClearcolor();
-        ~TestClearcolor();
+        TestClearColor();
+        ~TestClearColor();
         void onRender(GLFWwindow *window, double deltatime) override;
         void onImGuiRender(double deltatime) override;
     };

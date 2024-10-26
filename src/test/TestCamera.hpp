@@ -13,18 +13,6 @@
 
 namespace test
 {
-    float const squareVertices[] = {
-    //  coordinate              texture
-        -1.0f, -1.0f,  0.0f,    0.0f, 0.0f, // 0
-        1.0f, -1.0f,  0.0f,    1.0f, 0.0f, // 1
-        1.0f,  1.0f,  0.0f,    1.0f, 1.0f, // 2
-        -1.0f,  1.0f,  0.0f,    0.0f, 1.0f  // 3
-    };
-    unsigned const squareIndicies[] = {
-        0, 1, 2,
-        0, 2, 3
-    };
-
     class TestCamera : public Test
     {
     private:

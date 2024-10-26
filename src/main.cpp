@@ -34,10 +34,11 @@ int main()
     double deltatime;
     int testIndex = 0;
     const char *testNames[] = {
+        "clear color test",
         "camera test",
-        "clear color test"
+        "texture test"
     };
-    std::unique_ptr<test::Test> currentTest = std::make_unique<test::TestCamera>(window); 
+    std::unique_ptr<test::Test> currentTest = std::make_unique<test::TestClearColor>(window); 
 
     while (!glfwWindowShouldClose(window))
     {
@@ -52,10 +53,13 @@ int main()
         if(ImGui::Combo("test", &testIndex, testNames, IM_ARRAYSIZE(testNames))) {
             switch (testIndex) {
             case 0:
-                currentTest = std::make_unique<test::TestCamera>(window);
+                currentTest = std::make_unique<test::TestClearColor>();
                 break;
             case 1:
-                currentTest = std::make_unique<test::TestClearcolor>();
+                currentTest = std::make_unique<test::TestCamera>(window);
+                break;
+            case 2:
+                currentTest = std::make_unique<test::TestClearColor>();
                 break;
             default:
                 break;
