@@ -12,8 +12,8 @@ namespace test {
     public:
         ControllableCamera camera;
         Renderer renderer;
-        GLFWwindow *window;
-        glm::vec4 clearColor;
+        GLFWwindow *&window = camera.window;
+        glm::vec4 clearColor = {0.05, 0.1, 0.12, 0};
         bool wireframe = false;
 
         BasicScene(GLFWwindow *window);

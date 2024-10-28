@@ -4,11 +4,11 @@
 
 class ControllableCamera : public Camera {
 private:
-    bool firstCursorMove = true;
     bool roatationCallback;
     double prevx;
     double prevy;
 public:
+    bool firstCursorMove = true;
     float sensitivity = 1.0f;
     float cameraSpeed = 1.0f;
     bool mouseLocked = false;

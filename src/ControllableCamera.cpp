@@ -1,7 +1,7 @@
 #include "ControllableCamera.hpp"
 
 const float sensitivitySlow = 0.05f;
-const float movementSlow = 0.005f;
+const float movementSlow = 1.0f;
 
 ControllableCamera::ControllableCamera(GLFWwindow *window, glm::vec3 const &position, glm::vec3 const &rotation) :
     Camera(position, rotation), 

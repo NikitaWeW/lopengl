@@ -5,10 +5,15 @@
 
 void test::BasicScene::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    bool &mouseLocked = static_cast<test::BasicScene *>(glfwGetWindowUserPointer(window))->camera.mouseLocked;
+    ControllableCamera &camera = static_cast<test::BasicScene *>(glfwGetWindowUserPointer(window))->camera;
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        mouseLocked = !mouseLocked;
-        glfwSetInputMode(window, GLFW_CURSOR, mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        camera.mouseLocked = !camera.mouseLocked;
+        if(camera.mouseLocked) {
+            camera.firstCursorMove = true;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
     }
 }
 void test::BasicScene::scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
@@ -45,26 +50,29 @@ void test::BasicScene::setMVPUniform(Shader &shader, glm::mat4 const &model, std
 void test::BasicScene::onRender(GLFWwindow *window, double deltatime) {
     camera.update(deltatime);
     GLCALL(glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL));
-    renderer.Clear(0.05, 0.1, 0.12);
+    renderer.Clear(clearColor.r, clearColor.g, clearColor.b);
 }
 
 void test::BasicScene::onImGuiRender(double deltatime) {
-    ImGui::Begin("scene");
-    ImGui::Text("delta time: %f", deltatime);
-    ImGui::Text("FPS: %f", deltatime ? 1/deltatime : -1);
+    ImGui::Begin("properties");
+    ImGui::Separator();
     ImGui::Checkbox("wireframe", &wireframe);
+    ImGui::ColorEdit4("color", &clearColor.r);
     ImGui::End();
 
     ImGui::Begin("camera");
     ImGui::Text("W, A, S, D, E, Q -- move");
     ImGui::Text("<mouse> -- rotate");
     ImGui::Text("<esc> -- (un)capture mouse");
+    ImGui::Separator();
     ImGui::Text("position: (%f; %f; %f)", camera.position.x, camera.position.y, camera.position.z);
     ImGui::Text("rotation: (%f; %f; %f)", camera.rotation.x, camera.rotation.y, camera.rotation.z);
-    if(ImGui::Button("reset")) {
+    ImGui::Separator();
+    if(ImGui::Button("reset position")) {
         camera.position = glm::vec3(0, 0, 3.5);
         camera.rotation = glm::vec3(-90, 0, 0);
     }
+    ImGui::Separator();
     ImGui::InputFloat("camera speed", &camera.cameraSpeed);
     ImGui::InputFloat("sensitivity", &camera.sensitivity);
     ImGui::End();
