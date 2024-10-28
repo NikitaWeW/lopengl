@@ -3,7 +3,7 @@
 const float sensitivitySlow = 0.05f;
 const float movementSlow = 0.005f;
 
-ControllableCamera::ControllableCamera(glm::vec3 const &position, glm::vec3 const &rotation, GLFWwindow *window) : 
+ControllableCamera::ControllableCamera(GLFWwindow *window, glm::vec3 const &position, glm::vec3 const &rotation) :
     Camera(position, rotation), 
     window(window) 
 {}

@@ -14,7 +14,7 @@ public:
     bool mouseLocked = false;
     GLFWwindow *window;
 
-    ControllableCamera(glm::vec3 const &position, glm::vec3 const &rotation, GLFWwindow *window);
+    ControllableCamera(GLFWwindow *window, glm::vec3 const &position = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
     virtual ~ControllableCamera();
 
     virtual void update(double deltatime);
