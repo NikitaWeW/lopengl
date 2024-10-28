@@ -7,7 +7,7 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/VertexArray.hpp"
 #include "opengl/Texture.hpp"
-#include "Camera.hpp"
+#include "ControllableCamera.hpp"
 #include "GLFW/glfw3.h"
 #include "Test.hpp"
 
@@ -28,14 +28,7 @@ namespace test
     class TestCamera : public Test
     {
     private:
-        bool mouseLocked = true;
-        bool firstCursorMove = true;
-        float prevx = 0;
-        float prevy = 0;
-        float sensitivity = 0.05f;
-        float cameraSpeed = 0.01f;
-
-        Camera cam;
+        ControllableCamera cam;
         Renderer renderer;
         Shader shader;
         VertexBuffer VB;
@@ -44,7 +37,6 @@ namespace test
         VertexBufferlayout layout;
         Texture brickWallTexture;
 
-        // in case you think thats all
         glm::vec3 translation1;
         glm::vec3 rotation1;
         glm::vec3 scale1;
@@ -60,14 +52,12 @@ namespace test
         bool show_another_window = false;
         bool object2 = false;
         
-        // nope
-        static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-        static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+        static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+        static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+
     public:
         ~TestCamera();
         TestCamera(GLFWwindow *window);
-        void processCameraMovement(GLFWwindow *window, double deltatime);
         void onRender(GLFWwindow *window, double deltatime) override;
         void onImGuiRender(double deltatime) override;
     };

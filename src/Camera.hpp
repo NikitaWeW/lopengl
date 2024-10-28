@@ -11,17 +11,18 @@ public:
     glm::vec3 rotation;
     float fov;
 public:
-    Camera(glm::vec3 pos = glm::vec3(0), glm::vec3 rotation = glm::vec3(0));
-    void update();
-    glm::mat4 getViewMatrix() const;
-    glm::mat4 getProjectionMatrix(int windowWidth, int windowHeight) const;
-    inline glm::vec3 getFront() const {
+    Camera(glm::vec3 const &pos = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
+    virtual ~Camera();
+    virtual void update();
+    virtual glm::mat4 getViewMatrix() const;
+    virtual glm::mat4 getProjectionMatrix(int windowWidth, int windowHeight) const;
+    virtual inline glm::vec3 getFront() const {
         return front;
     }
-    inline glm::vec3 getRight() const {
+    virtual inline glm::vec3 getRight() const {
         return right;
     }
-    inline glm::vec3 getUp() const {
+    virtual inline glm::vec3 getUp() const {
         return up;
     }
 };

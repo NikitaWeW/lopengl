@@ -2,9 +2,9 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-Camera::Camera(glm::vec3 pos, glm::vec3 rotation) : position(pos), rotation(rotation), fov(45)
-{
-}
+Camera::Camera(glm::vec3 const &pos, glm::vec3 const &rotation) : position(pos), rotation(rotation), fov(45) {}
+
+Camera::~Camera() {}
 
 void Camera::update()
 {

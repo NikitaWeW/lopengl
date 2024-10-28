@@ -20,12 +20,6 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-float GetTime() {
-    typedef std::chrono::high_resolution_clock clock;
-    typedef std::chrono::duration<float, std::milli> duration;
-
-    return clock::now().time_since_epoch().count();
-}
 int main()
 {
     Application app;
@@ -41,7 +35,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        auto start = GetTime();
+        auto start = std::chrono::high_resolution_clock::now();
         currentTest->onRender(window, deltatime);
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -73,6 +67,6 @@ int main()
         }
         glfwSwapBuffers(window);
         glfwPollEvents();
-        deltatime = GetTime() - start;
+        deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 0.001;
     }
 }

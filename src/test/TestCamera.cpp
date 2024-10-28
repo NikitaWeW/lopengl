@@ -8,69 +8,28 @@
 #include "imgui.h"
 #include <stdexcept>
 
-void test::TestCamera::scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-    test::TestCamera *thistest = static_cast<test::TestCamera *>(glfwGetWindowUserPointer(window));
-    thistest->cam.fov -= (float) yoffset;
-    if(thistest->cam.fov < 1.0f) thistest->cam.fov = 1.0f; 
-    if(thistest->cam.fov > 45.0f) thistest->cam.fov = 45.0f; 
-}
 void test::TestCamera::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    test::TestCamera *thistest = static_cast<test::TestCamera *>(glfwGetWindowUserPointer(window));
-    if(action == GLFW_PRESS) {
-        switch (key)
-        {
-        case GLFW_KEY_ESCAPE:
-            thistest->mouseLocked = !thistest->mouseLocked;
-            if(thistest->mouseLocked) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            } else {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
-            break;
-        default:
-            break;
-        }
+    bool &mouseLocked = static_cast<TestCamera *>(glfwGetWindowUserPointer(window))->cam.mouseLocked;
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        mouseLocked = !mouseLocked;
+        glfwSetInputMode(window, GLFW_CURSOR, mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 }
-void test::TestCamera::cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
-    ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-    test::TestCamera *thistest = static_cast<test::TestCamera *>(glfwGetWindowUserPointer(window));
-    if(thistest->mouseLocked) {
-        if (thistest->firstCursorMove)
-        {
-            thistest->prevx = xpos;
-            thistest->prevy = ypos;
-            thistest->firstCursorMove = false;
-        }
-
-        float xoffset = xpos - thistest->prevx;
-        float yoffset = thistest->prevy - ypos; // reversed since y-coordinates go from bottom to top
-
-        thistest->prevx = xpos;
-        thistest->prevy = ypos;
-
-        xoffset *= thistest->sensitivity;
-        yoffset *= thistest->sensitivity;
-
-        thistest->cam.rotation.x += xoffset;
-        thistest->cam.rotation.y += yoffset;
-
-        if (thistest->cam.rotation.y > 89.0f)
-            thistest->cam.rotation.y = 89.0f;
-        if (thistest->cam.rotation.y < -89.0f)
-            thistest->cam.rotation.y = -89.0f;
-        
-        thistest->cam.update();
-    }
+void test::TestCamera::scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+    ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+    float &fov = static_cast<test::TestCamera *>(glfwGetWindowUserPointer(window))->cam.fov;
+    fov -= (float) yoffset;
+    if(fov < 1.0f) fov = 1.0f; 
+    if(fov > 45.0f) fov = 45.0f; 
 }
+
 
 test::TestCamera::~TestCamera() {
     LOG_INFO("destroying test");
 }
 test::TestCamera::TestCamera(GLFWwindow *window) : 
-    cam(glm::vec3(0, 0, 2.5), glm::vec3(-90, 0, 0)),
+    cam(glm::vec3(0, 0, 3.5), glm::vec3(-90, 0, 0), window),
     VB(test::squareVertices, sizeof(test::squareVertices)),
     IB(test::squareIndicies, 6),
     brickWallTexture("res/textures/wall.png"),
@@ -79,14 +38,13 @@ test::TestCamera::TestCamera(GLFWwindow *window) :
     scale1(1),
     translation2(0),
     rotation2(0),
-    scale2(1)
+    scale2(1) 
 {
     LOG_INFO("creating test");
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, cam.mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, this);
-    glfwSetKeyCallback(window, test::TestCamera::key_callback);
-    glfwSetCursorPosCallback(window, test::TestCamera::cursor_position_callback);
-    glfwSetScrollCallback(window, test::TestCamera::scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     if(!shader.ParceShaderFile("src/basic.glsl")) throw std::runtime_error("failed to parce shaders!");
     if(!shader.CompileShaders()) throw std::runtime_error("failed to compile shaders!");
@@ -100,30 +58,9 @@ test::TestCamera::TestCamera(GLFWwindow *window) :
     VA.bind();  
     VA.addBuffer(VB, layout);
 }
-void test::TestCamera::processCameraMovement(GLFWwindow *window, double deltatime) {
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        cam.position += cameraSpeed * cam.getFront() * (float) deltatime;
-    } 
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        cam.position -= cameraSpeed * glm::cross(cam.getFront(), cam.getUp()) * (float) deltatime;
-    } 
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        cam.position -= cameraSpeed * cam.getFront() * (float) deltatime;
-    } 
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        cam.position += cameraSpeed * glm::cross(cam.getFront(), cam.getUp()) * (float) deltatime;
-    }
-    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        cam.position += cameraSpeed * cam.getUp() * (float) deltatime;
-    }
-    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        cam.position += cameraSpeed * -cam.getUp() * (float) deltatime;
-    }
-}
+
 void test::TestCamera::onRender(GLFWwindow *window, double deltatime) {
-    glfwSetWindowUserPointer(window, this);
-    processCameraMovement(window, deltatime);
-    cam.update();
+    cam.update(deltatime);
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
     glm::mat4 proj = cam.getProjectionMatrix(windowWidth, windowHeight);
@@ -165,7 +102,8 @@ void test::TestCamera::onImGuiRender(double deltatime) {
     ImGui::Text("W, A, S, D, E, Q -- move");
     ImGui::Text("<mouse> -- rotate");
     ImGui::Text("<esc> -- (un)capture mouse");
-    ImGui::Text("delta time: %f", &deltatime);
+    ImGui::Text("delta time: %f", deltatime);
+    ImGui::Text("FPS: %f", deltatime ? 1/deltatime : -1);
     ImGui::ColorEdit4("color", color);
     ImGui::Checkbox("wireframe", &wireframe);
     ImGui::Checkbox("object 2", &object2);
@@ -209,10 +147,10 @@ void test::TestCamera::onImGuiRender(double deltatime) {
     ImGui::Text("position: (%f; %f; %f)", cam.position.x, cam.position.y, cam.position.z);
     ImGui::Text("rotation: (%f; %f; %f)", cam.rotation.x, cam.rotation.y, cam.rotation.z);
     if(ImGui::Button("reset")) {
-        cam.position = glm::vec3(0, 0, 2.5);
+        cam.position = glm::vec3(0, 0, 3.5);
         cam.rotation = glm::vec3(-90, 0, 0);
     }
-    ImGui::InputFloat("camera speed", &cameraSpeed);
-    ImGui::InputFloat("sensitivity", &sensitivity);
+    ImGui::InputFloat("camera speed", &cam.cameraSpeed);
+    ImGui::InputFloat("sensitivity", &cam.sensitivity);
     ImGui::End();
 }
