@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 project(learning-opengl C CXX)
-set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/imgui)
+set(GLAD_API "gl:core=4.3")
 set(IMGUI_BACKEND_SOURCES ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp)
 set(DEPS OpenGL GLFW Logger GLM imgui STB)
 

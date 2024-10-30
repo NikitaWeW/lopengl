@@ -5,20 +5,20 @@
 #include <array>
 
 #include "Shader.hpp"
-#include "GlCall.h"
+#include "logger.h"
 
 bool compileShader(unsigned &shader, const char *shaderSource, const int mode, std::string &log) {
     shader = glCreateShader(mode);
-    GLCALL(glShaderSource(shader, 1, &shaderSource, nullptr));
-    GLCALL(glCompileShader(shader));
+    glShaderSource(shader, 1, &shaderSource, nullptr);
+    glCompileShader(shader);
     int success;
-    GLCALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &success));
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if(!success) {
         GLint log_size;
-        GLCALL(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_size));
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_size);
         if(log_size > 0) {
             log.resize(log_size);
-            GLCALL(glGetShaderInfoLog(shader, log_size, nullptr, &log[0]));
+            glGetShaderInfoLog(shader, log_size, nullptr, &log[0]);
         }
         return false;
     }
@@ -26,39 +26,43 @@ bool compileShader(unsigned &shader, const char *shaderSource, const int mode, s
 }
 bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log) {
     program = glCreateProgram();
-    GLCALL(glAttachShader(program, vertexShaderID));
-    GLCALL(glAttachShader(program, fragmentShaderID));
-    GLCALL(glLinkProgram(program));
+    glAttachShader(program, vertexShaderID);
+    glAttachShader(program, fragmentShaderID);
+    glLinkProgram(program);
 
     int success;
-    GLCALL(glGetProgramiv(program, GL_LINK_STATUS, &success));
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
     if(!success) {
         GLint log_size;
-        GLCALL(glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_size));
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_size);
         if(log_size > 0) {
             log.resize(log_size);
-            GLCALL(glGetProgramInfoLog(program, log_size, nullptr, &log[0]));
+            glGetProgramInfoLog(program, log_size, nullptr, &log[0]);
         }
         return false;
     }
     return true;
 }
 Shader::Shader() = default;
+Shader::Shader(std::string const & filepath) {
+    if(!ParceShaderFile(filepath)) throw std::runtime_error("failed to parce shaders!");
+    if(!CompileShaders()) throw std::runtime_error("failed to compile shaders!");
+}
 Shader::~Shader() {
-    if(VertexShaderID) GLCALL(glDeleteShader(VertexShaderID));
-    if(FragmentShaderID) GLCALL(glDeleteShader(FragmentShaderID));
-    if(ShaderProgramID) GLCALL(glDeleteProgram(ShaderProgramID));
+    if(VertexShaderID) glDeleteShader(VertexShaderID);
+    if(FragmentShaderID) glDeleteShader(FragmentShaderID);
+    if(ShaderProgramID) glDeleteProgram(ShaderProgramID);
 }
 void Shader::bind() const {
-    GLCALL(glUseProgram(ShaderProgramID));
+    glUseProgram(ShaderProgramID);
 }
 void Shader::unbind() const {
-    GLCALL(glUseProgram(0));
+    glUseProgram(0);
 }
-int Shader::getUniform(std::string const &name)
+int Shader::getUniform(std::string const &name) const
 {
     if(m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) return m_UniformLocationCache[name];
-    GLCALL(int location = glGetUniformLocation(ShaderProgramID, name.c_str()));
+    int location = glGetUniformLocation(ShaderProgramID, name.c_str());
     m_UniformLocationCache[name] = location;
     return location;
 }

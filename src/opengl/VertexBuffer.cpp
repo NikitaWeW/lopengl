@@ -1,7 +1,6 @@
 #include "glad/gl.h"
 
 #include "VertexBuffer.hpp"
-#include "GlCall.h"
 #include "Renderer.hpp"
 
 VertexBufferlayout::VertexBufferlayout() : m_stride(0) {}
@@ -27,16 +26,16 @@ void VertexBufferlayout::push<unsigned char>(unsigned const count) {
 }
 
 VertexBuffer::VertexBuffer(const void *data, size_t size) {
-    GLCALL(glGenBuffers(1, &m_RenderID));
-    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, m_RenderID));
-    GLCALL(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+    glGenBuffers(1, &m_RenderID);
+    glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 }
 VertexBuffer::~VertexBuffer() {
-    GLCALL(glDeleteBuffers(1, &m_RenderID));
+    glDeleteBuffers(1, &m_RenderID);
 }
 void VertexBuffer::bind() const {
-    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, m_RenderID));
+    glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
 }
 void VertexBuffer::unbind() const {
-    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

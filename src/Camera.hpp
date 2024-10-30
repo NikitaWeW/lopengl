@@ -1,11 +1,14 @@
 #pragma once
 #include "glm/glm.hpp"
+#include <map>
+#include <tuple>
 
 class Camera {
 private:
     glm::vec3 right;
     glm::vec3 up;
     glm::vec3 front;
+    mutable std::map<std::tuple<int, int, float>, glm::mat4> m_ProjectionMatrixCache;
 public:
     glm::vec3 position;
     glm::vec3 rotation;

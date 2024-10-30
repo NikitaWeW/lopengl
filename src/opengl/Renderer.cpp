@@ -1,7 +1,6 @@
 #include "glad/gl.h"
 #include <cassert>
 
-#include "GlCall.h"
 #include "Renderer.hpp"
 
 size_t getSizeOfGLType(unsigned type) {
@@ -16,8 +15,8 @@ size_t getSizeOfGLType(unsigned type) {
 }
 
 void Renderer::Clear(float r, float g, float b) const {
-    GLCALL(glClearColor(r, g, b, 0));
-    GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+    glClearColor(r, g, b, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Renderer::Draw(VertexArray const &va, IndexBuffer const &ib, Shader const &shader) const
@@ -25,5 +24,5 @@ void Renderer::Draw(VertexArray const &va, IndexBuffer const &ib, Shader const &
     shader.bind();
     ib.bind();
     va.bind();
-    GLCALL(glDrawElements(GL_TRIANGLES, ib.getCount(), GL_UNSIGNED_INT, nullptr));
+    glDrawElements(GL_TRIANGLES, ib.getCount(), GL_UNSIGNED_INT, nullptr);
 }
