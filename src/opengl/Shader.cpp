@@ -99,6 +99,7 @@ bool Shader::ParceShaderFile(std::string const &filepath)
     return true;
 }
 bool Shader::CompileShaders() {
+    m_UniformLocationCache.erase(m_UniformLocationCache.begin(), m_UniformLocationCache.end());
     std::string log;
     if(!compileShader(VertexShaderID, VertexShaderSource.c_str(), GL_VERTEX_SHADER, log)) {
         LOG_ERROR("failed to compile vertex shader! log:\n%s", log.c_str());

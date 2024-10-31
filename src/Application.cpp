@@ -20,9 +20,9 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length,
                             const GLchar *msg, const void *data)
 {
-    char* _source;
-    char* _type;
-    char* _severity;
+    std::string_view _source;
+    std::string_view _type;
+    std::string_view _severity;
 
     switch (source) {
         case GL_DEBUG_SOURCE_API:
@@ -151,12 +151,8 @@ Application::Application() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     ImGui::StyleColorsDark();
-
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(GLDebugMessageCallback, nullptr);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_DEPTH_TEST);
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");

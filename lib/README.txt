@@ -1,0 +1,3 @@
+thats for large dependencies. list of these dependencies:
+    assimp
+yea...
