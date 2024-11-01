@@ -15,8 +15,7 @@ private:
 public:
     VertexBufferlayout();
     ~VertexBufferlayout();
-    template <typename T>
-    void push(unsigned const count);
+    void push(unsigned const count, unsigned type, bool normalised = true);
     inline unsigned getStride() const {
         return m_stride;
     }

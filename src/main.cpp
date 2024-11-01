@@ -7,6 +7,10 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_glfw.h"
 #include "logger.h"
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
+
 
 #include "Application.hpp"
 #include "opengl/VertexBuffer.hpp"
@@ -19,6 +23,7 @@
 
 #include <chrono>
 #include <memory>
+#include <thread>
 
 #ifdef NDEBUG
 extern const bool debug = false;
@@ -26,29 +31,38 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation1, glm::vec3 &rotation1, glm::vec3 &scale1, ControllableCamera &cam)
+void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation1, glm::vec3 &rotation1, glm::vec3 &scale1, ControllableCamera &cam, glm::vec3 &cuberotation)
 {
+    static bool wireframe = false;
+    static glm::vec4 colorpicker(1);
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGui::Begin("aaa");
+    ImGui::Separator();
     ImGui::Text("delta time: %f", deltatime);
     ImGui::Text("FPS: %f", deltatime ? 1 / deltatime : -1);
     ImGui::Separator();
     ImGui::Text("render delta time: %f", renderdeltatime);
     ImGui::Text("render FPS: %f", renderdeltatime ? 1 / renderdeltatime : -1);
     ImGui::Separator();
-    ImGui::Text("square 1");
+    if(ImGui::Checkbox("wireframe", &wireframe)) {
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+    }
+    ImGui::Separator();
+    ImGui::Text("cube 1");
     ImGui::DragFloat3("position", &translation1.x, 0.01f);
     ImGui::DragFloat3("rotation", &rotation1.x, 0.5f);
     ImGui::DragFloat3("scale", &scale1.x, 0.01f);
+    ImGui::InputFloat3("rotation per ms", &cuberotation.x);
     if (ImGui::Button("reset"))
     {
         translation1 = glm::vec3(0);
         rotation1 = glm::vec3(0);
         scale1 = glm::vec3(1);
     }
+    ImGui::ColorEdit4("sample color picker", &colorpicker.x);
     ImGui::Separator();
     ImGui::Text("camera position: (%.3f; %.3f; %.3f)", cam.position.x, cam.position.y, cam.position.z);
     ImGui::Text("camera rotation: (%.3f; %.3f; %.3f)", cam.rotation.x, cam.rotation.y, cam.rotation.z);
@@ -108,16 +122,17 @@ inline glm::vec3 toRGB(int hex)
 }
 int main()
 {
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f,    0, 0,
-         0.5f, -0.5f, -0.5f,    1, 0,
-         0.5f,  0.5f, -0.5f,    1, 1,
-        -0.5f,  0.5f, -0.5f,    0, 1,
-        -0.5f, -0.5f,  0.5f,    0, 0,
-         0.5f, -0.5f,  0.5f,    1, 0,
-         0.5f,  0.5f,  0.5f,    1, 1,
-        -0.5f,  0.5f,  0.5f,    0, 1
-    };
+float vertices[] = {
+//      x      y      z        u      v      tex id
+/*0*/  -0.5f, -0.5f, -0.5f,    0.0f,  0.0f,  1,  
+/*1*/   0.5f, -0.5f, -0.5f,    2.0f,  0.0f,  1, 
+/*2*/   0.5f,  0.5f, -0.5f,    0.0f,  2.0f,  1, 
+/*3*/  -0.5f,  0.5f, -0.5f,    0.0f,  2.0f,  1, 
+/*4*/  -0.5f, -0.5f,  0.5f,    0.0f,  0.0f,  0,
+/*5*/   0.5f, -0.5f,  0.5f,    2.0f,  0.0f,  0,
+/*6*/   0.5f,  0.5f,  0.5f,    2.0f,  2.0f,  0,
+/*7*/  -0.5f,  0.5f,  0.5f,    0.0f,  2.0f,  0
+};
     unsigned indices[] = {
         0, 1, 3, 3, 1, 2,
         1, 5, 2, 2, 5, 6,
@@ -130,14 +145,16 @@ int main()
     Application app;
     GLFWwindow *window = app.window;
     VertexBuffer VB(vertices, sizeof(vertices));
-    IndexBuffer IB(indices, sizeof(indices) / sizeof(*indices));
+    IndexBuffer IB(indices, sizeof(indices));
     VertexArray VA;
-    Texture texture("res/textures/tile.png");
+    Texture tileTexture("res/textures/tile.png");
+    Texture wallTexture("res/textures/wall.png");
     Shader shader("src/basic.glsl");
     VertexBufferlayout layout;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
     double deltatime = 0;
     double renderdeltatime = 0;
+    glm::vec3 cuberotation{0.1, 0.2, -0.1};
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -148,18 +165,28 @@ int main()
     glfwSetKeyCallback(window, key_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    layout.push<float>(3);
-    layout.push<float>(2);
-    shader.bind();
-    texture.bind();
-    glUniform1i(shader.getUniform("u_Texture"), 0);
-    VA.bind();
+    layout.push(3, GL_FLOAT);
+    layout.push(2, GL_FLOAT);
+    layout.push(1, GL_INT);
+
+    tileTexture.bind(0);
+    wallTexture.bind(1);
     VA.addBuffer(VB, layout);
+    int samplers[] = { 0, 1 };
+    shader.bind();
+    glUniform1iv(shader.getUniform("u_Textures"), 2, samplers);
 
     glm::vec3 translation1 = glm::vec3(0.0f);
     glm::vec3 rotation1 = glm::vec3(0.0f);
     glm::vec3 scale1 = glm::vec3(1.0f);
     glm::vec3 ClearColor = toRGB(0x0f0f0d);
+
+    std::thread cubeThread([&translation1, &rotation1, &scale1, window, &cuberotation](){
+        while(!glfwWindowShouldClose(window)) {
+            rotation1 += cuberotation;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
 
     while (!glfwWindowShouldClose(window))
     {
@@ -183,13 +210,14 @@ int main()
         shader.bind();
         IB.bind();
         VB.bind();
-        glDrawElements(GL_TRIANGLES, IB.getCount(), GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, IB.getSize(), GL_UNSIGNED_INT, nullptr);
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 0.000001;
-        imguistuff(deltatime, renderdeltatime, translation1, rotation1, scale1, camera);
+        imguistuff(deltatime, renderdeltatime, translation1, rotation1, scale1, camera, cuberotation);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 0.000001;
     }
+    cubeThread.join();
 }

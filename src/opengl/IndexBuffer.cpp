@@ -2,10 +2,10 @@
 
 #include "IndexBuffer.hpp"
 
-IndexBuffer::IndexBuffer(const GLuint *data, size_t count) : m_count(count) {
+IndexBuffer::IndexBuffer(const GLuint *data, size_t size) : m_size(size) {
     glGenBuffers(1, &m_RenderID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count, data, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 }
 IndexBuffer::~IndexBuffer() {
     glDeleteBuffers(1, &m_RenderID);

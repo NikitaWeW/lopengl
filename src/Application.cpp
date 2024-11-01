@@ -110,7 +110,7 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
         break;
     }
 
-    LOG_ERROR("%d: %s of %s severity, raised from %s: %s", id, _type, _severity, _source, msg);
+    LOG_ERROR("%d: %s of %s severity, raised from %s: %s", id, &_type.at(0), &_severity.at(0), &_source.at(0), msg);
     if(type == GL_DEBUG_TYPE_ERROR && severity == GL_DEBUG_SEVERITY_HIGH) throw std::logic_error("opengl high severity error");
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {

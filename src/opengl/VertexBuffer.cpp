@@ -5,24 +5,9 @@
 
 VertexBufferlayout::VertexBufferlayout() : m_stride(0) {}
 VertexBufferlayout::~VertexBufferlayout() = default;
-template <typename T>
-void VertexBufferlayout::push(unsigned const count) {
-    static_assert(false && "type not supported");
-}
-template <>
-void VertexBufferlayout::push<float>(unsigned const count) {
-    m_elements.push_back({GL_FLOAT, count, true});
-    m_stride += getSizeOfGLType(GL_FLOAT) * count;
-}
-template <>
-void VertexBufferlayout::push<unsigned>(unsigned const count) {
-    m_elements.push_back({GL_UNSIGNED_INT, count, false});
-    m_stride += getSizeOfGLType(GL_UNSIGNED_INT) * count;
-}
-template <>
-void VertexBufferlayout::push<unsigned char>(unsigned const count) {
-    m_elements.push_back({GL_UNSIGNED_BYTE, count, true});
-    m_stride += getSizeOfGLType(GL_UNSIGNED_BYTE) * count;
+void VertexBufferlayout::push(unsigned const count, unsigned type, bool normalised) {
+    m_elements.push_back({type, count, normalised});
+    m_stride += getSizeOfGLType(type) * count;
 }
 
 VertexBuffer::VertexBuffer(const void *data, size_t size) {
