@@ -31,7 +31,7 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation1, glm::vec3 &rotation1, glm::vec3 &scale1, ControllableCamera &cam, glm::vec3 &cuberotation)
+void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation1, glm::vec3 &rotation1, glm::vec3 &scale1, ControllableCamera &cam, glm::vec3 &cuberotation, glm::vec3 &ClearColor)
 {
     static bool wireframe = false;
     static glm::vec4 colorpicker(1);
@@ -50,6 +50,7 @@ void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation
     if(ImGui::Checkbox("wireframe", &wireframe)) {
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
     }
+    ImGui::ColorEdit4("clear color", &ClearColor.x);
     ImGui::Separator();
     ImGui::Text("cube 1");
     ImGui::DragFloat3("position", &translation1.x, 0.01f);
@@ -61,6 +62,7 @@ void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation
         translation1 = glm::vec3(0);
         rotation1 = glm::vec3(0);
         scale1 = glm::vec3(1);
+        cuberotation = glm::vec3(0);
     }
     ImGui::ColorEdit4("sample color picker", &colorpicker.x);
     ImGui::Separator();
@@ -106,12 +108,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-    float &fov = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window))->fov;
-    fov -= (float)yoffset;
-    if (fov < 1.0f)
-        fov = 1.0f;
-    if (fov > 45.0f)
-        fov = 45.0f;
+    ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
+    if(cam->mouseLocked) {
+        cam->fov -= (float)yoffset;
+        if (cam->fov < 1.0f)
+            cam->fov = 1.0f;
+        if (cam->fov > 45.0f)
+            cam->fov = 45.0f;
+    }
 }
 inline glm::vec3 toRGB(int hex)
 {
@@ -122,18 +126,18 @@ inline glm::vec3 toRGB(int hex)
 }
 int main()
 {
-float vertices[] = {
-//      x      y      z        u      v      tex id
-/*0*/  -0.5f, -0.5f, -0.5f,    0.0f,  0.0f,  1,  
-/*1*/   0.5f, -0.5f, -0.5f,    2.0f,  0.0f,  1, 
-/*2*/   0.5f,  0.5f, -0.5f,    0.0f,  2.0f,  1, 
-/*3*/  -0.5f,  0.5f, -0.5f,    0.0f,  2.0f,  1, 
-/*4*/  -0.5f, -0.5f,  0.5f,    0.0f,  0.0f,  0,
-/*5*/   0.5f, -0.5f,  0.5f,    2.0f,  0.0f,  0,
-/*6*/   0.5f,  0.5f,  0.5f,    2.0f,  2.0f,  0,
-/*7*/  -0.5f,  0.5f,  0.5f,    0.0f,  2.0f,  0
-};
-    unsigned indices[] = {
+    float cubeVertices[] = {
+//       x      y      z        u      v      tex id
+/* 0 */ -0.5f, -0.5f, -0.5f,    0.0f,  0.0f,  1,  
+/* 1 */  0.5f, -0.5f, -0.5f,    1.0f,  0.0f,  1, 
+/* 2 */  0.5f,  0.5f, -0.5f,    0.0f,  1.0f,  1, 
+/* 3 */ -0.5f,  0.5f, -0.5f,    0.0f,  1.0f,  1, 
+/* 4 */ -0.5f, -0.5f,  0.5f,    0.0f,  0.0f,  0,
+/* 5 */  0.5f, -0.5f,  0.5f,    1.0f,  0.0f,  0,
+/* 6 */  0.5f,  0.5f,  0.5f,    1.0f,  1.0f,  0,
+/* 7 */ -0.5f,  0.5f,  0.5f,    0.0f,  1.0f,  0
+    };
+    unsigned cubeIndices[] = {
         0, 1, 3, 3, 1, 2,
         1, 5, 2, 2, 5, 6,
         5, 4, 6, 6, 4, 7,
@@ -144,12 +148,12 @@ float vertices[] = {
 
     Application app;
     GLFWwindow *window = app.window;
-    VertexBuffer VB(vertices, sizeof(vertices));
-    IndexBuffer IB(indices, sizeof(indices));
+    Shader shader("src/basic.glsl");
+    VertexBuffer VB(cubeVertices, sizeof(cubeVertices));
+    IndexBuffer IB(cubeIndices, sizeof(cubeIndices));
     VertexArray VA;
     Texture tileTexture("res/textures/tile.png");
     Texture wallTexture("res/textures/wall.png");
-    Shader shader("src/basic.glsl");
     VertexBufferlayout layout;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
     double deltatime = 0;
@@ -160,6 +164,7 @@ float vertices[] = {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
 
+    glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, camera.mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, &camera);
     glfwSetKeyCallback(window, key_callback);
@@ -167,7 +172,7 @@ float vertices[] = {
 
     layout.push(3, GL_FLOAT);
     layout.push(2, GL_FLOAT);
-    layout.push(1, GL_INT);
+    layout.push(1, GL_FLOAT);
 
     tileTexture.bind(0);
     wallTexture.bind(1);
@@ -181,9 +186,10 @@ float vertices[] = {
     glm::vec3 scale1 = glm::vec3(1.0f);
     glm::vec3 ClearColor = toRGB(0x0f0f0d);
 
-    std::thread cubeThread([&translation1, &rotation1, &scale1, window, &cuberotation](){
+    std::thread cubeThread([&translation1, &rotation1, &scale1, window, &cuberotation, &camera, &deltatime](){
         while(!glfwWindowShouldClose(window)) {
             rotation1 += cuberotation;
+            camera.update(0.1);
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     });
@@ -203,7 +209,6 @@ float vertices[] = {
         glm::mat4 MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * model;
 
         glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
-        camera.update(deltatime);
 
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -212,12 +217,12 @@ float vertices[] = {
         VB.bind();
         glDrawElements(GL_TRIANGLES, IB.getSize(), GL_UNSIGNED_INT, nullptr);
 
-        renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 0.000001;
-        imguistuff(deltatime, renderdeltatime, translation1, rotation1, scale1, camera, cuberotation);
+        renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
+        imguistuff(deltatime, renderdeltatime, translation1, rotation1, scale1, camera, cuberotation, ClearColor);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-        deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 0.000001;
+        deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
     cubeThread.join();
 }

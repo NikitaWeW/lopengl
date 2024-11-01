@@ -18,23 +18,26 @@ void ControllableCamera::update(double deltatime) {
 }
 
 void ControllableCamera::processPosition(double deltatime) {
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        position += cameraSpeed * getFront() * (float) deltatime * movementSlow;
-    } 
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        position -= cameraSpeed * glm::cross(getFront(), getUp()) * (float) deltatime * movementSlow;
-    } 
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        position -= cameraSpeed * getFront() * (float) deltatime * movementSlow;
-    } 
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        position += cameraSpeed * glm::cross(getFront(), getUp()) * (float) deltatime * movementSlow;
-    }
-    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        position += cameraSpeed * getUp() * (float) deltatime * movementSlow;
-    }
-    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        position += cameraSpeed * -getUp() * (float) deltatime * movementSlow;
+    if(mouseLocked) {
+        float speed = cameraSpeed * (float) deltatime * movementSlow;
+        if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            position += getFront() * speed;
+        } 
+        if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            position -= glm::cross(getFront(), getUp()) * speed;
+        } 
+        if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            position -= getFront() * speed;
+        } 
+        if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            position += glm::cross(getFront(), getUp()) * speed;
+        }
+        if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+            position += getUp() * speed;
+        }
+        if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+            position += -getUp() * speed;
+        }
     }
 }
 void ControllableCamera::processRotation(double xpos, double ypos) {

@@ -20,7 +20,7 @@ void main() {
 out vec4 color;
 
 in vec2 v_texCoord;
-in float v_texIndex;
+flat in float v_texIndex;
 
 uniform sampler2D u_Textures[2];
 
