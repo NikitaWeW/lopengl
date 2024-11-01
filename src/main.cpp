@@ -20,6 +20,7 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/Renderer.hpp"
 #include "ControllableCamera.hpp"
+#include "Vertex.hpp"
 
 #include <chrono>
 #include <memory>
@@ -31,7 +32,7 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation1, glm::vec3 &rotation1, glm::vec3 &scale1, ControllableCamera &cam, glm::vec3 &cuberotation, glm::vec3 &ClearColor)
+void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation1, glm::vec3 &rotation1, glm::vec3 &scale1, ControllableCamera &cam, glm::vec3 &cuberotation, glm::vec3 &ClearColor, float &frequencyHZ)
 {
     static bool wireframe = false;
     static glm::vec4 colorpicker(1);
@@ -51,6 +52,7 @@ void imguistuff(double deltatime, double renderdeltatime, glm::vec3 &translation
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
     }
     ImGui::ColorEdit4("clear color", &ClearColor.x);
+    ImGui::InputFloat("dynamic geometry wobbly frequency (hertz)", &frequencyHZ);
     ImGui::Separator();
     ImGui::Text("cube 1");
     ImGui::DragFloat3("position", &translation1.x, 0.01f);
@@ -124,19 +126,19 @@ inline glm::vec3 toRGB(int hex)
         ((hex >> 8) & 0xFF) / 255.0,
         ((hex) & 0xFF) / 255.0};
 }
+/*
+//  x      y      z         xtex   ytex   tex id
+{   -0.5f, -0.5f, -0.5f,    0.0f,  0.0f,  1,   },
+{    0.5f, -0.5f, -0.5f,    1.0f,  0.0f,  1,   },
+{    0.5f,  0.5f, -0.5f,    0.0f,  1.0f,  1,   },
+{   -0.5f,  0.5f, -0.5f,    0.0f,  1.0f,  1,   },
+{   -0.5f, -0.5f,  0.5f,    0.0f,  0.0f,  0,   },
+{    0.5f, -0.5f,  0.5f,    1.0f,  0.0f,  0,   },
+{    0.5f,  0.5f,  0.5f,    1.0f,  1.0f,  0,   },
+{   -0.5f,  0.5f,  0.5f,    0.0f,  1.0f,  0    }
+*/
 int main()
 {
-    float cubeVertices[] = {
-//       x      y      z        u      v      tex id
-/* 0 */ -0.5f, -0.5f, -0.5f,    0.0f,  0.0f,  1,  
-/* 1 */  0.5f, -0.5f, -0.5f,    1.0f,  0.0f,  1, 
-/* 2 */  0.5f,  0.5f, -0.5f,    0.0f,  1.0f,  1, 
-/* 3 */ -0.5f,  0.5f, -0.5f,    0.0f,  1.0f,  1, 
-/* 4 */ -0.5f, -0.5f,  0.5f,    0.0f,  0.0f,  0,
-/* 5 */  0.5f, -0.5f,  0.5f,    1.0f,  0.0f,  0,
-/* 6 */  0.5f,  0.5f,  0.5f,    1.0f,  1.0f,  0,
-/* 7 */ -0.5f,  0.5f,  0.5f,    0.0f,  1.0f,  0
-    };
     unsigned cubeIndices[] = {
         0, 1, 3, 3, 1, 2,
         1, 5, 2, 2, 5, 6,
@@ -149,16 +151,13 @@ int main()
     Application app;
     GLFWwindow *window = app.window;
     Shader shader("src/basic.glsl");
-    VertexBuffer VB(cubeVertices, sizeof(cubeVertices));
+    VertexBuffer VB(nullptr, sizeof(Vertex) * 1000);
     IndexBuffer IB(cubeIndices, sizeof(cubeIndices));
     VertexArray VA;
     Texture tileTexture("res/textures/tile.png");
     Texture wallTexture("res/textures/wall.png");
     VertexBufferlayout layout;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
-    double deltatime = 0;
-    double renderdeltatime = 0;
-    glm::vec3 cuberotation{0.1, 0.2, -0.1};
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -174,8 +173,8 @@ int main()
     layout.push(2, GL_FLOAT);
     layout.push(1, GL_FLOAT);
 
-    tileTexture.bind(0);
-    wallTexture.bind(1);
+    tileTexture.bind(1);
+    wallTexture.bind(0);
     VA.addBuffer(VB, layout);
     int samplers[] = { 0, 1 };
     shader.bind();
@@ -184,13 +183,22 @@ int main()
     glm::vec3 translation1 = glm::vec3(0.0f);
     glm::vec3 rotation1 = glm::vec3(0.0f);
     glm::vec3 scale1 = glm::vec3(1.0f);
-    glm::vec3 ClearColor = toRGB(0x0f0f0d);
+    glm::vec3 ClearColor = toRGB(0x0f0f0d); // why not?
+    float magicValue = 0;
+    float updateCounter = 0;
+    float frequencyHZ = 0.1f;
+    double deltatime = 0;
+    double renderdeltatime = 0;
+    unsigned frameCounter = 0;
+    glm::vec3 cuberotation{0.1, 0.2, -0.1};
 
-    std::thread cubeThread([&translation1, &rotation1, &scale1, window, &cuberotation, &camera, &deltatime](){
+    std::thread updateThread([&, window](){
         while(!glfwWindowShouldClose(window)) {
             rotation1 += cuberotation;
+            magicValue = sin(0.0062831852f * updateCounter * frequencyHZ); // magic happens
             camera.update(0.1);
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            ++updateCounter;
         }
     });
 
@@ -198,6 +206,19 @@ int main()
     {
         auto start = std::chrono::high_resolution_clock::now();
         glfwGetWindowSize(window, &app.windowSize.x, &app.windowSize.y);
+
+        Vertex cubeVertices[] = {
+            //  x      y      z         xtex   ytex   tex id
+            {   -magicValue, -0.5f, -0.5f,    0.0f,  0.0f,  1,   },
+            {    magicValue, -0.5f, -0.5f,    1.0f,  0.0f,  1,   },
+            {    magicValue,  0.5f, -0.5f,    0.0f,  1.0f,  1,   },
+            {   -magicValue,  0.5f, -0.5f,    0.0f,  1.0f,  1,   },
+            {   -0.5f, -0.5f,  0.5f,    0.0f,  0.0f,  0,   },
+            {    0.5f, -0.5f,  0.5f,    1.0f,  0.0f,  0,   },
+            {    0.5f,  0.5f,  0.5f,    1.0f,  1.0f,  0,   },
+            {   -0.5f,  0.5f,  0.5f,    0.0f,  1.0f,  0    }
+        };
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertices), cubeVertices);
 
         glm::mat4 model(1.0f);
         model = glm::translate(model, translation1);
@@ -218,11 +239,12 @@ int main()
         glDrawElements(GL_TRIANGLES, IB.getSize(), GL_UNSIGNED_INT, nullptr);
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
-        imguistuff(deltatime, renderdeltatime, translation1, rotation1, scale1, camera, cuberotation, ClearColor);
+        imguistuff(deltatime, renderdeltatime, translation1, rotation1, scale1, camera, cuberotation, ClearColor, frequencyHZ);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+        ++frameCounter;
         deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
-    cubeThread.join();
+    updateThread.join();
 }

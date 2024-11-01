@@ -15,7 +15,7 @@ private:
 public:
     VertexBufferlayout();
     ~VertexBufferlayout();
-    void push(unsigned const count, unsigned type, bool normalised = true);
+    void push(unsigned const count, unsigned type, bool normalised = false);
     inline unsigned getStride() const {
         return m_stride;
     }
