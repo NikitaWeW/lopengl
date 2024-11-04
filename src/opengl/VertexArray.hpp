@@ -9,5 +9,5 @@ public:
     ~VertexArray();
     void bind() const;
     void unbind() const;
-    void addBuffer(VertexBuffer const &VB, VertexBufferlayout const &layout);
+    void addBuffer(VertexBuffer const &VB, VertexBufferLayout const &layout);
 };

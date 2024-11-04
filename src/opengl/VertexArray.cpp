@@ -18,7 +18,7 @@ void VertexArray::unbind() const {
     glBindVertexArray(0);
 }
 
-void VertexArray::addBuffer(VertexBuffer const &VB, VertexBufferlayout const &layout) {
+void VertexArray::addBuffer(VertexBuffer const &VB, VertexBufferLayout const &layout) {
     bind();
     VB.bind();
     auto const& elements = layout.getElements(); 

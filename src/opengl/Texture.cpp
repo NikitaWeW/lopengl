@@ -21,11 +21,10 @@ Texture::Texture(std::string const &filepath) :
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_Buffer);
     glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(m_Buffer);
 }
 
 Texture::~Texture() {
-    if(m_Buffer) stbi_image_free(m_Buffer); 
-
     glDeleteTextures(1, &m_RenderID);
 }
 

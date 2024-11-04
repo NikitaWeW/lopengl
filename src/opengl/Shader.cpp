@@ -46,7 +46,7 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
 Shader::Shader() = default;
 Shader::Shader(std::string const & filepath) {
     if(!ParceShaderFile(filepath)) throw std::runtime_error("failed to parce shaders!");
-    if(!CompileShaders()) throw std::runtime_error("failed to compile shaders!");
+    if(!CompileShaders()) throw std::logic_error("failed to compile shaders!");
 }
 Shader::~Shader() {
     if(VertexShaderID) glDeleteShader(VertexShaderID);

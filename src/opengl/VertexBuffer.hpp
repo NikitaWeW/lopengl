@@ -8,13 +8,13 @@ struct VertexBufferlayoutElement {
     bool normalised;
 };
 
-class VertexBufferlayout {
+class VertexBufferLayout {
 private:
     std::vector<VertexBufferlayoutElement> m_elements;
     unsigned m_stride;
 public:
-    VertexBufferlayout();
-    ~VertexBufferlayout();
+    VertexBufferLayout();
+    ~VertexBufferLayout();
     void push(unsigned const count, unsigned type, bool normalised = false);
     inline unsigned getStride() const {
         return m_stride;
@@ -25,9 +25,10 @@ public:
 };
 class VertexBuffer {
 private:
-    unsigned m_RenderID;
+    unsigned m_RenderID = 0;
 public:
     VertexBuffer(const void *data, size_t size);
+    VertexBuffer();
     ~VertexBuffer();
     void bind() const;
     void unbind() const;

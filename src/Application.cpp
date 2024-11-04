@@ -130,15 +130,13 @@ Application::Application() {
     window = glfwCreateWindow(640, 480, "opengl", nullptr, nullptr);
     if (!window) {
         LOG_FATAL("failed to initialise window.");
-        throw std::runtime_error("failed to initialise window.");
+        throw std::runtime_error("failed to initialise");
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-    if (gladLoadGL((GLADloadfunc) glfwGetProcAddress)) 
-        LOG_INFO("gl loaded successfully. gl version: %s", glGetString(GL_VERSION));
-    else{
+    if (!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) {
         LOG_FATAL("gladLoadGL: Failed to initialize GLAD!");
-        throw std::runtime_error("gladLoadGL: Failed to initialize GLAD!");
+        throw std::runtime_error("failed to initialise");
     }
     
     ImGui::CreateContext();
@@ -151,8 +149,8 @@ Application::Application() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     ImGui::StyleColorsDark();
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(GLDebugMessageCallback, nullptr);
+    // glEnable(GL_DEBUG_OUTPUT);
+    // glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");

@@ -1,5 +1,5 @@
 #shader vertex
-#version 330 core
+#version 430 core
 layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec2 a_texCoord;
 layout(location = 2) in float a_texIndex;
@@ -16,15 +16,17 @@ void main() {
 }
 
 #shader fragment
-#version 330 core
+#version 430 core
 out vec4 color;
 
 in vec2 v_texCoord;
 flat in float v_texIndex;
 
 uniform sampler2D u_Textures[2];
+uniform vec4 u_lightColor;
+uniform vec3 u_lightPos;
 
 void main() {
     vec4 texColor = texture(u_Textures[int(v_texIndex)], v_texCoord);
-    color = texColor;
+    color = texColor * u_lightColor;
 }

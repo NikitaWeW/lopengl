@@ -9,20 +9,26 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 project(learning-opengl C CXX)
 set(GLAD_API "gl:core=4.3")
-set(IMGUI_BACKEND_SOURCES ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp)
-if(WIN32)
-    set(ASSIMP_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/libassimp.dll.a)
+set(IMGUI_BACKEND_SOURCES imgui_impl_opengl3.cpp imgui_impl_glfw.cpp)
+if(WIN32) # we dont want to spend time building big library
+    set(ASSIMP_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/lib/libassimp.dll.a)
+    set(ASSIMP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include)
 endif()
 set(DEPS OpenGL GLFW Logger GLM imgui STB assimp)
 
 include(gvo/gvo.cmake)
-gvo_find_dependencies(DEPENDENCIES ${DEPS} SCRIPT_DIRS ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/gvo/scripts)
+gvo_find_dependencies(DEPENDENCIES ${DEPS} SCRIPT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/gvo/scripts)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(main ${SOURCES})
 target_link_libraries(main PRIVATE gvo)
 target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/include/)
 target_include_directories(main PRIVATE "src")
+add_custom_command(
+    TARGET main
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/bin/libassimp-5.dll ${CMAKE_BINARY_DIR}
+)
 
 message(STATUS "Sources: ")
 foreach(SOURCE ${SOURCES})
