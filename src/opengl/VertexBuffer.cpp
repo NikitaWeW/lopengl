@@ -18,7 +18,10 @@ VertexBuffer::VertexBuffer(const void *data, size_t size) {
 VertexBuffer::VertexBuffer() = default;
 VertexBuffer::~VertexBuffer()
 {
-    if(m_RenderID) glDeleteBuffers(1, &m_RenderID);
+    if(m_RenderID) {
+        glDeleteBuffers(1, &m_RenderID);
+        m_RenderID = 0;   
+    }
 }
 void VertexBuffer::bind() const {
     if(m_RenderID) glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);

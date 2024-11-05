@@ -149,8 +149,8 @@ Application::Application() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     ImGui::StyleColorsDark();
-    // glEnable(GL_DEBUG_OUTPUT);
-    // glDebugMessageCallback(GLDebugMessageCallback, nullptr);
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");

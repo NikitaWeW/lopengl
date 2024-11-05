@@ -22,11 +22,11 @@ out vec4 color;
 in vec2 v_texCoord;
 flat in float v_texIndex;
 
-uniform sampler2D u_Textures[2];
+uniform sampler2D texture_diffuse0;
 uniform vec4 u_lightColor;
 uniform vec3 u_lightPos;
 
 void main() {
-    vec4 texColor = texture(u_Textures[int(v_texIndex)], v_texCoord);
+    vec4 texColor = texture(texture_diffuse0, v_texCoord);
     color = texColor * u_lightColor;
 }

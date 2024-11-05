@@ -147,11 +147,11 @@ glm::vec3 toRGB(int hex)
 
 int main()
 {
-    printf("loading...\n");
+    printf("loading...\n"); // TODO: console progress bar
     Application app;
     GLFWwindow *window = app.window;
     Shader shader("src/basic.glsl");
-    Model cube{"res/models/backpack/backpack.obj"};
+    Model model{"res/models/backpack/backpack.obj"};
     VertexBufferLayout layout;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
 
@@ -169,7 +169,7 @@ int main()
 
     shader.bind();
 
-    std::thread updateThread([&, window](){
+    std::thread updateThread([&, window]() {
         while(!glfwWindowShouldClose(window)) {
             rotation1 += cuberotation;
             magicValue = sin(0.0062831852f * updateCounter * frequencyHZ); // magic happens
@@ -184,14 +184,14 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
         glfwGetWindowSize(window, &app.windowSize.x, &app.windowSize.y);
 
-        glm::mat4 model(1.0f);
-        model = glm::translate(model, translation1);
-        model = glm::rotate(model, glm::radians(rotation1.x), glm::vec3(1, 0, 0));
-        model = glm::rotate(model, glm::radians(rotation1.y), glm::vec3(0, 1, 0));
-        model = glm::rotate(model, glm::radians(rotation1.z), glm::vec3(0, 0, 1));
-        model = glm::scale(model, scale1);
+        glm::mat4 modelmat(1.0f);
+        modelmat = glm::translate(modelmat, translation1);
+        modelmat = glm::rotate(modelmat, glm::radians(rotation1.x), glm::vec3(1, 0, 0));
+        modelmat = glm::rotate(modelmat, glm::radians(rotation1.y), glm::vec3(0, 1, 0));
+        modelmat = glm::rotate(modelmat, glm::radians(rotation1.z), glm::vec3(0, 0, 1));
+        modelmat = glm::scale(modelmat, scale1);
 
-        glm::mat4 MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * model;
+        glm::mat4 MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelmat;
 
         glUniform4fv(shader.getUniform("u_lightColor"), 1, &lightColor.r);
         glUniform3fv(shader.getUniform("u_lightPos"), 1, &lightPos.x);
@@ -200,7 +200,7 @@ int main()
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        cube.draw(shader); 
+        model.draw(shader); 
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
         imguistuff(camera);

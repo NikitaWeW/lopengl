@@ -10,7 +10,6 @@
 #include "opengl/VertexArray.hpp"
 
 struct Mesh {
-    Mesh() = default;
     VertexBuffer vb;
     IndexBuffer ib;
     VertexArray va;

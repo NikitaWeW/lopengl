@@ -68,31 +68,42 @@ Mesh Model::processMesh(aiMesh *aimesh) {
         mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
     }
     
-    
-    mesh.vb = {mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
-    mesh.ib = {mesh.indices.data(), mesh.indices.size() * sizeof(unsigned)};
+    mesh.va.bind();
+    mesh.vb = VertexBuffer {mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
+    mesh.ib = IndexBuffer  {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
     mesh.va.addBuffer(mesh.vb, meshLayout);
     return mesh;
 }
 
 void Model::draw(Shader const &shader) {
+    shader.bind();
     for(Mesh &mesh : m_meshes) {
-        shader.bind();
         mesh.va.bind();
         mesh.ib.bind();
-        // for(unsigned i = 0; i < mesh.textures.size(); ++i) {
-        //     switch (mesh.textures[i].)
-        //     {
-        //     case /* constant-expression */:
-        //         /* code */
-        //         break;
-            
-        //     default:
-        //         break;
-        //     }
-        // }
+        unsigned int diffuseNr  = 0; // some dark magic here
+        unsigned int specularNr = 0; // set shader unforms typen, etc. texture_diffuse0
+        unsigned int normalNr   = 0;
+        unsigned int heightNr   = 0;
+        for(unsigned i = 0; i < mesh.textures.size(); ++i) {
+            std::string &type = mesh.textures[i].type;
+            unsigned n; // typeN <- texure index
+              if(type == "texture_diffuse") {
+                n = diffuseNr++;
+            } else if(type == "texture_specular") {
+                n = specularNr++;
+            } else if(type == "texture_normal") {
+                n = normalNr++;
+            } else if(type == "texture_height") {
+                n = heightNr++;
+            }
+            if(shader.getUniform(type + std::to_string(n)) != -1) glUniform1i(shader.getUniform(type + std::to_string(n)), i);
+            mesh.textures[i].bind(i);
+        }
         glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
+        mesh.va.unbind();
+        mesh.ib.unbind();
     }
+    glActiveTexture(GL_TEXTURE0);
 }
 
 Model::Model(std::string const &filepath)

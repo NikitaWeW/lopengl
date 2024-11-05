@@ -9,10 +9,15 @@ VertexArray::VertexArray() {
     glGenVertexArrays(1, &m_RenderID);
 }
 VertexArray::~VertexArray() {
-    glDeleteVertexArrays(1, &m_RenderID);
+    if(m_RenderID) {
+        glDeleteVertexArrays(1, &m_RenderID);
+        m_RenderID = 0;
+    }
 }
 void VertexArray::bind() const {
-    glBindVertexArray(m_RenderID);
+    if(m_RenderID) {
+        glBindVertexArray(m_RenderID);
+    }
 }
 void VertexArray::unbind() const {
     glBindVertexArray(0);
