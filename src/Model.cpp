@@ -6,7 +6,7 @@
 #include "opengl/IndexBuffer.hpp"
 #include "logger.h"
 #include "glad/gl.h"
-
+// 0 AI!!
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTextureType type, std::string typeName) {
     std::vector<Texture> textures;
@@ -22,7 +22,8 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
             }
         }
         if(!alreadyLoaded) {
-            Texture texture{directory + '/' + str.C_Str()};
+            Texture texture{directory + '/' + str.C_Str(), false};
+            texture.type = typeName;
             textures.push_back(texture);
             m_loadedTextures.push_back(texture);
         }
@@ -81,7 +82,7 @@ void Model::draw(Shader const &shader) {
         mesh.va.bind();
         mesh.ib.bind();
         unsigned int diffuseNr  = 0; // some dark magic here
-        unsigned int specularNr = 0; // set shader unforms typen, etc. texture_diffuse0
+        unsigned int specularNr = 0; // set shader unforms typeN, etc. texture_diffuse0
         unsigned int normalNr   = 0;
         unsigned int heightNr   = 0;
         for(unsigned i = 0; i < mesh.textures.size(); ++i) {
@@ -106,7 +107,7 @@ void Model::draw(Shader const &shader) {
     glActiveTexture(GL_TEXTURE0);
 }
 
-Model::Model(std::string const &filepath)
+Model::Model(std::string const &filepath) : filepath(filepath)
 {
     Assimp::Importer importer;
 
@@ -127,7 +128,6 @@ Model::Model(std::string const &filepath)
     meshLayout.push(1, GL_FLOAT);
     processNode(scene->mRootNode);
 }
-
 Model::~Model()
 {
 }

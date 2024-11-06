@@ -20,11 +20,12 @@ struct Mesh {
 };
 class Model { 
 private:
-    aiScene const* scene;
+    aiScene const *scene;
     std::vector<Mesh> m_meshes;
     std::vector<Texture> m_loadedTextures;
     std::string directory;
     VertexBufferLayout meshLayout;
+    std::string filepath;
 private:
     std::vector<Texture> loadMaterialTextures(aiMaterial *material, aiTextureType type, std::string typeName);
     void processNode(aiNode *node);
@@ -33,5 +34,11 @@ public:
     void draw(Shader const &shader);
     Model(const std::string &filepath);
     ~Model();
+    inline aiScene const *getScene() const {
+        return scene;
+    }
+    inline std::string getFilepath() const {
+        return filepath;
+    }
 };
 

@@ -11,7 +11,6 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-
 #include "Application.hpp"
 #include "opengl/VertexBuffer.hpp"
 #include "opengl/VertexArray.hpp"
@@ -26,6 +25,7 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <stdexcept>
 
 #ifdef NDEBUG
 extern const bool debug = false;
@@ -47,7 +47,22 @@ unsigned frameCounter = 0;
 glm::vec3 cuberotation{0.1, 0.2, -0.1};
 glm::vec4 lightColor{1};
 glm::vec3 lightPos{0};
+int currentModelIndex = 0;
+Model *currentModel = nullptr;
+std::vector<Model> models;
+std::vector<const char *> modelNames;
+char loadModelBuffer[1024];
 
+void addModel(std::string filepath) {
+    try {
+        LOG_INFO("loading model \"%s\"...", filepath.c_str());
+        models.push_back({filepath});
+        modelNames.push_back(filepath.c_str());
+        LOG_INFO("model loaded!");
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
+    }
+}
 void imguistuff(ControllableCamera &cam)
 {
     static bool wireframe = false;
@@ -67,9 +82,19 @@ void imguistuff(ControllableCamera &cam)
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
     }
     ImGui::ColorEdit4("clear color", &ClearColor.x);
-    ImGui::InputFloat("dynamic geometry wobbly frequency™ (hertz)", &frequencyHZ);
+    ImGui::InputFloat("dynamic geometry wobbly frequency™", &frequencyHZ);
     ImGui::ColorEdit4("light color", &lightColor.r);
     ImGui::DragFloat3("light position", &lightPos.x, 0.01f);
+    ImGui::Separator();
+    if(modelNames.size() > 0) {
+        if(ImGui::Combo("loaded models", &currentModelIndex, modelNames[0])) {
+             currentModel = &models.at(currentModelIndex);
+        }
+    }
+    // ImGui::InputText("load model", loadModelBuffer, sizeof(loadModelBuffer));
+    // if(ImGui::Button("load")) {
+    //     addModel(loadModelBuffer);
+    // }
     ImGui::Separator();
     ImGui::Text("cube 1");
     ImGui::DragFloat3("position", &translation1.x, 0.01f);
@@ -151,9 +176,13 @@ int main()
     Application app;
     GLFWwindow *window = app.window;
     Shader shader("src/basic.glsl");
-    Model model{"res/models/backpack/backpack.obj"};
+    Texture texture("res/textures/tile.png");
     VertexBufferLayout layout;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
+
+    strcpy(loadModelBuffer, "");
+    addModel("res/models/Crate/Crate1.3ds");
+    addModel("res/models/backpack/backpack.obj");
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -168,6 +197,7 @@ int main()
     printf("loaded!\n");
 
     shader.bind();
+    texture.bind();
 
     std::thread updateThread([&, window]() {
         while(!glfwWindowShouldClose(window)) {
@@ -200,7 +230,7 @@ int main()
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        model.draw(shader); 
+        if(currentModel) currentModel->draw(shader); 
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
         imguistuff(camera);

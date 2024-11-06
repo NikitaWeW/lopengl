@@ -11,7 +11,7 @@ private:
     mutable bool m_managing = true;
 public:
     std::string type; 
-    Texture(std::string const &filepath);
+    Texture(std::string const &filepath, bool flip = true);
     ~Texture();
     Texture(Texture const &other);
     Texture(Texture &&other);
