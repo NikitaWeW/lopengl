@@ -4,14 +4,20 @@
 class Texture
 {
 private:
-    unsigned m_RenderID;
+    unsigned m_RenderID = 0;
     std::string m_FilePath;
     unsigned char *m_Buffer;
     int m_Width, m_Height, m_BPP;
+    mutable bool m_managing = true;
 public:
     std::string type; 
     Texture(std::string const &filepath);
     ~Texture();
+    Texture(Texture const &other);
+    Texture(Texture &&other);
+    void operator=(Texture const &other);
+    void copy(Texture const &other);
+    void swap(Texture &&other);
 
     void bind(unsigned slot = 0) const;
     void unbind() const;

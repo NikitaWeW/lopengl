@@ -26,10 +26,16 @@ public:
 class VertexBuffer {
 private:
     unsigned m_RenderID = 0;
+    mutable bool m_managing = true;
 public:
     VertexBuffer(const void *data, size_t size);
     VertexBuffer();
     ~VertexBuffer();
+    VertexBuffer(VertexBuffer const &other);
+    VertexBuffer(VertexBuffer &&other);
+    void operator=(VertexBuffer const &other);
+    void copy(VertexBuffer const &other);
+    void swap(VertexBuffer &&other);
     void bind() const;
     void unbind() const;
 };

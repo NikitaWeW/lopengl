@@ -18,12 +18,31 @@ VertexBuffer::VertexBuffer(const void *data, size_t size) {
 VertexBuffer::VertexBuffer() = default;
 VertexBuffer::~VertexBuffer()
 {
-    if(m_RenderID) {
+    if(m_managing) {
         glDeleteBuffers(1, &m_RenderID);
-        m_RenderID = 0;   
+        m_RenderID = 0;
     }
 }
-void VertexBuffer::bind() const {
+VertexBuffer::VertexBuffer(VertexBuffer const &other) {
+    copy(other);
+}
+VertexBuffer::VertexBuffer(VertexBuffer &&other) {
+    swap(std::forward<VertexBuffer>(other));
+}
+void VertexBuffer::operator=(VertexBuffer const &other) {
+    copy(other);
+}
+void VertexBuffer::copy(VertexBuffer const &other) {
+    m_managing = other.m_managing;
+    other.m_managing = false;
+    m_RenderID = other.m_RenderID;
+}
+void VertexBuffer::swap(VertexBuffer &&other) {
+    other.m_managing = false;
+    std::swap(m_RenderID, other.m_RenderID);
+}
+void VertexBuffer::bind() const
+{
     if(m_RenderID) glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
 }
 void VertexBuffer::unbind() const {

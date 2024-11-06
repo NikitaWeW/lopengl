@@ -8,11 +8,30 @@
 VertexArray::VertexArray() {
     glGenVertexArrays(1, &m_RenderID);
 }
-VertexArray::~VertexArray() {
-    if(m_RenderID) {
+VertexArray::VertexArray(VertexArray const &other) {
+    copy(other);
+}
+VertexArray::VertexArray(VertexArray &&other) {
+    swap(std::forward<VertexArray>(other));
+}
+void VertexArray::operator=(VertexArray const &other) {
+    copy(other);
+}
+void VertexArray::copy(VertexArray const &other) {
+    m_managing = other.m_managing;
+    other.m_managing = false;
+    m_RenderID = other.m_RenderID;
+}
+void VertexArray::swap(VertexArray &&other) {
+    other.m_managing = false;
+    std::swap(m_RenderID, other.m_RenderID);
+}
+VertexArray::~VertexArray()
+{
+    if(m_managing) {
         glDeleteVertexArrays(1, &m_RenderID);
-        m_RenderID = 0;
     }
+    m_RenderID = 0;
 }
 void VertexArray::bind() const {
     if(m_RenderID) {

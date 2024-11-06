@@ -49,9 +49,33 @@ Shader::Shader(std::string const & filepath) {
     if(!CompileShaders()) throw std::logic_error("failed to compile shaders!");
 }
 Shader::~Shader() {
-    if(VertexShaderID) glDeleteShader(VertexShaderID);
-    if(FragmentShaderID) glDeleteShader(FragmentShaderID);
-    if(ShaderProgramID) glDeleteProgram(ShaderProgramID);
+    if(m_managing) {
+        if(VertexShaderID) glDeleteShader(VertexShaderID);
+        if(FragmentShaderID) glDeleteShader(FragmentShaderID);
+        if(ShaderProgramID) glDeleteProgram(ShaderProgramID);
+    }
+}
+Shader::Shader(Shader const &other) {
+    copy(other);
+}
+Shader::Shader(Shader &&other) {
+    swap(std::forward<Shader>(other));
+}
+void Shader::operator=(Shader const &other) {
+    copy(other);
+}
+void Shader::copy(Shader const &other) {
+    m_managing = other.m_managing;
+    other.m_managing = false;
+    VertexShaderID = other.VertexShaderID;
+    FragmentShaderID = other.FragmentShaderID;
+    ShaderProgramID = other.ShaderProgramID;
+}
+void Shader::swap(Shader &&other) {
+    other.m_managing = false;
+    std::swap(VertexShaderID, other.VertexShaderID);
+    std::swap(FragmentShaderID, other.FragmentShaderID);
+    std::swap(ShaderProgramID, other.ShaderProgramID);
 }
 void Shader::bind() const {
     glUseProgram(ShaderProgramID);

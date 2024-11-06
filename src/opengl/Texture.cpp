@@ -24,13 +24,46 @@ Texture::Texture(std::string const &filepath) :
     stbi_image_free(m_Buffer);
 }
 
+Texture::Texture(Texture const &other) {
+    copy(other);
+}
+Texture::Texture(Texture &&other) {
+    swap(std::forward<Texture>(other));
+}
+void Texture::operator=(Texture const &other) {
+    copy(other);
+}
+void Texture::copy(Texture const &other) {
+    other.m_managing = false;
+    m_FilePath = other.m_FilePath;
+    m_Buffer = other.m_Buffer;
+    m_Width = other.m_Width;
+    m_Height = other.m_Height;
+    m_BPP = other.m_BPP;
+    m_RenderID = other.m_RenderID;
+}
+void Texture::swap(Texture &&other) {
+    m_managing = other.m_managing;
+    other.m_managing = false;
+    std::swap(m_RenderID, other.m_RenderID);
+    std::swap(m_FilePath, other.m_FilePath);
+    std::swap(m_Buffer, other.m_Buffer);
+    std::swap(m_Width, other.m_Width);
+    std::swap(m_Height, other.m_Height);
+    std::swap(m_BPP, other.m_BPP);
+    std::swap(m_RenderID, other.m_RenderID);
+}
 Texture::~Texture() {
-    glDeleteTextures(1, &m_RenderID);
+    if(m_managing) {
+        glDeleteTextures(1, &m_RenderID);
+    }
 }
 
 void Texture::bind(unsigned slot) const {
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D, m_RenderID);
+    if(m_RenderID) {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, m_RenderID);
+    }
 }
 
 void Texture::unbind() const {

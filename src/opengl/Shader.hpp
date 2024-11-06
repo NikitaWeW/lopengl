@@ -8,6 +8,7 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
 struct Shader {
 private:
     mutable std::map<std::string, int> m_UniformLocationCache;
+    mutable bool m_managing = true;
 public:
     std::string VertexShaderSource;
     std::string FragmentShaderSource;
@@ -17,6 +18,11 @@ public:
     Shader();
     Shader(std::string const &filepath);
     ~Shader();
+    Shader(Shader const &other);
+    Shader(Shader &&other);
+    void operator=(Shader const &other);
+    void copy(Shader const &other);
+    void swap(Shader &&other);
     void bind() const;
     void unbind() const;
     int getUniform(std::string const &name) const;
