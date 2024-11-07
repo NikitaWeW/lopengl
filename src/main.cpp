@@ -39,6 +39,7 @@ glm::vec3 rotation1 = glm::vec3{0.0f};
 glm::vec3 scale1 = glm::vec3{1.0f};
 glm::vec3 ClearColor = toRGB(0x0f0f0d); // why not?
 float magicValue = 0;
+float scrollSpeed  = 4.5f;
 float updateCounter = 0;
 float frequencyHZ = 0.1f;
 double deltatime = 0;
@@ -53,11 +54,14 @@ std::vector<Model> models;
 std::vector<const char *> modelNames;
 char loadModelBuffer[1024];
 
-void addModel(std::string filepath) {
+void addModel(char const *filepath) {
     try {
-        LOG_INFO("loading model \"%s\"...", filepath.c_str());
-        models.push_back({filepath});
-        modelNames.push_back(filepath.c_str());
+        LOG_INFO("loading model \"%s\"...", filepath);
+        std::string newFilepath{filepath};
+        std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
+        models.push_back(std::move(Model{newFilepath}));
+        currentModel = &models[0];
+        modelNames.push_back(filepath);
         LOG_INFO("model loaded!");
     } catch(std::runtime_error &e) {
         LOG_ERROR("%s", e.what());
@@ -70,7 +74,11 @@ void imguistuff(ControllableCamera &cam)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    ImGui::Begin("aaa");
+    ImGui::Begin("properties");
+    ImGui::Text("<esc> -- (un)lock mouse + keyboard");
+    ImGui::Text("W, A, S, D, E, Q -- move");
+    ImGui::Text("<mouse> -- look around");
+    ImGui::Text("<scroll> -- zoom");
     ImGui::Separator();
     ImGui::Text("delta time: %f", deltatime);
     ImGui::Text("FPS: %f", deltatime ? 1 / deltatime : -1);
@@ -82,19 +90,19 @@ void imguistuff(ControllableCamera &cam)
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
     }
     ImGui::ColorEdit4("clear color", &ClearColor.x);
-    ImGui::InputFloat("dynamic geometry wobbly frequency™", &frequencyHZ);
+    // ImGui::InputFloat("dynamic geometry wobbly frequency™", &frequencyHZ);
     ImGui::ColorEdit4("light color", &lightColor.r);
     ImGui::DragFloat3("light position", &lightPos.x, 0.01f);
     ImGui::Separator();
     if(modelNames.size() > 0) {
-        if(ImGui::Combo("loaded models", &currentModelIndex, modelNames[0])) {
+        if(ImGui::ListBox("loaded models", &currentModelIndex, modelNames.data(), modelNames.size())) {
              currentModel = &models.at(currentModelIndex);
         }
     }
-    // ImGui::InputText("load model", loadModelBuffer, sizeof(loadModelBuffer));
-    // if(ImGui::Button("load")) {
-    //     addModel(loadModelBuffer);
-    // }
+    ImGui::InputText("load model", loadModelBuffer, sizeof(loadModelBuffer));
+    if(ImGui::Button("load")) {
+        addModel(loadModelBuffer);
+    }
     ImGui::Separator();
     ImGui::Text("cube 1");
     ImGui::DragFloat3("position", &translation1.x, 0.01f);
@@ -114,12 +122,16 @@ void imguistuff(ControllableCamera &cam)
     ImGui::Text("camera position: (%.3f; %.3f; %.3f)", cam.position.x, cam.position.y, cam.position.z);
     ImGui::Text("camera rotation: (%.3f; %.3f; %.3f)", cam.rotation.x, cam.rotation.y, cam.rotation.z);
     ImGui::InputFloat("camera speed", &cam.cameraSpeed);
+    ImGui::InputFloat("camera scroll speed", &scrollSpeed);
     ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
     if (ImGui::Button("reset camera"))
     {
         cam.position = {0, 0, 3};
         cam.rotation = {-90, 0, 0};
         cam.fov = 45;
+        cam.cameraSpeed = 1.0f;
+        cam.sensitivity = 1.0f;
+        scrollSpeed = 4.5f;
     }
     ImGui::End();
     ImGui::Render();
@@ -155,7 +167,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
     ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
     ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
     if(cam->mouseLocked) {
-        cam->fov -= (float)yoffset;
+        cam->fov -= (float)yoffset * scrollSpeed;
         if (cam->fov < 1.0f)
             cam->fov = 1.0f;
         if (cam->fov > 45.0f)
@@ -183,6 +195,7 @@ int main()
     strcpy(loadModelBuffer, "");
     addModel("res/models/Crate/Crate1.3ds");
     addModel("res/models/backpack/backpack.obj");
+    if(models.size()) currentModel = &models[0];
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
