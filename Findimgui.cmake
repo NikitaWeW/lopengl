@@ -2,6 +2,7 @@ set(IMGUI_DIR ${GVO_SCRIPT_DIR}/gvo/dependencies/imgui)
 if((NOT IMGUI_INCLUDE_DIRS OR NOT IMGUI_LIBRARIES) AND NOT EXISTS  ${GVO_SCRIPT_DIR}/gvo/dependencies/imgui)
     FetchContent_Populate(
         imgui
+        GIT_TAG docking
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
         SOURCE_DIR ${IMGUI_DIR}
         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/imgui
