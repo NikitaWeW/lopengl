@@ -1,5 +1,5 @@
 set(IMGUI_DIR ${GVO_SCRIPT_DIR}/gvo/dependencies/imgui)
-if((NOT LOGGER_INCLUDE_DIRS OR NOT LOGGER_LIBRARIES) AND NOT EXISTS  ${GVO_SCRIPT_DIR}/gvo/dependencies/c-logger)
+if((NOT IMGUI_INCLUDE_DIRS OR NOT IMGUI_LIBRARIES) AND NOT EXISTS  ${GVO_SCRIPT_DIR}/gvo/dependencies/c-logger)
     FetchContent_Populate(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
