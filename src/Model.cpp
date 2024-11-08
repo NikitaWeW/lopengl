@@ -131,3 +131,8 @@ Model::Model(std::string const &filepath) : filepath(filepath)
 Model::~Model()
 {
 }
+
+bool Model::operator==(Model const &other)
+{
+    return filepath == other.filepath;
+}

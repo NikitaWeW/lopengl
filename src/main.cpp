@@ -51,7 +51,7 @@ glm::vec3 lightPos{0};
 int currentModelIndex = 0;
 Model *currentModel = nullptr;
 std::vector<Model> models;
-std::vector<const char *> modelNames;
+std::vector<std::string> modelNames;
 char loadModelBuffer[1024];
 
 void addModel(char const *filepath) {
@@ -59,15 +59,16 @@ void addModel(char const *filepath) {
         LOG_INFO("loading model \"%s\"...", filepath);
         std::string newFilepath{filepath};
         std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
-        models.push_back(std::move(Model{newFilepath}));
-        currentModel = &models[0];
-        modelNames.push_back(filepath);
+        Model model{newFilepath};
+        models.push_back(std::move(model));
+        currentModel = nullptr;
+        modelNames.push_back({filepath});
         LOG_INFO("model loaded!");
     } catch(std::runtime_error &e) {
         LOG_ERROR("%s", e.what());
     }
 }
-void imguistuff(ControllableCamera &cam)
+void imguistuff(ControllableCamera &cam, Texture &defaultTexture)
 {
     static bool wireframe = false;
     ImGuiIO &io = ImGui::GetIO();
@@ -94,14 +95,26 @@ void imguistuff(ControllableCamera &cam)
     ImGui::ColorEdit4("light color", &lightColor.r);
     ImGui::DragFloat3("light position", &lightPos.x, 0.01f);
     ImGui::Separator();
+    if(currentModel) {
+        size_t triangles = 0;
+        for(size_t i = 0; i < currentModel->getMeshes().size(); ++i) {
+            triangles += currentModel->getMeshes()[i].indices.size() / 3;
+        }
+        ImGui::Text("%u triangles", triangles);
+    }
     if(modelNames.size() > 0) {
-        if(ImGui::ListBox("loaded models", &currentModelIndex, modelNames.data(), modelNames.size())) {
+        std::vector<const char *> modelCNames;
+        for(std::string &name : modelNames) modelCNames.push_back(name.c_str());
+        if(ImGui::ListBox("loaded models", &currentModelIndex, modelCNames.data(), modelCNames.size())) {
              currentModel = &models.at(currentModelIndex);
         }
     }
     ImGui::InputText("load model", loadModelBuffer, sizeof(loadModelBuffer));
     if(ImGui::Button("load")) {
         addModel(loadModelBuffer);
+    }
+    if(ImGui::Button("apply default texture")) {
+        defaultTexture.bind();
     }
     ImGui::Separator();
     ImGui::Text("cube 1");
@@ -119,8 +132,10 @@ void imguistuff(ControllableCamera &cam)
         magicValue = 0.5f;
     }
     ImGui::Separator();
-    ImGui::Text("camera position: (%.3f; %.3f; %.3f)", cam.position.x, cam.position.y, cam.position.z);
-    ImGui::Text("camera rotation: (%.3f; %.3f; %.3f)", cam.rotation.x, cam.rotation.y, cam.rotation.z);
+    ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
+    ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
+    ImGui::DragFloat("camera near plane", &cam.near, 0.001f);
+    ImGui::DragFloat("camera far plane", &cam.far, 25.0f);
     ImGui::InputFloat("camera speed", &cam.cameraSpeed);
     ImGui::InputFloat("camera scroll speed", &scrollSpeed);
     ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
@@ -129,6 +144,8 @@ void imguistuff(ControllableCamera &cam)
         cam.position = {0, 0, 3};
         cam.rotation = {-90, 0, 0};
         cam.fov = 45;
+        cam.near = 0.01f;
+        cam.far = 1000.0f;
         cam.cameraSpeed = 1.0f;
         cam.sensitivity = 1.0f;
         scrollSpeed = 4.5f;
@@ -161,6 +178,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
+    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
+        // evaluate fov
+        if (camera.fov < 1.0f)
+            camera.fov = 1.0f;
+        if (camera.fov > 45.0f)
+            camera.fov = 45.0f;
+    }
 }
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
@@ -168,10 +192,17 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
     ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
     if(cam->mouseLocked) {
         cam->fov -= (float)yoffset * scrollSpeed;
-        if (cam->fov < 1.0f)
-            cam->fov = 1.0f;
-        if (cam->fov > 45.0f)
-            cam->fov = 45.0f;
+        if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            if (cam->fov < 0.01f)
+                cam->fov = 0.01f;
+            if (cam->fov > 60.0f)
+                cam->fov = 60.0f;
+        } else {
+            if (cam->fov < 1.0f)
+                cam->fov = 1.0f;
+            if (cam->fov > 45.0f)
+                cam->fov = 45.0f;
+        }
     }
 }
 glm::vec3 toRGB(int hex)
@@ -195,7 +226,7 @@ int main()
     strcpy(loadModelBuffer, "");
     addModel("res/models/Crate/Crate1.3ds");
     addModel("res/models/backpack/backpack.obj");
-    if(models.size()) currentModel = &models[0];
+
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -246,7 +277,7 @@ int main()
         if(currentModel) currentModel->draw(shader); 
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
-        imguistuff(camera);
+        imguistuff(camera, texture);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

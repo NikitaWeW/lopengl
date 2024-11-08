@@ -34,11 +34,18 @@ public:
     void draw(Shader const &shader);
     Model(const std::string &filepath);
     ~Model();
+    bool operator==(Model const &other);
     inline aiScene const *getScene() const {
         return scene;
     }
-    inline std::string getFilepath() const {
+    inline std::string const &getFilepath() const {
         return filepath;
+    }
+    inline std::vector<Mesh> const &getMeshes() const {
+        return m_meshes;
+    }
+    inline std::vector<Mesh> &getMeshes() {
+        return m_meshes;
     }
 };
 
