@@ -1,14 +1,17 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "glad/gl.h"
+#include <stdexcept>
 
 #include "Texture.hpp"
 
 Texture::Texture(std::string const &filepath, bool flip) :
-    m_RenderID(0), m_FilePath(filepath), m_Buffer(nullptr), m_Width(0), m_Height(0), m_BPP(0) {
+    m_FilePath(filepath), m_Buffer(nullptr), m_Width(0), m_Height(0), m_BPP(0) {
 
     stbi_set_flip_vertically_on_load(flip);
     m_Buffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
+
+    if(!m_Buffer) throw std::runtime_error("failed to load \"" + filepath + "\" texture!");
 
     glGenTextures(1, &m_RenderID);
     glBindTexture(GL_TEXTURE_2D, m_RenderID);
@@ -17,7 +20,6 @@ Texture::Texture(std::string const &filepath, bool flip) :
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_Buffer);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -57,6 +59,7 @@ Texture::~Texture() {
     if(m_managing) {
         glDeleteTextures(1, &m_RenderID);
     }
+    m_RenderID = 0;
 }
 
 void Texture::bind(unsigned slot) const {

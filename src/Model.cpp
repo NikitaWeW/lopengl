@@ -85,10 +85,16 @@ void Model::draw(Shader const &shader) {
         unsigned int specularNr = 0; // set shader unforms typeN, etc. texture_diffuse0
         unsigned int normalNr   = 0;
         unsigned int heightNr   = 0;
+        if(mesh.textures.size() == 0) {
+            if(shader.getUniform("texture_diffuse0") != -1)  glUniform1i(shader.getUniform("texture_diffuse0"), 0);
+            if(shader.getUniform("texture_specular0") != -1) glUniform1i(shader.getUniform("texture_specular0"), 0);
+            if(shader.getUniform("texture_normal0") != -1)   glUniform1i(shader.getUniform("texture_normal0"), 0);
+            if(shader.getUniform("texture_height0") != -1)   glUniform1i(shader.getUniform("texture_height0"), 0);
+        }
         for(unsigned i = 0; i < mesh.textures.size(); ++i) {
             std::string &type = mesh.textures[i].type;
             unsigned n; // typeN <- texure index
-              if(type == "texture_diffuse") {
+            if(type == "texture_diffuse") {
                 n = diffuseNr++;
             } else if(type == "texture_specular") {
                 n = specularNr++;

@@ -47,12 +47,19 @@ double renderdeltatime = 0;
 unsigned frameCounter = 0;
 glm::vec3 cuberotation{0.1, 0.2, -0.1};
 glm::vec4 lightColor{1};
-glm::vec3 lightPos{0};
-int currentModelIndex = 0;
+glm::vec3 lightPos{2, 1, 3};
+
 Model *currentModel = nullptr;
+int currentModelIndex = 0;
 std::vector<Model> models;
 std::vector<std::string> modelNames;
 char loadModelBuffer[1024];
+
+Texture *currentTexture = nullptr;
+int currentTextureIndex = 0;
+std::vector<Texture> textures;
+std::vector<std::string> textureNames;
+char loadTextureBuffer[1024];
 
 void addModel(char const *filepath) {
     try {
@@ -68,7 +75,19 @@ void addModel(char const *filepath) {
         LOG_ERROR("%s", e.what());
     }
 }
-void imguistuff(ControllableCamera &cam, Texture &defaultTexture)
+void addTexture(char const *filepath) {
+    try {
+        LOG_INFO("loading texture \"%s\"...", filepath);
+        Texture texture{filepath};
+        textures.push_back(texture);
+        currentTexture = &textures[0];
+        textureNames.push_back({filepath});
+        LOG_INFO("texture loaded!");
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
+    }
+}
+void imguistuff(ControllableCamera &cam)
 {
     static bool wireframe = false;
     ImGuiIO &io = ImGui::GetIO();
@@ -109,12 +128,21 @@ void imguistuff(ControllableCamera &cam, Texture &defaultTexture)
              currentModel = &models.at(currentModelIndex);
         }
     }
-    ImGui::InputText("load model", loadModelBuffer, sizeof(loadModelBuffer));
-    if(ImGui::Button("load")) {
+    ImGui::InputText("model path", loadModelBuffer, sizeof(loadModelBuffer));
+    if(ImGui::Button("load model")) {
         addModel(loadModelBuffer);
     }
-    if(ImGui::Button("apply default texture")) {
-        defaultTexture.bind();
+    ImGui::Separator();
+    if(modelNames.size() > 0) {
+        std::vector<const char *> textureCNames;
+        for(std::string const &name : textureNames) textureCNames.push_back(name.c_str());
+        if(ImGui::ListBox("loaded textures", &currentTextureIndex, textureCNames.data(), textureCNames.size())) {
+            currentTexture = &textures[currentTextureIndex];
+        }
+    }
+    ImGui::InputText("texture path", loadTextureBuffer, sizeof(loadTextureBuffer));
+    if(ImGui::Button("load texture")) {
+        addTexture(loadTextureBuffer);
     }
     ImGui::Separator();
     ImGui::Text("cube 1");
@@ -141,7 +169,7 @@ void imguistuff(ControllableCamera &cam, Texture &defaultTexture)
     ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
     if (ImGui::Button("reset camera"))
     {
-        cam.position = {0, 0, 3};
+        cam.position = {0, 0, 5};
         cam.rotation = {-90, 0, 0};
         cam.fov = 45;
         cam.near = 0.01f;
@@ -215,18 +243,23 @@ glm::vec3 toRGB(int hex)
 
 int main()
 {
-    printf("loading...\n"); // TODO: console progress bar
+    printf("loading...\n"); // TODO: cool console progress bar
     Application app;
     GLFWwindow *window = app.window;
-    Shader shader("src/basic.glsl");
-    Texture texture("res/textures/tile.png");
+    Shader lightingShader("shaders/lighting.glsl");
+    Shader lightCubeShader("shaders/basic.glsl");
+    Model lightCube("res/models/cube.obj");
     VertexBufferLayout layout;
-    ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
+    ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
+    Texture texture("res/textures/tile.png");
+    Texture lightCubeTexture("res/textures/white.png");
 
     strcpy(loadModelBuffer, "");
     addModel("res/models/Crate/Crate1.3ds");
     addModel("res/models/backpack/backpack.obj");
-
+    addModel("res/models/cube.obj");
+    addTexture("res/textures/tile.png");
+    addTexture("res/textures/white.png");
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -239,9 +272,6 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     printf("loaded!\n");
-
-    shader.bind();
-    texture.bind();
 
     std::thread updateThread([&, window]() {
         while(!glfwWindowShouldClose(window)) {
@@ -258,26 +288,42 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
         glfwGetWindowSize(window, &app.windowSize.x, &app.windowSize.y);
 
-        glm::mat4 modelmat(1.0f);
-        modelmat = glm::translate(modelmat, translation1);
-        modelmat = glm::rotate(modelmat, glm::radians(rotation1.x), glm::vec3(1, 0, 0));
-        modelmat = glm::rotate(modelmat, glm::radians(rotation1.y), glm::vec3(0, 1, 0));
-        modelmat = glm::rotate(modelmat, glm::radians(rotation1.z), glm::vec3(0, 0, 1));
-        modelmat = glm::scale(modelmat, scale1);
-
-        glm::mat4 MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelmat;
-
-        glUniform4fv(shader.getUniform("u_lightColor"), 1, &lightColor.r);
-        glUniform3fv(shader.getUniform("u_lightPos"), 1, &lightPos.x);
-        glUniformMatrix4fv(shader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
-
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glm::mat4 modelMatrix;
+        glm::mat4 MVP;
+
+        if(currentModel) {
+            modelMatrix = glm::translate(glm::mat4{1.0f}, translation1);
+            modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.x), glm::vec3(1, 0, 0));
+            modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.y), glm::vec3(0, 1, 0));
+            modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.z), glm::vec3(0, 0, 1));
+            modelMatrix = glm::scale(modelMatrix, scale1);
+            MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelMatrix;
+
+            lightingShader.bind();
+            glUniformMatrix4fv(lightingShader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
+            glUniform4fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
+            glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
+
+            if(currentTexture) currentTexture->bind();
+            currentModel->draw(lightingShader); 
+            if(currentTexture) currentTexture->unbind();
+        }
         
-        if(currentModel) currentModel->draw(shader); 
+        modelMatrix = glm::translate(glm::mat4{1.0f}, lightPos);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3{0.25});
+        MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelMatrix;
+
+        lightCubeShader.bind();
+        glUniformMatrix4fv(lightCubeShader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
+        lightCubeTexture.bind();
+        lightCube.draw(lightCubeShader);
+        lightCubeTexture.unbind();
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
-        imguistuff(camera, texture);
+        imguistuff(camera);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
