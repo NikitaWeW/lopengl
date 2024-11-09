@@ -20,7 +20,7 @@ public:
     virtual ~Camera();
     virtual void update();
     virtual glm::mat4 getViewMatrix() const;
-    virtual glm::mat4 getProjectionMatrix(int windowWidth, int windowHeight) const;
+    virtual glm::mat4 getProjectionMatrix(int const windowWidth, int const windowHeight) const;
     virtual inline glm::vec3 getFront() const {
         return front;
     }

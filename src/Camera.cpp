@@ -22,7 +22,7 @@ glm::mat4 Camera::getViewMatrix() const
     return glm::lookAt(position, position + front, up);
 }
 
-glm::mat4 Camera::getProjectionMatrix(int windowWidth, int windowHeight) const
+glm::mat4 Camera::getProjectionMatrix(int const windowWidth, int const windowHeight) const
 {
     auto key = std::make_tuple(windowWidth, windowHeight, fov, near, far);
     if(m_ProjectionMatrixCache.find(key) != m_ProjectionMatrixCache.end()) return m_ProjectionMatrixCache[key];

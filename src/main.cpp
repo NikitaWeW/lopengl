@@ -33,11 +33,10 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-inline glm::vec3 toRGB(int hex);
 glm::vec3 translation1 = glm::vec3{0.0f};
 glm::vec3 rotation1 = glm::vec3{0.0f};
 glm::vec3 scale1 = glm::vec3{1.0f};
-glm::vec3 ClearColor = toRGB(0x0f0f0d); // why not?
+glm::vec3 ClearColor = glm::vec3{0.0f};
 float magicValue = 0;
 float scrollSpeed  = 4.5f;
 float updateCounter = 0;
@@ -207,7 +206,6 @@ void imguistuff(ControllableCamera &cam, std::vector<Shader *> shaders)
 }
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
@@ -228,11 +226,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             camera.fov = 1.0f;
         if (camera.fov > 45.0f)
             camera.fov = 45.0f;
+    } else {
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     }
 }
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
     ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
     if(cam->mouseLocked) {
         cam->fov -= (float)yoffset * scrollSpeed;
@@ -247,14 +246,9 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
             if (cam->fov > 45.0f)
                 cam->fov = 45.0f;
         }
+    } else {
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
     }
-}
-glm::vec3 toRGB(int hex)
-{
-    return {
-        ((hex >> 16) & 0xFF) / 255.0,
-        ((hex >> 8) & 0xFF) / 255.0,
-        ((hex) & 0xFF) / 255.0};
 }
 
 int main()
@@ -263,12 +257,10 @@ int main()
     Application app;
     GLFWwindow *window = app.window;
     Shader lightingShader("shaders/lighting.glsl");
-    Shader lightCubeShader("shaders/basic.glsl");
+    Shader lightCubeShader("shaders/lightcube.glsl");
     Model lightCube("res/models/cube.obj");
     VertexBufferLayout layout;
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
-    Texture texture("res/textures/tile.png");
-    Texture lightCubeTexture("res/textures/white.png");
     std::vector<Shader *> shaders;
     shaders.push_back(&lightingShader);
     shaders.push_back(&lightCubeShader);
@@ -320,26 +312,20 @@ int main()
             modelMatrix = glm::scale(modelMatrix, scale1);
 
             lightingShader.bind();
-            glUniformMatrix4fv(lightingShader.getUniform("u_model"), 1, GL_FALSE, &modelMatrix[0][0]);
-            glUniformMatrix4fv(lightingShader.getUniform("u_view"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-            glUniformMatrix4fv(lightingShader.getUniform("u_projection"), 1, GL_FALSE, &camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y)[0][0]);
             glUniform3fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
             glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
 
             if(currentTexture) currentTexture->bind();
-            currentModel->draw(lightingShader); 
+            currentModel->draw(lightingShader, modelMatrix, camera, app.windowSize.x, app.windowSize.y); 
             if(currentTexture) currentTexture->unbind();
         }
         
         modelMatrix = glm::translate(glm::mat4{1.0f}, lightPos);
-        modelMatrix = glm::scale(modelMatrix, glm::vec3{0.25});
-        glm::mat4 MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelMatrix;
+        modelMatrix = glm::scale(modelMatrix, glm::vec3{0.125});
 
         lightCubeShader.bind();
-        glUniformMatrix4fv(lightCubeShader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
-        lightCubeTexture.bind();
-        lightCube.draw(lightCubeShader);
-        lightCubeTexture.unbind();
+        lightCube.draw(lightCubeShader, modelMatrix, camera, app.windowSize.x, app.windowSize.y);
+        lightCubeShader.unbind();
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
         imguistuff(camera, shaders);

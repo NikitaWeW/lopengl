@@ -8,6 +8,7 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/VertexBuffer.hpp"
 #include "opengl/VertexArray.hpp"
+#include "Camera.hpp"
 
 struct Mesh {
     VertexBuffer vb;
@@ -31,7 +32,8 @@ private:
     void processNode(aiNode *node);
     Mesh processMesh(aiMesh *aimesh);
 public:
-    void draw(Shader const &shader);
+    void draw(Shader const &shader, glm::mat4 const &modelMat, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
+    void draw(Shader const &shader, glm::mat4 const &modelMat, Camera const &camera, int const windowWidth, int const windowHeight) const;
     Model(const std::string &filepath);
     ~Model();
     bool operator==(Model const &other);

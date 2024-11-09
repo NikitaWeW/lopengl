@@ -77,13 +77,13 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     return mesh;
 }
 
-void Model::draw(Shader const &shader) {
+void Model::draw(Shader const &shader, glm::mat4 const &modelMat, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const {
     shader.bind();
-    for(Mesh &mesh : m_meshes) {
+    for(Mesh const &mesh : m_meshes) {
         mesh.va.bind();
         mesh.ib.bind();
-        unsigned int diffuseNr  = 0; // some dark magic here
-        unsigned int specularNr = 0; // set shader unforms typeN, etc. texture_diffuse0
+        unsigned int diffuseNr  = 0;
+        unsigned int specularNr = 0;
         unsigned int normalNr   = 0;
         unsigned int heightNr   = 0;
         if(mesh.textures.size() == 0) {
@@ -93,7 +93,7 @@ void Model::draw(Shader const &shader) {
             if(shader.getUniform("texture_height0") != -1)   glUniform1i(shader.getUniform("texture_height0"), 0);
         }
         for(unsigned i = 0; i < mesh.textures.size(); ++i) {
-            std::string &type = mesh.textures[i].type;
+            std::string const &type = mesh.textures[i].type;
             unsigned n; // typeN <- texure index
             if(type == "texture_diffuse") {
                 n = diffuseNr++;
@@ -107,11 +107,21 @@ void Model::draw(Shader const &shader) {
             if(shader.getUniform(type + std::to_string(n)) != -1) glUniform1i(shader.getUniform(type + std::to_string(n)), i);
             mesh.textures[i].bind(i);
         }
+        glm::mat4 normalMat = glm::transpose(glm::inverse(modelMat));
+        if(shader.getUniform("u_model") != -1)     glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &modelMat[0][0]);
+        if(shader.getUniform("u_view") != -1)      glUniformMatrix4fv(shader.getUniform("u_view"),      1, GL_FALSE, &viewMat[0][0]);
+        if(shader.getUniform("u_projection") != -1)glUniformMatrix4fv(shader.getUniform("u_projection"),1, GL_FALSE, &projectionMat[0][0]);
+        if(shader.getUniform("u_normalMat") != -1) glUniformMatrix4fv(shader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
         glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
         mesh.va.unbind();
         mesh.ib.unbind();
     }
     glActiveTexture(GL_TEXTURE0);
+}
+
+void Model::draw(Shader const &shader, glm::mat4 const &modelMat, Camera const &camera, int const windowWidth, int const windowHeight) const
+{
+    draw(shader, modelMat, camera.getViewMatrix(), camera.getProjectionMatrix(windowWidth, windowHeight));
 }
 
 Model::Model(std::string const &filepath) : filepath(filepath)
