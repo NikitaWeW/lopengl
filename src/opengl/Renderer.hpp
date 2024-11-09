@@ -1,4 +1,9 @@
 #pragma once
+
+/*
+im not using it but anyway ¯\_(ツ)_/¯
+*/
+
 #include "VertexArray.hpp"
 #include "IndexBuffer.hpp"
 #include "Shader.hpp"

@@ -8,7 +8,7 @@ private:
     std::string m_FilePath;
     unsigned char *m_Buffer;
     int m_Width, m_Height, m_BPP;
-    mutable bool m_managing = true;
+    mutable bool m_managing = false;
 public:
     std::string type; 
     Texture(std::string const &filepath, bool flip = true);

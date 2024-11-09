@@ -36,7 +36,7 @@ void Texture::operator=(Texture const &other) {
     copy(other);
 }
 void Texture::copy(Texture const &other) {
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     m_FilePath = other.m_FilePath;
     m_Buffer = other.m_Buffer;
     m_Width = other.m_Width;
@@ -45,8 +45,7 @@ void Texture::copy(Texture const &other) {
     m_RenderID = other.m_RenderID;
 }
 void Texture::swap(Texture &&other) {
-    m_managing = other.m_managing;
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     std::swap(m_RenderID, other.m_RenderID);
     std::swap(m_FilePath, other.m_FilePath);
     std::swap(m_Buffer, other.m_Buffer);

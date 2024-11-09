@@ -4,7 +4,7 @@
 class VertexArray {
 private:
     unsigned m_RenderID;
-    mutable bool m_managing = true;
+    mutable bool m_managing = false;
 public:
     VertexArray();
     ~VertexArray();

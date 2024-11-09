@@ -4,7 +4,7 @@ class IndexBuffer {
 private:
     unsigned m_RenderID = 0;
     unsigned m_size = 0;
-    mutable bool m_managing = true;
+    mutable bool m_managing = false;
 public:
     IndexBuffer(const GLuint *data, size_t size);
     IndexBuffer();

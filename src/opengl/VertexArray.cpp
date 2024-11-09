@@ -18,12 +18,11 @@ void VertexArray::operator=(VertexArray const &other) {
     copy(other);
 }
 void VertexArray::copy(VertexArray const &other) {
-    m_managing = other.m_managing;
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     m_RenderID = other.m_RenderID;
 }
 void VertexArray::swap(VertexArray &&other) {
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     std::swap(m_RenderID, other.m_RenderID);
 }
 VertexArray::~VertexArray()

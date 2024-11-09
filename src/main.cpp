@@ -46,7 +46,7 @@ double deltatime = 0;
 double renderdeltatime = 0;
 unsigned frameCounter = 0;
 glm::vec3 cuberotation{0.1, 0.2, -0.1};
-glm::vec4 lightColor{1};
+glm::vec3 lightColor{1};
 glm::vec3 lightPos{2, 1, 3};
 
 Model *currentModel = nullptr;
@@ -87,7 +87,7 @@ void addTexture(char const *filepath) {
         LOG_ERROR("%s", e.what());
     }
 }
-void imguistuff(ControllableCamera &cam)
+void imguistuff(ControllableCamera &cam, std::vector<Shader *> shaders)
 {
     static bool wireframe = false;
     ImGuiIO &io = ImGui::GetIO();
@@ -102,16 +102,32 @@ void imguistuff(ControllableCamera &cam)
     ImGui::Separator();
     ImGui::Text("delta time: %f", deltatime);
     ImGui::Text("FPS: %f", deltatime ? 1 / deltatime : -1);
-    ImGui::Separator();
     ImGui::Text("render delta time: %f", renderdeltatime);
     ImGui::Text("render FPS: %f", renderdeltatime ? 1 / renderdeltatime : -1);
+    ImGui::Separator();
+    if(ImGui::Button("recompile shaders")) {
+        for(Shader *shader : shaders) {
+            Shader copy = *shader;
+            LOG_INFO("recompiling %s...", shader->getFilePath().c_str());
+            if(!shader->ParceShaderFile(shader->getFilePath())) {
+                shader->swap(std::forward<Shader>(copy));
+                continue;
+            };
+            if(!shader->CompileShaders()) {
+                shader->swap(std::forward<Shader>(copy));
+                continue;
+            }
+        }
+        LOG_INFO("done.");
+    }
     ImGui::Separator();
     if(ImGui::Checkbox("wireframe", &wireframe)) {
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
     }
     ImGui::ColorEdit4("clear color", &ClearColor.x);
     // ImGui::InputFloat("dynamic geometry wobbly frequency™", &frequencyHZ);
-    ImGui::ColorEdit4("light color", &lightColor.r);
+    ImGui::Separator();
+    ImGui::ColorEdit3("light color", &lightColor.r);
     ImGui::DragFloat3("light position", &lightPos.x, 0.01f);
     ImGui::Separator();
     if(currentModel) {
@@ -145,12 +161,12 @@ void imguistuff(ControllableCamera &cam)
         addTexture(loadTextureBuffer);
     }
     ImGui::Separator();
-    ImGui::Text("cube 1");
+    ImGui::Text("model 1");
     ImGui::DragFloat3("position", &translation1.x, 0.01f);
     ImGui::DragFloat3("rotation", &rotation1.x, 0.5f);
     ImGui::DragFloat3("scale", &scale1.x, 0.01f);
     ImGui::InputFloat3("rotation per ms", &cuberotation.x);
-    if (ImGui::Button("reset"))
+    if (ImGui::Button("reset model"))
     {
         translation1 = glm::vec3(0);
         rotation1 = glm::vec3(0);
@@ -253,6 +269,9 @@ int main()
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
     Texture texture("res/textures/tile.png");
     Texture lightCubeTexture("res/textures/white.png");
+    std::vector<Shader *> shaders;
+    shaders.push_back(&lightingShader);
+    shaders.push_back(&lightCubeShader);
 
     strcpy(loadModelBuffer, "");
     addModel("res/models/Crate/Crate1.3ds");
@@ -292,7 +311,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 modelMatrix;
-        glm::mat4 MVP;
 
         if(currentModel) {
             modelMatrix = glm::translate(glm::mat4{1.0f}, translation1);
@@ -300,11 +318,12 @@ int main()
             modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.y), glm::vec3(0, 1, 0));
             modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.z), glm::vec3(0, 0, 1));
             modelMatrix = glm::scale(modelMatrix, scale1);
-            MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelMatrix;
 
             lightingShader.bind();
-            glUniformMatrix4fv(lightingShader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
-            glUniform4fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
+            glUniformMatrix4fv(lightingShader.getUniform("u_model"), 1, GL_FALSE, &modelMatrix[0][0]);
+            glUniformMatrix4fv(lightingShader.getUniform("u_view"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+            glUniformMatrix4fv(lightingShader.getUniform("u_projection"), 1, GL_FALSE, &camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y)[0][0]);
+            glUniform3fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
             glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
 
             if(currentTexture) currentTexture->bind();
@@ -314,7 +333,7 @@ int main()
         
         modelMatrix = glm::translate(glm::mat4{1.0f}, lightPos);
         modelMatrix = glm::scale(modelMatrix, glm::vec3{0.25});
-        MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelMatrix;
+        glm::mat4 MVP = camera.getProjectionMatrix(app.windowSize.x, app.windowSize.y) * camera.getViewMatrix() * modelMatrix;
 
         lightCubeShader.bind();
         glUniformMatrix4fv(lightCubeShader.getUniform("u_MVP"), 1, GL_FALSE, &MVP[0][0]);
@@ -323,7 +342,7 @@ int main()
         lightCubeTexture.unbind();
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
-        imguistuff(camera);
+        imguistuff(camera, shaders);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

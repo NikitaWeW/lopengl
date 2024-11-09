@@ -25,13 +25,12 @@ void IndexBuffer::operator=(IndexBuffer const &other) {
     copy(other);
 }
 void IndexBuffer::copy(IndexBuffer const &other) {
-    m_managing = other.m_managing;
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     m_RenderID = other.m_RenderID;
     m_size = other.m_size;
 }
 void IndexBuffer::swap(IndexBuffer &&other) {
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     std::swap(m_RenderID, other.m_RenderID);
     std::swap(m_size, other.m_size);
 }

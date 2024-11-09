@@ -43,6 +43,7 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     for(int i = 0; i < aimesh->mNumVertices; ++i) {
         Vertex vertex;
         vertex.position = { aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z };
+        vertex.normals = { aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z };
         if(aimesh->mTextureCoords[0]) {
             vertex.textureCoords = { aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y };
         }
@@ -128,10 +129,7 @@ Model::Model(std::string const &filepath) : filepath(filepath)
         throw std::runtime_error("failed to import model!");
     } 
     directory = filepath.substr(0, filepath.find_last_of('/'));
-    meshLayout = {};
-    meshLayout.push(3, GL_FLOAT);
-    meshLayout.push(2, GL_FLOAT);
-    meshLayout.push(1, GL_FLOAT);
+    meshLayout = getVertexLayout();
     processNode(scene->mRootNode);
 }
 Model::~Model()

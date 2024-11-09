@@ -44,7 +44,7 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
     return true;
 }
 Shader::Shader() = default;
-Shader::Shader(std::string const & filepath) {
+Shader::Shader(std::string const & filepath) : m_filepath(filepath) {
     if(!ParceShaderFile(filepath)) throw std::runtime_error("failed to parce shaders!");
     if(!CompileShaders()) throw std::logic_error("failed to compile shaders!");
 }
@@ -65,14 +65,13 @@ void Shader::operator=(Shader const &other) {
     copy(other);
 }
 void Shader::copy(Shader const &other) {
-    m_managing = other.m_managing;
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     VertexShaderID = other.VertexShaderID;
     FragmentShaderID = other.FragmentShaderID;
     ShaderProgramID = other.ShaderProgramID;
 }
 void Shader::swap(Shader &&other) {
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     std::swap(VertexShaderID, other.VertexShaderID);
     std::swap(FragmentShaderID, other.FragmentShaderID);
     std::swap(ShaderProgramID, other.ShaderProgramID);
@@ -123,6 +122,11 @@ bool Shader::ParceShaderFile(std::string const &filepath)
     return true;
 }
 bool Shader::CompileShaders() {
+    if(m_managing) {
+        if(VertexShaderID) glDeleteShader(VertexShaderID);
+        if(FragmentShaderID) glDeleteShader(FragmentShaderID);
+        if(ShaderProgramID) glDeleteProgram(ShaderProgramID);
+    }
     m_UniformLocationCache.erase(m_UniformLocationCache.begin(), m_UniformLocationCache.end());
     std::string log;
     if(!compileShader(VertexShaderID, VertexShaderSource.c_str(), GL_VERTEX_SHADER, log)) {

@@ -26,7 +26,7 @@ public:
 class VertexBuffer {
 private:
     unsigned m_RenderID = 0;
-    mutable bool m_managing = true;
+    mutable bool m_managing = false;
 public:
     VertexBuffer(const void *data, size_t size);
     VertexBuffer();

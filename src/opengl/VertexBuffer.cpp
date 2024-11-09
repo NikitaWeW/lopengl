@@ -33,12 +33,11 @@ void VertexBuffer::operator=(VertexBuffer const &other) {
     copy(other);
 }
 void VertexBuffer::copy(VertexBuffer const &other) {
-    m_managing = other.m_managing;
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     m_RenderID = other.m_RenderID;
 }
 void VertexBuffer::swap(VertexBuffer &&other) {
-    other.m_managing = false;
+    std::swap(m_managing, other.m_managing);
     std::swap(m_RenderID, other.m_RenderID);
 }
 void VertexBuffer::bind() const
