@@ -18,9 +18,14 @@
 #include "opengl/Shader.hpp"
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/Renderer.hpp"
+<<<<<<< Updated upstream
 #include "ControllableCamera.hpp"
 #include "opengl/Vertex.hpp"
 #include "Model.hpp"
+=======
+#include "utils/ControllableCamera.hpp"
+#include "utils/Model.hpp"
+>>>>>>> Stashed changes
 
 #include <chrono>
 #include <memory>
@@ -45,8 +50,15 @@ double deltatime = 0;
 double renderdeltatime = 0;
 unsigned frameCounter = 0;
 glm::vec3 cuberotation{0.1, 0.2, -0.1};
+<<<<<<< Updated upstream
 glm::vec4 lightColor{1};
 glm::vec3 lightPos{0};
+=======
+glm::vec3 lightColor{1};
+glm::vec3 &lightPos = lightColor; // this is dumb
+
+Model *currentModel = nullptr;
+>>>>>>> Stashed changes
 int currentModelIndex = 0;
 Model *currentModel = nullptr;
 std::vector<Model> models;
@@ -178,7 +190,21 @@ int main()
     Shader shader("src/basic.glsl");
     Texture texture("res/textures/tile.png");
     VertexBufferLayout layout;
+<<<<<<< Updated upstream
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
+=======
+    ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
+    std::vector<Shader *> shaders;
+    Light light {
+        .position= glm::vec3{2, 1, 3},
+        .ambient = glm::vec3{0.2f},
+        .diffuse = glm::vec3{0.5f},
+        .specular= glm::vec3{1.0f}
+    };
+    lightPos = light.position;
+    shaders.push_back(&lightingShader);
+    shaders.push_back(&lightCubeShader);
+>>>>>>> Stashed changes
 
     strcpy(loadModelBuffer, "");
     addModel("res/models/Crate/Crate1.3ds");
@@ -229,6 +255,30 @@ int main()
 
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+<<<<<<< Updated upstream
+=======
+
+
+        if(currentModel) {
+            currentModel->resetMatrix();
+            currentModel->translate(translation1);
+            currentModel->rotate(rotation1);
+            currentModel->scale(scale1);
+
+            lightingShader.bind();
+            if(shader.getUniform("u_light.ambient") != -1)  glUniform3fv(shader.getUniform("u_light.ambient"),  1, &mesh.material.ambient.r);
+            if(shader.getUniform("u_light.diffuse") != -1)  glUniform3fv(shader.getUniform("u_light.diffuse"),  1, &mesh.material.diffuse.r);
+            if(shader.getUniform("u_light.specular") != -1) glUniform3fv(shader.getUniform("u_light.specular"), 1, &mesh.material.specular.r);
+            if(shader.getUniform("u_light.position") != -1) glUniform3fv (shader.getUniform("u_light.position"),1, &mesh.material.shininess);
+            glUniform3fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
+            glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
+            glUniform3fv(lightingShader.getUniform("u_viewPos"), 1, &camera.position.x);
+
+            if(currentTexture) currentTexture->bind();
+            currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
+            if(currentTexture) currentTexture->unbind();
+        }
+>>>>>>> Stashed changes
         
         if(currentModel) currentModel->draw(shader); 
 
