@@ -312,6 +312,7 @@ int main()
             lightingShader.bind();
             glUniform3fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
             glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
+            glUniform3fv(lightingShader.getUniform("u_viewPos"), 1, &camera.position.x);
 
             if(currentTexture) currentTexture->bind();
             currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
