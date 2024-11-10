@@ -16,7 +16,7 @@ uniform mat4 u_normalMat;
 void main() {
     gl_Position = u_projection * u_view * u_model * a_position;
     v_texCoord = a_texCoord;
-    fragPosition = (a_position * u_model).xyz;
+    fragPosition = vec3(u_model *a_position);
     v_normal = (u_normalMat * a_normal).xyz;
 }
 
@@ -43,5 +43,5 @@ void main() {
     vec3 diffuse = u_lightColor * vec3(max(dot(norm, lightDir), 0.0));
 
     color = vec4(ambient + diffuse, 1.0) * textureColor;
-    // color = vec4(vec3(norm), 1.0);
+    // color = vec4(vec3(lightDir), 1.0);
 }
