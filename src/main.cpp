@@ -18,9 +18,9 @@
 #include "opengl/Shader.hpp"
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/Renderer.hpp"
-#include "ControllableCamera.hpp"
+#include "utils/ControllableCamera.hpp"
 #include "opengl/Vertex.hpp"
-#include "Model.hpp"
+#include "utils/Model.hpp"
 
 #include <chrono>
 #include <memory>
@@ -302,29 +302,28 @@ int main()
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 modelMatrix;
 
         if(currentModel) {
-            modelMatrix = glm::translate(glm::mat4{1.0f}, translation1);
-            modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.x), glm::vec3(1, 0, 0));
-            modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.y), glm::vec3(0, 1, 0));
-            modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation1.z), glm::vec3(0, 0, 1));
-            modelMatrix = glm::scale(modelMatrix, scale1);
+            currentModel->resetMatrix();
+            currentModel->translate(translation1);
+            currentModel->rotate(rotation1);
+            currentModel->scale(scale1);
 
             lightingShader.bind();
             glUniform3fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
             glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
 
             if(currentTexture) currentTexture->bind();
-            currentModel->draw(lightingShader, modelMatrix, camera, app.windowSize.x, app.windowSize.y); 
+            currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
             if(currentTexture) currentTexture->unbind();
         }
         
-        modelMatrix = glm::translate(glm::mat4{1.0f}, lightPos);
-        modelMatrix = glm::scale(modelMatrix, glm::vec3{0.125});
+        lightCube.resetMatrix();
+        lightCube.translate(lightPos);
+        lightCube.scale(glm::vec3{0.125});
 
         lightCubeShader.bind();
-        lightCube.draw(lightCubeShader, modelMatrix, camera, app.windowSize.x, app.windowSize.y);
+        lightCube.draw(lightCubeShader, camera, app.windowSize.x, app.windowSize.y);
         lightCubeShader.unbind();
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;

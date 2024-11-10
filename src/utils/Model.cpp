@@ -6,7 +6,7 @@
 #include "opengl/IndexBuffer.hpp"
 #include "logger.h"
 #include "glad/gl.h"
-// 0 AI!!
+#include "glm/gtc/matrix_transform.hpp"
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTextureType type, std::string typeName) {
     std::vector<Texture> textures;
@@ -15,14 +15,14 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
         material->GetTexture(type, i, &str);
         bool alreadyLoaded = false;
         for(auto &loadedTexture : m_loadedTextures)  {
-            if(loadedTexture.getFilePath() == directory + '/' + str.C_Str()) {
+            if(loadedTexture.getFilePath() == m_directory + '/' + str.C_Str()) {
                 textures.push_back(loadedTexture);
                 alreadyLoaded = true;
                 break;
             }
         }
         if(!alreadyLoaded) {
-            Texture texture{directory + '/' + str.C_Str(), false};
+            Texture texture{m_directory + '/' + str.C_Str(), false};
             texture.type = typeName;
             textures.push_back(texture);
             m_loadedTextures.push_back(texture);
@@ -32,7 +32,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
 }
 void Model::processNode(aiNode *node) {
     for(unsigned i = 0; i < node->mNumMeshes; ++i) {
-        m_meshes.push_back(processMesh(scene->mMeshes[node->mMeshes[i]]));
+        m_meshes.push_back(processMesh(m_scene->mMeshes[node->mMeshes[i]]));
     }
     for(unsigned i = 0; i < node->mNumChildren; ++i) {
         processNode(node->mChildren[i]);
@@ -55,7 +55,7 @@ Mesh Model::processMesh(aiMesh *aimesh) {
             mesh.indices.push_back(face.mIndices[j]);
     }
     if(aimesh->mMaterialIndex >= 0) {
-        aiMaterial *material = scene->mMaterials[aimesh->mMaterialIndex];
+        aiMaterial *material = m_scene->mMaterials[aimesh->mMaterialIndex];
 
         std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         mesh.textures.insert(mesh.textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -73,11 +73,11 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     mesh.va.bind();
     mesh.vb = VertexBuffer {mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
     mesh.ib = IndexBuffer  {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
-    mesh.va.addBuffer(mesh.vb, meshLayout);
+    mesh.va.addBuffer(mesh.vb, m_meshLayout);
     return mesh;
 }
 
-void Model::draw(Shader const &shader, glm::mat4 const &modelMat, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const {
+void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const {
     shader.bind();
     for(Mesh const &mesh : m_meshes) {
         mesh.va.bind();
@@ -107,8 +107,8 @@ void Model::draw(Shader const &shader, glm::mat4 const &modelMat, glm::mat4 cons
             if(shader.getUniform(type + std::to_string(n)) != -1) glUniform1i(shader.getUniform(type + std::to_string(n)), i);
             mesh.textures[i].bind(i);
         }
-        glm::mat4 normalMat = glm::transpose(glm::inverse(modelMat));
-        if(shader.getUniform("u_model") != -1)     glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &modelMat[0][0]);
+        glm::mat4 normalMat = glm::transpose(glm::inverse(m_modelMat));
+        if(shader.getUniform("u_model") != -1)     glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &m_modelMat[0][0]);
         if(shader.getUniform("u_view") != -1)      glUniformMatrix4fv(shader.getUniform("u_view"),      1, GL_FALSE, &viewMat[0][0]);
         if(shader.getUniform("u_projection") != -1)glUniformMatrix4fv(shader.getUniform("u_projection"),1, GL_FALSE, &projectionMat[0][0]);
         if(shader.getUniform("u_normalMat") != -1) glUniformMatrix4fv(shader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
@@ -119,34 +119,56 @@ void Model::draw(Shader const &shader, glm::mat4 const &modelMat, glm::mat4 cons
     glActiveTexture(GL_TEXTURE0);
 }
 
-void Model::draw(Shader const &shader, glm::mat4 const &modelMat, Camera const &camera, int const windowWidth, int const windowHeight) const
+void Model::draw(Shader const &shader, Camera const &camera, int const windowWidth, int const windowHeight) const
 {
-    draw(shader, modelMat, camera.getViewMatrix(), camera.getProjectionMatrix(windowWidth, windowHeight));
+    draw(shader, camera.getViewMatrix(), camera.getProjectionMatrix(windowWidth, windowHeight));
 }
 
-Model::Model(std::string const &filepath) : filepath(filepath)
+Model::Model(std::string const &filepath) : m_filepath(filepath)
 {
     Assimp::Importer importer;
 
-    scene = importer.ReadFile( filepath,
+    m_scene = importer.ReadFile( filepath,
         aiProcess_CalcTangentSpace       |
         aiProcess_Triangulate            |
         aiProcess_JoinIdenticalVertices  |
         aiProcess_SortByPType);
 
-    if (!scene) {
+    if (!m_scene) {
         LOG_ERROR("error parcing \"%s\": %s", filepath.c_str(), importer.GetErrorString());
         throw std::runtime_error("failed to import model!");
     } 
-    directory = filepath.substr(0, filepath.find_last_of('/'));
-    meshLayout = getVertexLayout();
-    processNode(scene->mRootNode);
+    m_directory = filepath.substr(0, filepath.find_last_of('/'));
+    m_meshLayout = getVertexLayout();
+    processNode(m_scene->mRootNode);
 }
 Model::~Model()
 {
 }
 
+void Model::resetMatrix()
+{
+    m_modelMat = glm::mat4{1.0f};
+}
+
+void Model::translate(glm::vec3 const &translation)
+{
+    m_modelMat = glm::translate(m_modelMat, translation);
+}
+
+void Model::rotate(glm::vec3 const &rotation) // eulers for now
+{
+    m_modelMat = glm::rotate(m_modelMat, glm::radians(rotation.x), glm::vec3(1, 0, 0));
+    m_modelMat = glm::rotate(m_modelMat, glm::radians(rotation.y), glm::vec3(0, 1, 0));
+    m_modelMat = glm::rotate(m_modelMat, glm::radians(rotation.z), glm::vec3(0, 0, 1));
+}
+
+void Model::scale(glm::vec3 const &scale)
+{
+    m_modelMat = glm::scale(m_modelMat, scale);
+}
+
 bool Model::operator==(Model const &other)
 {
-    return filepath == other.filepath;
+    return m_filepath == other.m_filepath;
 }
