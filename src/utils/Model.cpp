@@ -68,6 +68,17 @@ Mesh Model::processMesh(aiMesh *aimesh) {
 
         std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
+        
+        aiColor4D color;
+
+        if(aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &color) == AI_SUCCESS) 
+            mesh.material.ambient = {color.r, color.g, color.b};
+        if(aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS) 
+            mesh.material.diffuse = {color.r, color.g, color.b};
+        if(aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &color) == AI_SUCCESS) 
+            mesh.material.specular = {color.r, color.g, color.b};
+        if(aiGetMaterialColor(material, AI_MATKEY_SHININESS, &color) == AI_SUCCESS) 
+            mesh.material.shininess = color.r;
     }
     
     mesh.va.bind();
@@ -108,6 +119,11 @@ void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const
             mesh.textures[i].bind(i);
         }
         glm::mat4 normalMat = glm::transpose(glm::inverse(m_modelMat));
+        if(shader.getUniform("u_material.ambient") != -1)  glUniform3fv(shader.getUniform("u_material.ambient"),  1, &mesh.material.ambient.r);
+        if(shader.getUniform("u_material.diffuse") != -1)  glUniform3fv(shader.getUniform("u_material.diffuse"),  1, &mesh.material.diffuse.r);
+        if(shader.getUniform("u_material.specular") != -1) glUniform3fv(shader.getUniform("u_material.specular"), 1, &mesh.material.specular.r);
+        if(shader.getUniform("u_material.shininess") != -1)glUniform1f (shader.getUniform("u_material.shininess"),    mesh.material.shininess);
+
         if(shader.getUniform("u_model") != -1)     glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &m_modelMat[0][0]);
         if(shader.getUniform("u_view") != -1)      glUniformMatrix4fv(shader.getUniform("u_view"),      1, GL_FALSE, &viewMat[0][0]);
         if(shader.getUniform("u_projection") != -1)glUniformMatrix4fv(shader.getUniform("u_projection"),1, GL_FALSE, &projectionMat[0][0]);

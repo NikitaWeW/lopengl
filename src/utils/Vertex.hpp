@@ -1,5 +1,5 @@
 #pragma once
-#include "VertexBuffer.hpp"
+#include "opengl/VertexBuffer.hpp"
 #include "glad/gl.h"
 #include "glm/glm.hpp"
 

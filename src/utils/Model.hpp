@@ -1,24 +1,11 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "opengl/Vertex.hpp"
-#include "opengl/Texture.hpp"
 #include "assimp/scene.h"
 #include "opengl/Shader.hpp"
-#include "opengl/IndexBuffer.hpp"
-#include "opengl/VertexBuffer.hpp"
-#include "opengl/VertexArray.hpp"
 #include "Camera.hpp"
+#include "Mesh.hpp"
 
-struct Mesh {
-    VertexBuffer vb;
-    IndexBuffer ib;
-    VertexArray va;
-
-    std::vector<Vertex> vertices;
-    std::vector<unsigned> indices;
-    std::vector<Texture> textures;
-};
 class Model { 
 private:
     aiScene const *m_scene;

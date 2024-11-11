@@ -19,8 +19,8 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
-#include "opengl/Vertex.hpp"
 #include "utils/Model.hpp"
+#include "utils/Light.hpp"
 
 #include <chrono>
 #include <memory>
@@ -46,7 +46,6 @@ double renderdeltatime = 0;
 unsigned frameCounter = 0;
 glm::vec3 cuberotation{0.1, 0.2, -0.1};
 glm::vec3 lightColor{1};
-glm::vec3 lightPos{2, 1, 3};
 
 Model *currentModel = nullptr;
 int currentModelIndex = 0;
@@ -86,7 +85,7 @@ void addTexture(char const *filepath) {
         LOG_ERROR("%s", e.what());
     }
 }
-void imguistuff(ControllableCamera &cam, std::vector<Shader *> shaders)
+void imguistuff(ControllableCamera &cam, std::vector<Shader *> shaders, Light &light)
 {
     static bool wireframe = false;
     ImGuiIO &io = ImGui::GetIO();
@@ -127,7 +126,7 @@ void imguistuff(ControllableCamera &cam, std::vector<Shader *> shaders)
     // ImGui::InputFloat("dynamic geometry wobbly frequency™", &frequencyHZ);
     ImGui::Separator();
     ImGui::ColorEdit3("light color", &lightColor.r);
-    ImGui::DragFloat3("light position", &lightPos.x, 0.01f);
+    ImGui::DragFloat3("light position", &light.position.x, 0.01f);
     ImGui::Separator();
     if(currentModel) {
         size_t triangles = 0;
@@ -259,6 +258,12 @@ int main()
     Shader lightingShader("shaders/lighting.glsl");
     Shader lightCubeShader("shaders/lightcube.glsl");
     Model lightCube("res/models/cube.obj");
+    Light light {
+        .position= glm::vec3{2, 1, 3},
+        .ambient = glm::vec3{0.2f},
+        .diffuse = glm::vec3{0.5f},
+        .specular= glm::vec3{1.0f}
+    };
     VertexBufferLayout layout;
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
     std::vector<Shader *> shaders;
@@ -310,8 +315,10 @@ int main()
             currentModel->scale(scale1);
 
             lightingShader.bind();
-            glUniform3fv(lightingShader.getUniform("u_lightColor"), 1, &lightColor.r);
-            glUniform3fv(lightingShader.getUniform("u_lightPos"), 1, &lightPos.x);
+            if(lightingShader.getUniform("u_light.position") != -1) glUniform3fv(lightingShader.getUniform("u_light.position"), 1, &light.position.x);
+            if(lightingShader.getUniform("u_light.ambient") != -1)  glUniform3fv(lightingShader.getUniform("u_light.ambient"),  1, &light.ambient.r);
+            if(lightingShader.getUniform("u_light.diffuse") != -1)  glUniform3fv(lightingShader.getUniform("u_light.diffuse"),  1, &light.diffuse.r);
+            if(lightingShader.getUniform("u_light.specular") != -1) glUniform3fv(lightingShader.getUniform("u_light.specular"), 1, &light.specular.r);
             glUniform3fv(lightingShader.getUniform("u_viewPos"), 1, &camera.position.x);
 
             if(currentTexture) currentTexture->bind();
@@ -320,7 +327,7 @@ int main()
         }
         
         lightCube.resetMatrix();
-        lightCube.translate(lightPos);
+        lightCube.translate(light.position);
         lightCube.scale(glm::vec3{0.125});
 
         lightCubeShader.bind();
@@ -328,7 +335,7 @@ int main()
         lightCubeShader.unbind();
 
         renderdeltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
-        imguistuff(camera, shaders);
+        imguistuff(camera, shaders, light);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
