@@ -16,7 +16,7 @@ private:
     std::string m_filepath;
     glm::mat4 m_modelMat;
 private:
-    std::vector<Texture> loadMaterialTextures(aiMaterial *material, aiTextureType type, std::string typeName);
+    std::vector<Texture> loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName);
     void processNode(aiNode *node);
     Mesh processMesh(aiMesh *aimesh);
 public:

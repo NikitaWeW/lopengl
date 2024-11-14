@@ -43,6 +43,7 @@ void Texture::copy(Texture const &other) {
     m_Height = other.m_Height;
     m_BPP = other.m_BPP;
     m_RenderID = other.m_RenderID;
+    type = other.type;
 }
 void Texture::swap(Texture &&other) {
     std::swap(m_managing, other.m_managing);
@@ -53,6 +54,7 @@ void Texture::swap(Texture &&other) {
     std::swap(m_Height, other.m_Height);
     std::swap(m_BPP, other.m_BPP);
     std::swap(m_RenderID, other.m_RenderID);
+    std::swap(type, other.type);
 }
 Texture::~Texture() {
     if(m_managing) {
@@ -68,6 +70,12 @@ void Texture::bind(unsigned slot) const {
     }
 }
 
-void Texture::unbind() const {
+void Texture::unbind(unsigned slot) const {
+    unbindStatic(slot);
+}
+
+void Texture::unbindStatic(unsigned slot)
+{
+    glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, 0);
 }

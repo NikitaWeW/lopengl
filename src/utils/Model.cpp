@@ -8,7 +8,7 @@
 #include "glad/gl.h"
 #include "glm/gtc/matrix_transform.hpp"
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTextureType type, std::string typeName) {
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName) { 
     std::vector<Texture> textures;
     aiString str;
     for(unsigned int i = 0; i < material->GetTextureCount(type); i++) {
@@ -57,33 +57,27 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     if(aimesh->mMaterialIndex >= 0) {
         aiMaterial *material = m_scene->mMaterials[aimesh->mMaterialIndex];
 
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
         mesh.textures.insert(mesh.textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
         mesh.textures.insert(mesh.textures.end(), specularMaps.begin(), specularMaps.end());
 
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal");
         mesh.textures.insert(mesh.textures.end(), normalMaps.begin(), normalMaps.end());
 
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "height");
         mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
         
         aiColor4D color;
-
-        if(aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &color) == AI_SUCCESS) 
-            mesh.material.ambient = {color.r, color.g, color.b};
-        if(aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS) 
-            mesh.material.diffuse = {color.r, color.g, color.b};
-        if(aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &color) == AI_SUCCESS) 
-            mesh.material.specular = {color.r, color.g, color.b};
-        if(aiGetMaterialColor(material, AI_MATKEY_SHININESS, &color) == AI_SUCCESS) 
-            mesh.material.shininess = color.r;
+        if(aiGetMaterialColor(material, AI_MATKEY_SHININESS, &color) == AI_SUCCESS) {
+            mesh.material.shininess = color.r ? color.r : 32.0f;
+        }
     }
     
     mesh.va.bind();
-    mesh.vb = VertexBuffer {mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
-    mesh.ib = IndexBuffer  {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
+    mesh.vb = VertexBuffer{mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
+    mesh.ib = IndexBuffer {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
     mesh.va.addBuffer(mesh.vb, m_meshLayout);
     return mesh;
 }
@@ -93,44 +87,33 @@ void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const
     for(Mesh const &mesh : m_meshes) {
         mesh.va.bind();
         mesh.ib.bind();
-        unsigned int diffuseNr  = 0;
-        unsigned int specularNr = 0;
-        unsigned int normalNr   = 0;
-        unsigned int heightNr   = 0;
+        std::vector<unsigned> texturesToUnbind; // wanna unbind textuers after render
         if(mesh.textures.size() == 0) {
-            if(shader.getUniform("texture_diffuse0") != -1)  glUniform1i(shader.getUniform("texture_diffuse0"), 0);
-            if(shader.getUniform("texture_specular0") != -1) glUniform1i(shader.getUniform("texture_specular0"), 0);
-            if(shader.getUniform("texture_normal0") != -1)   glUniform1i(shader.getUniform("texture_normal0"), 0);
-            if(shader.getUniform("texture_height0") != -1)   glUniform1i(shader.getUniform("texture_height0"), 0);
-        }
-        for(unsigned i = 0; i < mesh.textures.size(); ++i) {
-            std::string const &type = mesh.textures[i].type;
-            unsigned n; // typeN <- texure index
-            if(type == "texture_diffuse") {
-                n = diffuseNr++;
-            } else if(type == "texture_specular") {
-                n = specularNr++;
-            } else if(type == "texture_normal") {
-                n = normalNr++;
-            } else if(type == "texture_height") {
-                n = heightNr++;
+            glUniform1i(shader.getUniform("u_material.diffuse"), 0);
+        } else {
+            unsigned int textureCount = 1; // leave 0 for other purposes
+            for(Texture const &texture : mesh.textures) {
+                unsigned location = shader.getUniform("u_material." + texture.type);
+                if(location != -1) {
+                    glUniform1i(location, textureCount);
+                    texture.bind(textureCount);
+                    texturesToUnbind.push_back(textureCount);
+                    ++textureCount;
+                }
             }
-            if(shader.getUniform(type + std::to_string(n)) != -1) glUniform1i(shader.getUniform(type + std::to_string(n)), i);
-            mesh.textures[i].bind(i);
         }
+        glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);
         glm::mat4 normalMat = glm::transpose(glm::inverse(m_modelMat));
-        if(shader.getUniform("u_material.ambient") != -1)  glUniform3fv(shader.getUniform("u_material.ambient"),  1, &mesh.material.ambient.r);
-        if(shader.getUniform("u_material.diffuse") != -1)  glUniform3fv(shader.getUniform("u_material.diffuse"),  1, &mesh.material.diffuse.r);
-        if(shader.getUniform("u_material.specular") != -1) glUniform3fv(shader.getUniform("u_material.specular"), 1, &mesh.material.specular.r);
-        if(shader.getUniform("u_material.shininess") != -1)glUniform1f (shader.getUniform("u_material.shininess"),    mesh.material.shininess);
-
-        if(shader.getUniform("u_model") != -1)     glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &m_modelMat[0][0]);
-        if(shader.getUniform("u_view") != -1)      glUniformMatrix4fv(shader.getUniform("u_view"),      1, GL_FALSE, &viewMat[0][0]);
-        if(shader.getUniform("u_projection") != -1)glUniformMatrix4fv(shader.getUniform("u_projection"),1, GL_FALSE, &projectionMat[0][0]);
-        if(shader.getUniform("u_normalMat") != -1) glUniformMatrix4fv(shader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
+        glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &m_modelMat[0][0]);
+        glUniformMatrix4fv(shader.getUniform("u_view"),      1, GL_FALSE, &viewMat[0][0]);
+        glUniformMatrix4fv(shader.getUniform("u_projection"),1, GL_FALSE, &projectionMat[0][0]);
+        glUniformMatrix4fv(shader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
         glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
         mesh.va.unbind();
         mesh.ib.unbind();
+        for(unsigned slot : texturesToUnbind) {
+            Texture::unbindStatic(slot);
+        }
     }
     glActiveTexture(GL_TEXTURE0);
 }

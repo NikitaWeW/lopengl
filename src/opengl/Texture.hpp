@@ -20,9 +20,10 @@ public:
     void swap(Texture &&other);
 
     void bind(unsigned slot = 0) const;
-    void unbind() const;
+    void unbind(unsigned slot = 0) const;
+    static void unbindStatic(unsigned slot = 0);
 
-    inline std::string getFilePath() const {
+    inline std::string const &getFilePath() const {
         return m_FilePath;
     }
     inline int getWidth() const {
