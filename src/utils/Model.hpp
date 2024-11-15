@@ -20,6 +20,10 @@ private:
     void processNode(aiNode *node);
     Mesh processMesh(aiMesh *aimesh);
 public:
+    glm::vec3 m_position = glm::vec3{0}; // does not do anythyng.
+    glm::vec3 m_rotation = glm::vec3{0};
+    glm::vec3 m_scale = glm::vec3{1};
+public:
     void draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
     void draw(Shader const &shader, Camera const &camera, int const windowWidth, int const windowHeight) const;
     Model(const std::string &filepath);

@@ -10,8 +10,7 @@ all shitty bad initialization/uninitialization goes here
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_glfw.h"
 
-#include <stdexcept>
-
+#include <algorithm>
 #include "Application.hpp"
 
 extern const bool debug;
@@ -151,9 +150,40 @@ Application::Application() {
     ImGui::StyleColorsDark();
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(GLDebugMessageCallback, nullptr);
+    strcpy(loadModelBuffer, "");
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");
     glfwDestroyWindow(window);
     glfwTerminate();
+}
+
+void Application::addModel(char const * filepath)
+{
+    try {
+        LOG_INFO("loading model \"%s\"...", filepath);
+        std::string newFilepath{filepath};
+        std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
+        Model model{newFilepath};
+        models.push_back(std::move(model));
+        currentModel = nullptr;
+        modelNames.push_back({filepath});
+        LOG_INFO("model loaded!");
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
+    }
+}
+
+void Application::addTexture(char const * filepath)
+{
+    try {
+        LOG_INFO("loading texture \"%s\"...", filepath);
+        Texture texture{filepath};
+        textures.push_back(texture);
+        currentTexture = &textures[0]; 
+        textureNames.push_back({filepath});
+        LOG_INFO("texture loaded!");
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
+    }
 }

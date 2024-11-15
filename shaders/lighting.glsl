@@ -46,6 +46,8 @@ uniform Material u_material;
 uniform Light u_light;
 
 void main() {
+    vec4 diffuseColor = texture(u_material.diffuse, v_texCoord);
+    vec4 specularColor = texture(u_material.specular, v_texCoord);
     vec3 norm = normalize(v_normal);
     vec3 lightDir = normalize(u_light.position - fragPosition);
     vec3 viewDir = normalize(u_viewPos - fragPosition);
@@ -58,10 +60,11 @@ void main() {
     vec3 specular = 
         u_light.specular * 
         pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
-        vec3(texture(u_material.specular, v_texCoord));
+        (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
 
-    color = vec4(ambient + diffuse + specular, 1.0) * texture(u_material.diffuse, v_texCoord);
+    color = vec4(ambient + diffuse + specular, 1.0) * diffuseColor;
+    // color = diffuseColor ;
     // color = vec4(vec3(somevalue), 1.0f);
     // color = vec4(vec3(u_material.shininess == 32 ? 1. : 0.), 1.0f);
-    // color = vec4(vec3(texture(u_material.diffuse, v_texCoord)), 1.0f);
+    // color = vec4(vec3(vec3(texture(u_material.specular, v_texCoord))), 1.0f);
 }

@@ -90,6 +90,8 @@ void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const
         std::vector<unsigned> texturesToUnbind; // wanna unbind textuers after render
         if(mesh.textures.size() == 0) {
             glUniform1i(shader.getUniform("u_material.diffuse"), 0);
+            Texture::unbindStatic(1);
+            glUniform1i(shader.getUniform("u_material.specular"), 1);
         } else {
             unsigned int textureCount = 1; // leave 0 for other purposes
             for(Texture const &texture : mesh.textures) {
