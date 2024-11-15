@@ -28,8 +28,14 @@ struct Material {
     sampler2D specular;
     float shininess;
 };
-struct Light {
+struct PointLight {
     vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+struct DirectionalLight {
+    vec3 direction;
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -43,28 +49,42 @@ in vec3 fragPosition;
 
 uniform vec3 u_viewPos;
 uniform Material u_material;
-uniform Light u_light;
+uniform PointLight u_light;
+
+vec3 processPointLight(PointLight light);
+vec3 processDirectionalLight(DirectionalLight light);
+// vec3 processLight(Light light);
 
 void main() {
-    vec4 diffuseColor = texture(u_material.diffuse, v_texCoord);
+    vec4 textureColor = texture(u_material.diffuse, v_texCoord);
+
+    color = vec4(processPointLight(u_light), 1.0) * textureColor;
+    // color = textureColor;
+    // color = vec4(vec3(somevalue), 1.0f);
+    // color = vec4(processPointLight(u_light), 1.0f);
+    // color = vec4(vec3(vec3(texture(u_material.specular, v_texCoord))), 1.0f);
+}
+
+vec3 processPointLight(PointLight light) 
+{
     vec4 specularColor = texture(u_material.specular, v_texCoord);
     vec3 norm = normalize(v_normal);
     vec3 lightDir = normalize(u_light.position - fragPosition);
     vec3 viewDir = normalize(u_viewPos - fragPosition);
     vec3 reflectDir = reflect(-lightDir, norm);
 
-    vec3 ambient = u_light.ambient;
+    vec3 ambient = light.ambient;
     vec3 diffuse = 
-        u_light.diffuse * 
+        light.diffuse * 
         vec3(max(dot(norm, lightDir), 0.0));
     vec3 specular = 
-        u_light.specular * 
+        light.specular * 
         pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
         (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
+    return ambient + diffuse + specular;
+}
 
-    color = vec4(ambient + diffuse + specular, 1.0) * diffuseColor;
-    // color = diffuseColor ;
-    // color = vec4(vec3(somevalue), 1.0f);
-    // color = vec4(vec3(u_material.shininess == 32 ? 1. : 0.), 1.0f);
-    // color = vec4(vec3(vec3(texture(u_material.specular, v_texCoord))), 1.0f);
+vec3 processDirectionalLight(DirectionalLight light)
+{
+    return vec3(0);
 }

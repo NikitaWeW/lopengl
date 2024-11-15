@@ -36,6 +36,13 @@ extern const bool debug = true;
 void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, Light &light);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+float easeInOutSine(float x) {
+    return -(cos(3.14 * x) - 1) / 2;
+}
+
+glm::vec3 interpolate(float n, glm::vec3 begin, glm::vec3 end, float (*easingfun)(float)) {
+    return begin + easingfun(n) * (end - begin);
+}
 
 int main()
 {
@@ -62,7 +69,8 @@ int main()
     app.addModel("res/models/cube.obj");
     app.addTexture("res/textures/tile.png");
     app.addTexture("res/textures/white.png");
-    app.currentModel = &app.models[0];
+    app.currentModel = &app.models[1];
+    app.cuberotation = glm::vec3{0};
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -79,7 +87,11 @@ int main()
     std::thread updateThread([&, window]() {
         while(!glfwWindowShouldClose(window)) {
             app.currentModel->m_rotation += app.cuberotation;
+            if(app.moveLight) {
+                light.position = interpolate(app.updateCounter * app.lightSpeed, app.lightPosBegin, app.lightPosEnd, easeInOutSine);
+            }
             camera.update(0.1);
+            ++app.updateCounter;
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     });
@@ -113,7 +125,7 @@ int main()
         
         lightCube.resetMatrix();
         lightCube.translate(light.position);
-        lightCube.scale(glm::vec3{0.125});
+        lightCube.scale(glm::vec3{0.0625});
 
         lightCubeShader.bind();
         lightCube.draw(lightCubeShader, camera, app.windowSize.x, app.windowSize.y);

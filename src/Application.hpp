@@ -15,6 +15,7 @@ public:
     glm::vec3 clearColor = glm::vec3{0.0f};
     double deltatime = 0;
     unsigned frameCounter = 0;
+    unsigned updateCounter = 0;
     glm::vec3 cuberotation{0.1, 0.2, -0.1};
 
     Model *currentModel = nullptr;
@@ -28,6 +29,13 @@ public:
     std::vector<Texture> textures;
     std::vector<std::string> textureNames;
     char loadTextureBuffer[1024];
+
+    bool wireframe = false;
+    bool moveLight = true;
+    glm::vec3 lightPosBegin = glm::vec3{-1, 1, 1.5f};
+    glm::vec3 lightPosEnd = glm::vec3{1.5f, -1, 3};
+    float lightSpeed = 0.005f;
+
     Application();
     ~Application();
     void addModel(char const *filepath);

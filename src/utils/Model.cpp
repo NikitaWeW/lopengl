@@ -94,6 +94,7 @@ void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const
             glUniform1i(shader.getUniform("u_material.specular"), 1);
         } else {
             unsigned int textureCount = 1; // leave 0 for other purposes
+            bool specularSet = false;
             for(Texture const &texture : mesh.textures) {
                 unsigned location = shader.getUniform("u_material." + texture.type);
                 if(location != -1) {
@@ -102,6 +103,13 @@ void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const
                     texturesToUnbind.push_back(textureCount);
                     ++textureCount;
                 }
+                if(texture.type == "specular") {
+                    specularSet = true;
+                }
+            }
+            if(!specularSet) {
+                Texture::unbindStatic(0);
+                glUniform1i(shader.getUniform("u_material.specular"), 0);
             }
         }
         glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);

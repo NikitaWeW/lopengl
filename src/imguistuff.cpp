@@ -13,7 +13,6 @@ impliment big imgui code here
 
 void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, Light &light)
 {
-    static bool wireframe = false;
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -38,9 +37,13 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         LOG_INFO("done.");
     }
     ImGui::Separator();
-    if(ImGui::Checkbox("wireframe", &wireframe)) {
-        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+    if(ImGui::Checkbox("wireframe", &app.wireframe)) {
+        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe ? GL_LINE : GL_FILL);
     }
+    ImGui::Checkbox("move light", &app.moveLight);
+    ImGui::DragFloat3("light position begin", &app.lightPosBegin.x, 0.01f);
+    ImGui::DragFloat3("light position end", &app.lightPosEnd.x, 0.01f);
+    ImGui::InputFloat("light speed", &app.lightSpeed);
     ImGui::ColorEdit4("clear color", &app.clearColor.x);
     ImGui::Separator();
     if(app.currentModel) {
