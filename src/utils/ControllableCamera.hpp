@@ -10,7 +10,7 @@ private:
 public:
     bool firstCursorMove = true;
     float sensitivity = 1.0f;
-    float cameraSpeed = 1.0f;
+    float speed = 7.0f;
     bool mouseLocked = false;
     GLFWwindow *window;
 

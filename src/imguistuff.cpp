@@ -77,37 +77,43 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         app.addTexture(app.loadTextureBuffer);
     }
     ImGui::Separator();
-    ImGui::Text("model");
-    ImGui::DragFloat3("model position", &app.currentModel->m_position.x, 0.01f);
-    ImGui::DragFloat3("rotation", &app.currentModel->m_rotation.x, 0.5f);
-    ImGui::DragFloat3("scale", &app.currentModel->m_scale.x, 0.01f);
-    ImGui::InputFloat3("rotation per ms", &app.cuberotation.x);
-    if (ImGui::Button("reset model"))
-    {
-        app.currentModel->m_position = glm::vec3(0);
-        app.currentModel->m_rotation = glm::vec3(0);
-        app.currentModel->m_scale = glm::vec3(1);
-        app.cuberotation = glm::vec3(0);
-    }
-    ImGui::Separator();
+    // ImGui::Text("model");
+    // ImGui::DragFloat3("model position", &app.currentModel->m_position.x, 0.01f);
+    // ImGui::DragFloat3("rotation", &app.currentModel->m_rotation.x, 0.5f);
+    // ImGui::DragFloat3("scale", &app.currentModel->m_scale.x, 0.01f);
+    // ImGui::InputFloat3("rotation per ms", &app.cuberotation.x);
+    // if (ImGui::Button("reset model"))
+    // {
+    //     app.currentModel->m_position = glm::vec3(0);
+    //     app.currentModel->m_rotation = glm::vec3(0);
+    //     app.currentModel->m_scale = glm::vec3(1);
+    //     app.cuberotation = glm::vec3(0);
+    // }
+    // ImGui::Separator();
     ImGui::Text("light");
     ImGui::DragFloat3("light position / direction", &light.position.x, 0.01f);
     ImGui::ColorEdit3("light ambient", &light.ambient.r);
     ImGui::ColorEdit3("light diffuse", &light.diffuse.r);
     ImGui::ColorEdit3("light specular", &light.specular.r);
+    ImGui::DragFloat("light constant attenuation", &light.constant, 0.01, 0, 50);
+    ImGui::DragFloat("light linear attenuation", &light.linear, 0.01, 0, 50);
+    ImGui::DragFloat("light quadratic attenuation", &light.quadratic, 0.01, 0, 50);
     if (ImGui::Button("reset light"))
     {
         light.position = glm::vec3(2, 1, 3);
         light.ambient = glm::vec3(0.1);
         light.diffuse = glm::vec3(0.5);
         light.specular = glm::vec3(1.0);
+        light.constant = 1.0f;
+        light.linear = 0.14f;
+        light.quadratic = 0.07f;
     }
     ImGui::Separator();
     ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
     ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
     ImGui::DragFloat("camera near plane", &cam.near, 0.001f);
     ImGui::DragFloat("camera far plane", &cam.far, 25.0f);
-    ImGui::InputFloat("camera speed", &cam.cameraSpeed);
+    ImGui::InputFloat("camera speed (unit/s)", &cam.speed);
     ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
     if (ImGui::Button("reset camera"))
     {
@@ -116,7 +122,7 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         cam.fov = 45;
         cam.near = 0.01f;
         cam.far = 1000.0f;
-        cam.cameraSpeed = 1.0f;
+        cam.speed = 7.0f;
         cam.sensitivity = 1.0f;
     }
     ImGui::End();

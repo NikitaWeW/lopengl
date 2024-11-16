@@ -118,24 +118,24 @@ int main()
         glUniform1f (lightingShader.getUniform("u_light.linear"),       light.linear);
         glUniform1f (lightingShader.getUniform("u_light.quadratic"),    light.quadratic);
 
-        if(app.currentModel) {
-            app.currentModel->resetMatrix();
-            app.currentModel->translate(app.currentModel->m_position);
-            app.currentModel->rotate(app.currentModel->m_rotation);
-            app.currentModel->scale(app.currentModel->m_scale);
+        // if(app.currentModel) {
+        //     app.currentModel->resetMatrix();
+        //     app.currentModel->translate(app.currentModel->m_position);
+        //     app.currentModel->rotate(app.currentModel->m_rotation);
+        //     app.currentModel->scale(app.currentModel->m_scale);
 
-            if(app.currentTexture) app.currentTexture->bind();
-            app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
-            if(app.currentTexture) app.currentTexture->unbind();
-        }
-        // for(unsigned int i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
-        //     app.currentModel->resetMatrix();    
-        //     app.currentModel->translate(cubePositions[i] * 2.0f);
-        //     app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
         //     if(app.currentTexture) app.currentTexture->bind();
-        //     app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y);
+        //     app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
         //     if(app.currentTexture) app.currentTexture->unbind();
         // }
+        for(unsigned int i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
+            app.currentModel->resetMatrix();    
+            app.currentModel->translate(cubePositions[i] * 2.0f);
+            app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
+            if(app.currentTexture) app.currentTexture->bind();
+            app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y);
+            if(app.currentTexture) app.currentTexture->unbind();
+        }
         
         lightCube.resetMatrix();
         lightCube.translate(light.position);

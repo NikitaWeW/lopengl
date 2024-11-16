@@ -1,7 +1,6 @@
 #include "ControllableCamera.hpp"
 
 const float sensitivitySlow = 0.05f;
-const float movementSlow = 1.0f;
 
 ControllableCamera::ControllableCamera(GLFWwindow *window, glm::vec3 const &position, glm::vec3 const &rotation) :
     Camera(position, rotation), 
@@ -19,24 +18,24 @@ void ControllableCamera::update(double deltatime) {
 
 void ControllableCamera::processPosition(double deltatime) {
     if(mouseLocked) {
-        float speed = cameraSpeed * (float) deltatime * movementSlow;
+        float cameraspeed = speed * (float) deltatime;
         if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            position += getFront() * speed;
+            position += getFront() * cameraspeed;
         } 
         if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            position -= glm::cross(getFront(), getUp()) * speed;
+            position -= glm::cross(getFront(), getUp()) * cameraspeed;
         } 
         if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            position -= getFront() * speed;
+            position -= getFront() * cameraspeed;
         } 
         if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            position += glm::cross(getFront(), getUp()) * speed;
+            position += glm::cross(getFront(), getUp()) * cameraspeed;
         }
         if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            position += getUp() * speed;
+            position += getUp() * cameraspeed;
         }
         if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            position += -getUp() * speed;
+            position += -getUp() * cameraspeed;
         }
     }
 }
