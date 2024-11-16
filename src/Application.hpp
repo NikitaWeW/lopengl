@@ -31,10 +31,10 @@ public:
     char loadTextureBuffer[1024];
 
     bool wireframe = false;
-    bool moveLight = true;
-    glm::vec3 lightPosBegin = glm::vec3{-1, 1, 1.5f};
-    glm::vec3 lightPosEnd = glm::vec3{1.5f, -1, 3};
-    float lightSpeed = 0.005f;
+    // bool moveLight = true;
+    // glm::vec3 lightPosBegin = glm::vec3{-1, 1, 1.5f};
+    // glm::vec3 lightPosEnd = glm::vec3{1.5f, -1, 3};
+    // float lightSpeed = 0.005f;
 
     Application();
     ~Application();

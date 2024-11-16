@@ -36,22 +36,28 @@ extern const bool debug = true;
 void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, Light &light);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-float easeInOutSine(float x) {
-    return -(cos(3.14 * x) - 1) / 2;
-}
-
-glm::vec3 interpolate(float n, glm::vec3 begin, glm::vec3 end, float (*easingfun)(float)) {
-    return begin + easingfun(n) * (end - begin);
-}
 
 int main()
 {
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f, 0.0f, 0.0f),
+        glm::vec3( 2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f, 2.0f, -2.5f),
+        glm::vec3( 1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)
+    };
     printf("loading...\n"); // TODO: cool console progress bar
     Application app;
     GLFWwindow *window = app.window;
     Shader lightingShader("shaders/lighting.glsl");
     Shader lightCubeShader("shaders/lightcube.glsl");
     Model lightCube("res/models/cube.obj");
+    Model container{"H:/me/dev/learning-opengl/res/models/Crate/Crate1.3ds"};
     Light light {
         .position= glm::vec3{2, 1, 3},
         .ambient = glm::vec3{0.1f},
@@ -87,9 +93,6 @@ int main()
     std::thread updateThread([&, window]() {
         while(!glfwWindowShouldClose(window)) {
             app.currentModel->m_rotation += app.cuberotation;
-            if(app.moveLight) {
-                light.position = interpolate(app.updateCounter * app.lightSpeed, app.lightPosBegin, app.lightPosEnd, easeInOutSine);
-            }
             camera.update(0.1);
             ++app.updateCounter;
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -104,22 +107,30 @@ int main()
         glClearColor(app.clearColor.x, app.clearColor.y, app.clearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        lightingShader.bind();
+        glUniform3fv(lightingShader.getUniform("u_light.position"), 1, &light.position.x);
+        glUniform3fv(lightingShader.getUniform("u_light.direction"), 1, &light.position.x);
+        glUniform3fv(lightingShader.getUniform("u_light.ambient"),  1, &light.ambient.r);
+        glUniform3fv(lightingShader.getUniform("u_light.diffuse"),  1, &light.diffuse.r);
+        glUniform3fv(lightingShader.getUniform("u_light.specular"), 1, &light.specular.r);
+        glUniform3fv(lightingShader.getUniform("u_viewPos"), 1, &camera.position.x);
 
-        if(app.currentModel) {
-            app.currentModel->resetMatrix();
-            app.currentModel->translate(app.currentModel->m_position);
-            app.currentModel->rotate(app.currentModel->m_rotation);
-            app.currentModel->scale(app.currentModel->m_scale);
+        // if(app.currentModel) {
+        //     app.currentModel->resetMatrix();
+        //     app.currentModel->translate(app.currentModel->m_position);
+        //     app.currentModel->rotate(app.currentModel->m_rotation);
+        //     app.currentModel->scale(app.currentModel->m_scale);
 
-            lightingShader.bind();
-            if(lightingShader.getUniform("u_light.position") != -1) glUniform3fv(lightingShader.getUniform("u_light.position"), 1, &light.position.x);
-            if(lightingShader.getUniform("u_light.ambient") != -1)  glUniform3fv(lightingShader.getUniform("u_light.ambient"),  1, &light.ambient.r);
-            if(lightingShader.getUniform("u_light.diffuse") != -1)  glUniform3fv(lightingShader.getUniform("u_light.diffuse"),  1, &light.diffuse.r);
-            if(lightingShader.getUniform("u_light.specular") != -1) glUniform3fv(lightingShader.getUniform("u_light.specular"), 1, &light.specular.r);
-            glUniform3fv(lightingShader.getUniform("u_viewPos"), 1, &camera.position.x);
-
+        //     if(app.currentTexture) app.currentTexture->bind();
+        //     app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
+        //     if(app.currentTexture) app.currentTexture->unbind();
+        // }
+        for(unsigned int i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
+            app.currentModel->resetMatrix();    
+            app.currentModel->translate(cubePositions[i] * 2.0f);
+            app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
             if(app.currentTexture) app.currentTexture->bind();
-            app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
+            app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y);
             if(app.currentTexture) app.currentTexture->unbind();
         }
         
