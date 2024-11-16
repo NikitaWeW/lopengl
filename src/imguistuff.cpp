@@ -77,19 +77,19 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         app.addTexture(app.loadTextureBuffer);
     }
     ImGui::Separator();
-    // ImGui::Text("model");
-    // ImGui::DragFloat3("model position", &app.currentModel->m_position.x, 0.01f);
-    // ImGui::DragFloat3("rotation", &app.currentModel->m_rotation.x, 0.5f);
-    // ImGui::DragFloat3("scale", &app.currentModel->m_scale.x, 0.01f);
-    // ImGui::InputFloat3("rotation per ms", &app.cuberotation.x);
-    // if (ImGui::Button("reset model"))
-    // {
-    //     app.currentModel->m_position = glm::vec3(0);
-    //     app.currentModel->m_rotation = glm::vec3(0);
-    //     app.currentModel->m_scale = glm::vec3(1);
-    //     app.cuberotation = glm::vec3(0);
-    // }
-    // ImGui::Separator();
+    ImGui::Text("model");
+    ImGui::DragFloat3("model position", &app.currentModel->m_position.x, 0.01f);
+    ImGui::DragFloat3("rotation", &app.currentModel->m_rotation.x, 0.5f);
+    ImGui::DragFloat3("scale", &app.currentModel->m_scale.x, 0.01f);
+    ImGui::InputFloat3("rotation per ms", &app.cuberotation.x);
+    if (ImGui::Button("reset model"))
+    {
+        app.currentModel->m_position = glm::vec3(0);
+        app.currentModel->m_rotation = glm::vec3(0);
+        app.currentModel->m_scale = glm::vec3(1);
+        app.cuberotation = glm::vec3(0);
+    }
+    ImGui::Separator();
     ImGui::Text("light");
     ImGui::DragFloat3("light position / direction", &light.position.x, 0.01f);
     ImGui::ColorEdit3("light ambient", &light.ambient.r);

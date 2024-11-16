@@ -30,9 +30,16 @@ struct Material {
 };
 struct PointLight {
     vec3 position;
+
+// colors
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+// attenuation
+    float constant;
+    float linear;
+    float quadratic;
 };
 struct DirectionalLight {
     vec3 direction;
@@ -49,7 +56,7 @@ in vec3 fragPosition;
 
 uniform vec3 u_viewPos;
 uniform Material u_material;
-uniform DirectionalLight u_light;
+uniform PointLight u_light;
 
 vec3 processLight(PointLight light);
 vec3 processLight(DirectionalLight light);
@@ -72,13 +79,19 @@ vec3 processLight(PointLight light)
     vec3 lightDir = normalize(light.position - fragPosition);
     vec3 viewDir = normalize(u_viewPos - fragPosition);
     vec3 reflectDir = reflect(-lightDir, norm);
+    float distanceLightFragment = length(light.position - fragPosition);
+    float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
-    vec3 ambient = light.ambient;
+    vec3 ambient = 
+        light.ambient * 
+        attenuation;
     vec3 diffuse = 
         light.diffuse * 
+        attenuation *
         vec3(max(dot(norm, lightDir), 0.0));
     vec3 specular = 
         light.specular * 
+        attenuation *
         pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
         (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
     return ambient + diffuse + specular;
