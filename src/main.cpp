@@ -57,7 +57,6 @@ int main()
     Shader lightingShader("shaders/lighting.glsl");
     Shader lightCubeShader("shaders/lightcube.glsl");
     Model lightCube("res/models/cube.obj");
-    Model container{"H:/me/dev/learning-opengl/res/models/Crate/Crate1.3ds"};
     Light light {
         .position= glm::vec3{2, 1, 3},
         .ambient = glm::vec3{0.1f},

@@ -10,9 +10,12 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 project(learning-opengl C CXX)
 set(GLAD_API "gl:core=4.3")
 set(IMGUI_BACKEND_SOURCES imgui_impl_opengl3.cpp imgui_impl_glfw.cpp)
+
+set(ASSIMP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include)
 if(WIN32) # we dont want to spend time building big library
-    set(ASSIMP_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/lib/libassimp.dll.a)
-    set(ASSIMP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include)
+    set(ASSIMP_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/win/lib/libassimp.dll.a)
+elseif(UNIX AND NOT APPLE)
+    set(ASSIMP_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/linux/libassimp.so)
 endif()
 set(DEPS OpenGL GLFW Logger GLM imgui STB assimp)
 
@@ -27,7 +30,8 @@ target_include_directories(main PRIVATE "src")
 add_custom_command(
     TARGET main
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/bin/libassimp-5.dll ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/win/bin/libassimp-5.dll ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/linux/libassimp.so      ${CMAKE_BINARY_DIR}
 )
 
 message(STATUS "Sources: ")
