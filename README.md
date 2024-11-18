@@ -1,5 +1,7 @@
-# idontknowhowtocallitsorry
-that is setup for graphic programming / learning projectthat i use. dont expect it to work. lol.
+# learning opengl 
+thats me learning opengl. 
+
+dont expect it to work. lol.
 
 # building
 uses cmake:
