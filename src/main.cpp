@@ -63,8 +63,15 @@ int main()
         .diffuse = glm::vec3{0.5f},
         .specular= glm::vec3{1.0f}
     };
-    VertexBufferLayout layout;
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
+    SpotLight flashlight {
+        .position= camera.position,
+        .direction=camera.getFront(),
+        .ambient = glm::vec3{0.1f},
+        .diffuse = glm::vec3{0.5f},
+        .specular= glm::vec3{1.0f}
+    };
+    VertexBufferLayout layout;
     std::vector<Shader *> shaders;
     shaders.push_back(&lightingShader);
     shaders.push_back(&lightCubeShader);
@@ -101,21 +108,26 @@ int main()
     {
         auto start = std::chrono::high_resolution_clock::now();
         camera.update(app.deltatime);
+        flashlight.position= camera.position;
+        flashlight.direction=camera.getFront();
         glfwGetWindowSize(window, &app.windowSize.x, &app.windowSize.y);
 
         glClearColor(app.clearColor.x, app.clearColor.y, app.clearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         lightingShader.bind();
+
         glUniform3fv(lightingShader.getUniform("u_viewPos"),        1, &camera.position.x);
-        glUniform3fv(lightingShader.getUniform("u_light.position"), 1, &light.position.x);
-        glUniform3fv(lightingShader.getUniform("u_light.direction"),1, &light.position.x);
-        glUniform3fv(lightingShader.getUniform("u_light.ambient"),  1, &light.ambient.r);
-        glUniform3fv(lightingShader.getUniform("u_light.diffuse"),  1, &light.diffuse.r);
-        glUniform3fv(lightingShader.getUniform("u_light.specular"), 1, &light.specular.r);
-        glUniform1f (lightingShader.getUniform("u_light.constant"),     light.constant);
-        glUniform1f (lightingShader.getUniform("u_light.linear"),       light.linear);
-        glUniform1f (lightingShader.getUniform("u_light.quadratic"),    light.quadratic);
+        glUniform3fv(lightingShader.getUniform("u_light.position"), 1, &flashlight.position.x);
+        glUniform3fv(lightingShader.getUniform("u_light.direction"),1, &flashlight.direction.x);
+        glUniform1f (lightingShader.getUniform("u_light.innerCutoff"),  flashlight.innerCutoff);
+        glUniform1f (lightingShader.getUniform("u_light.outerCutoff"),  flashlight.outerCutoff);
+        glUniform3fv(lightingShader.getUniform("u_light.ambient"),  1, &flashlight.ambient.r);
+        glUniform3fv(lightingShader.getUniform("u_light.diffuse"),  1, &flashlight.diffuse.r);
+        glUniform3fv(lightingShader.getUniform("u_light.specular"), 1, &flashlight.specular.r);
+        glUniform1f (lightingShader.getUniform("u_light.constant"),     flashlight.constant);
+        glUniform1f (lightingShader.getUniform("u_light.linear"),       flashlight.linear);
+        glUniform1f (lightingShader.getUniform("u_light.quadratic"),    flashlight.quadratic);
 
         // if(app.currentModel) {
         //     app.currentModel->resetMatrix();

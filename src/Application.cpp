@@ -151,6 +151,7 @@ Application::Application() {
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(GLDebugMessageCallback, nullptr);
     strcpy(loadModelBuffer, "");
+    strcpy(loadTextureBuffer, "");
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");
