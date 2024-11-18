@@ -1,4 +1,5 @@
 # This line will be changed if reconfiguration is required: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ligula.  
+# TODO: try CPM.
 
 include(CMakePrintHelpers)
 cmake_minimum_required(VERSION 3.5)
