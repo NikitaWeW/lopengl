@@ -33,7 +33,7 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, Light &light);
+void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -54,35 +54,35 @@ int main()
     printf("loading...\n"); // TODO: cool console progress bar
     Application app;
     GLFWwindow *window = app.window;
-    Shader lightingShader("shaders/lighting.glsl");
-    Shader lightCubeShader("shaders/lightcube.glsl");
+    Shader lightingShader("shaders/lighting.glsl", true);
+    Shader lightCubeShader("shaders/lightcube.glsl", true);
     Model lightCube("res/models/cube.obj");
-    Light light {
-        .position= glm::vec3{2, 1, 3},
-        .ambient = glm::vec3{0.1f},
-        .diffuse = glm::vec3{0.5f},
-        .specular= glm::vec3{1.0f}
-    };
+    PointLight light;
+        light.position= glm::vec3{2, 1, 3};
+        light.ambient = glm::vec3{0.1f};
+        light.diffuse = glm::vec3{0.5f};
+        light.specular= glm::vec3{1.0f};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
-    SpotLight flashlight {
-        .position= camera.position,
-        .direction=camera.getFront(),
-        .ambient = glm::vec3{0.1f},
-        .diffuse = glm::vec3{0.5f},
-        .specular= glm::vec3{1.0f}
-    };
+    SpotLight flashlight;
+        flashlight.position= camera.position;
+        flashlight.direction=camera.getFront();
+        flashlight.ambient = glm::vec3{0.1f};
+        flashlight.diffuse = glm::vec3{0.5f};
+        flashlight.specular= glm::vec3{1.0f};
     VertexBufferLayout layout;
-    std::vector<Shader *> shaders;
-    shaders.push_back(&lightingShader);
-    shaders.push_back(&lightCubeShader);
+    std::vector<Shader *> shaders {
+        &lightingShader,
+        &lightCubeShader
+    }; // for shader reloading. on reload contents will be recompiled, if fails failed shader will be restored.
+    Renderer renderer;
+    renderer.getLights().push_back(&flashlight);
+    renderer.getLights().push_back(&light);
 
-    app.addModel("res/models/Crate/Crate1.3ds");
-    app.addModel("res/models/backpack/backpack.obj");
-    app.addModel("res/models/cube.obj");
-    app.addTexture("res/textures/tile.png");
-    app.addTexture("res/textures/white.png");
-    app.currentModel = &app.models[1];
-    app.cuberotation = glm::vec3{0};
+    app.addModel("res/models/cube.obj", true);
+    app.addModel("res/models/backpack/backpack.obj", false);
+    app.addTexture("res/textures/tile.png", true);
+    app.addTexture("res/textures/white.png", true);
+    app.currentModel = &app.models[0];
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -94,57 +94,25 @@ int main()
     glfwSetKeyCallback(window, key_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    printf("loaded!\n");
-
-    std::thread updateThread([&, window]() {
-        while(!glfwWindowShouldClose(window)) {
-            app.currentModel->m_rotation += app.cuberotation;
-            ++app.updateCounter;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    });
+    LOG_INFO("loaded!");
 
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
         camera.update(app.deltatime);
-        flashlight.position= camera.position;
-        flashlight.direction=camera.getFront();
-        glfwGetWindowSize(window, &app.windowSize.x, &app.windowSize.y);
+        flashlight.position  = camera.position;
+        flashlight.direction = camera.getFront();
+        glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
 
         glClearColor(app.clearColor.x, app.clearColor.y, app.clearColor.z, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        lightingShader.bind();
-
-        glUniform3fv(lightingShader.getUniform("u_viewPos"),        1, &camera.position.x);
-        glUniform3fv(lightingShader.getUniform("u_light.position"), 1, &flashlight.position.x);
-        glUniform3fv(lightingShader.getUniform("u_light.direction"),1, &flashlight.direction.x);
-        glUniform1f (lightingShader.getUniform("u_light.innerCutoff"),  flashlight.innerCutoff);
-        glUniform1f (lightingShader.getUniform("u_light.outerCutoff"),  flashlight.outerCutoff);
-        glUniform3fv(lightingShader.getUniform("u_light.ambient"),  1, &flashlight.ambient.r);
-        glUniform3fv(lightingShader.getUniform("u_light.diffuse"),  1, &flashlight.diffuse.r);
-        glUniform3fv(lightingShader.getUniform("u_light.specular"), 1, &flashlight.specular.r);
-        glUniform1f (lightingShader.getUniform("u_light.constant"),     flashlight.constant);
-        glUniform1f (lightingShader.getUniform("u_light.linear"),       flashlight.linear);
-        glUniform1f (lightingShader.getUniform("u_light.quadratic"),    flashlight.quadratic);
-
-        // if(app.currentModel) {
-        //     app.currentModel->resetMatrix();
-        //     app.currentModel->translate(app.currentModel->m_position);
-        //     app.currentModel->rotate(app.currentModel->m_rotation);
-        //     app.currentModel->scale(app.currentModel->m_scale);
-
-        //     if(app.currentTexture) app.currentTexture->bind();
-        //     app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y); 
-        //     if(app.currentTexture) app.currentTexture->unbind();
-        // }
-        for(unsigned int i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
+        for(unsigned i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
             app.currentModel->resetMatrix();    
             app.currentModel->translate(cubePositions[i] * 2.0f);
             app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
             if(app.currentTexture) app.currentTexture->bind();
-            app.currentModel->draw(lightingShader, camera, app.windowSize.x, app.windowSize.y);
+            renderer.draw(*app.currentModel, lightingShader, camera);
             if(app.currentTexture) app.currentTexture->unbind();
         }
         
@@ -152,9 +120,7 @@ int main()
         lightCube.translate(light.position);
         lightCube.scale(glm::vec3{0.0625});
 
-        lightCubeShader.bind();
-        lightCube.draw(lightCubeShader, camera, app.windowSize.x, app.windowSize.y);
-        lightCubeShader.unbind();
+        renderer.draw(lightCube, lightCubeShader, camera);
 
         imguistuff(app, camera, shaders, light);
 
@@ -163,7 +129,6 @@ int main()
         ++app.frameCounter;
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
-    updateThread.join();
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)

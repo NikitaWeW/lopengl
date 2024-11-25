@@ -2,17 +2,16 @@
 #version 430 core
 layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec2 a_texCoord;
-// layout(location = 2) in float a_texIndex;
 
 out vec2 v_texCoord;
-// out float v_texIndex;
 
-uniform mat4 u_MVP;
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
 
 void main() {
-    gl_Position = u_MVP * a_position;
+    gl_Position = u_projection * u_view * u_model * a_position;
     v_texCoord = a_texCoord;
-    // v_texIndex = a_texIndex;
 }
 
 #shader fragment
@@ -20,7 +19,6 @@ void main() {
 out vec4 color;
 
 in vec2 v_texCoord;
-// flat in float v_texIndex;
 
 uniform sampler2D texture_diffuse0;
 

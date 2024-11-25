@@ -115,7 +115,28 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
 }
-Application::Application() {
+void Application::loadModel(char const *filepath)
+{
+    std::string newFilepath{filepath};
+    std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
+    LOG_INFO("loading model \"%s\"...", filepath);
+    Model model{newFilepath};
+    LOG_INFO("model loaded!");
+    models.push_back(std::move(model));
+    currentModel = &*models.rbegin();
+    currentModelIndex = models.size() - 1;
+}
+void Application::loadTexture(char const *filepath)
+{
+    LOG_INFO("loading texture \"%s\"...", filepath);
+    Texture texture{filepath};
+    LOG_INFO("texture loaded!");
+    textures.push_back(texture);
+    currentTexture = &*textures.rbegin(); 
+    currentTextureIndex = models.size() - 1;
+}
+Application::Application()
+{
     logger_initConsoleLogger(stdout);
     logger_setLevel(debug ? LogLevel_DEBUG : LogLevel_INFO);
     if (!glfwInit()) {
@@ -125,8 +146,12 @@ Application::Application() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    window = glfwCreateWindow(640, 480, "opengl", nullptr, nullptr);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+
+    GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    window = glfwCreateWindow(mode->width * 0.7, mode->height * 0.9, "opengl", nullptr, nullptr);
+
     if (!window) {
         LOG_FATAL("failed to initialise window.");
         throw std::runtime_error("failed to initialise");
@@ -152,6 +177,7 @@ Application::Application() {
     glDebugMessageCallback(GLDebugMessageCallback, nullptr);
     strcpy(loadModelBuffer, "");
     strcpy(loadTextureBuffer, "");
+    LOG_DEBUG("running in debug mode!");
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");
@@ -159,32 +185,44 @@ Application::~Application() {
     glfwTerminate();
 }
 
-void Application::addModel(char const * filepath)
+void Application::addModel(char const * filepath, bool loadNow)
 {
     try {
-        LOG_INFO("loading model \"%s\"...", filepath);
-        std::string newFilepath{filepath};
-        std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
-        Model model{newFilepath};
-        models.push_back(std::move(model));
-        currentModel = nullptr;
+        if(loadNow) {
+            loadModel(filepath);
+        }
         modelNames.push_back({filepath});
-        LOG_INFO("model loaded!");
     } catch(std::runtime_error &e) {
         LOG_ERROR("%s", e.what());
     }
 }
-
-void Application::addTexture(char const * filepath)
+void Application::addTexture(char const * filepath, bool loadNow)
 {
     try {
-        LOG_INFO("loading texture \"%s\"...", filepath);
-        Texture texture{filepath};
-        textures.push_back(texture);
-        currentTexture = &textures[0]; 
+        if(loadNow) {
+            loadTexture(filepath);
+        }
         textureNames.push_back({filepath});
-        LOG_INFO("texture loaded!");
     } catch(std::runtime_error &e) {
-        LOG_ERROR("%s", e.what());
+        LOG_ERROR("failed to add texture: %s", e.what());
+    }
+}
+
+void Application::applyModel()
+{
+    auto model = std::find_if(models.begin(), models.end(), [this](Model const &model){ return model.getFilepath() == modelNames.at(currentModelIndex); });
+    if(model == models.end()) {
+        loadModel(modelNames.at(currentModelIndex).c_str());
+    } else {
+        currentModel = &*model;
+    }
+}
+void Application::applyTexture()
+{
+    auto texture = std::find_if(textures.begin(), textures.end(), [this](Texture const &texture){ return texture.getFilePath() == textureNames.at(currentModelIndex); });
+    if(texture == textures.end()) {
+        loadModel(textureNames.at(currentModelIndex).c_str());
+    } else {
+        currentTexture = &*texture;
     }
 }

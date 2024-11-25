@@ -11,7 +11,7 @@ impliment big imgui code here
 #include "utils/Light.hpp"
 #include "logger.h"
 
-void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, Light &light)
+void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
@@ -21,29 +21,34 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
     ImGui::Text("delta time: %f", app.deltatime);
     ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
     ImGui::Separator();
-    if(ImGui::Button("recompile shaders")) {
+    static Shader *failedShaderTemp = nullptr;
+    if(ImGui::Button("reload shaders")) {
         for(Shader *shader : shaders) {
             Shader copy = *shader;
             LOG_INFO("recompiling %s...", shader->getFilePath().c_str());
             if(!shader->ParceShaderFile(shader->getFilePath())) {
                 shader->swap(std::forward<Shader>(copy));
-                continue;
+                failedShaderTemp = shader;
+                ImGui::OpenPopup("failed to reload shaders!");
+                break;
             };
+            LOG_INFO("linking %s...", shader->getFilePath().c_str());
             if(!shader->CompileShaders()) {
                 shader->swap(std::forward<Shader>(copy));
-                continue;
+                failedShaderTemp = shader;
+                ImGui::OpenPopup("failed to reload shaders!");
+                break;
             }
         }
-        LOG_INFO("done.");
+        if(failedShaderTemp)
+            LOG_ERROR("failed to reload!");
+        else
+            LOG_INFO("done reloading.");
     }
     ImGui::Separator();
     if(ImGui::Checkbox("wireframe", &app.wireframe)) {
         glPolygonMode(GL_FRONT_AND_BACK, app.wireframe ? GL_LINE : GL_FILL);
     }
-    // ImGui::Checkbox("move light", &app.moveLight);
-    // ImGui::DragFloat3("light position begin", &app.lightPosBegin.x, 0.01f);
-    // ImGui::DragFloat3("light position end", &app.lightPosEnd.x, 0.01f);
-    // ImGui::InputFloat("light speed", &app.lightSpeed);
     ImGui::ColorEdit4("clear color", &app.clearColor.x);
     ImGui::Separator();
     if(app.currentModel) {
@@ -57,7 +62,7 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         std::vector<const char *> modelCNames;
         for(std::string &name : app.modelNames) modelCNames.push_back(name.c_str());
         if(ImGui::ListBox("loaded models", &app.currentModelIndex, modelCNames.data(), modelCNames.size())) {
-             app.currentModel = &app.models.at(app.currentModelIndex);
+            app.applyModel();
         }
     }
     ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
@@ -69,7 +74,7 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         std::vector<const char *> textureCNames;
         for(std::string const &name : app.textureNames) textureCNames.push_back(name.c_str());
         if(ImGui::ListBox("loaded textures", &app.currentTextureIndex, textureCNames.data(), textureCNames.size())) {
-            app.currentTexture = &app.textures[app.currentTextureIndex];
+            app.applyTexture();
         }
     }
     ImGui::InputText("texture path", app.loadTextureBuffer, sizeof(app.loadTextureBuffer));
@@ -125,7 +130,21 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         cam.speed = 7.0f;
         cam.sensitivity = 1.0f;
     }
+    if(ImGui::BeginPopup("failed to reload shaders!")) {
+        if(failedShaderTemp) {
+            ImGui::Text("shader name: %s", failedShaderTemp->getFilePath().c_str());
+            ImGui::Separator();
+            ImGui::TextWrapped(failedShaderTemp->getLog().c_str());
+            ImGui::Separator();
+        } else {
+            ImGui::Text("no informaion :(");
+        }
+        ImGui::EndPopup();
+    } else {
+        failedShaderTemp = nullptr;
+    }
     ImGui::End();
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

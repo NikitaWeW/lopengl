@@ -24,6 +24,7 @@ Texture::Texture(std::string const &filepath, bool flip) :
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_Buffer);
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(m_Buffer);
+    m_managing = true;
 }
 
 Texture::Texture(Texture const &other) {
@@ -64,7 +65,7 @@ Texture::~Texture() {
 }
 
 void Texture::bind(unsigned slot) const {
-    if(m_RenderID) {
+    {
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, m_RenderID);
     }

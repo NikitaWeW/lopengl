@@ -3,10 +3,11 @@
 
 #include "VertexBuffer.hpp"
 #include "VertexArray.hpp"
-#include "Renderer.hpp"
+#include "glType.hpp"
 
 VertexArray::VertexArray() {
     glGenVertexArrays(1, &m_RenderID);
+    m_managing = true;
 }
 VertexArray::VertexArray(VertexArray const &other) {
     copy(other);
@@ -33,7 +34,7 @@ VertexArray::~VertexArray()
     m_RenderID = 0;
 }
 void VertexArray::bind() const {
-    if(m_RenderID) {
+    {
         glBindVertexArray(m_RenderID);
     }
 }

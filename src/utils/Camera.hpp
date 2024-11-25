@@ -15,12 +15,14 @@ public:
     float far = 1000;
     float near = 0.01f;
     float fov;
+    int windowWidthPx = -1; 
+    int windowHeightPx = -1;
 public:
     Camera(glm::vec3 const &pos = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
     virtual ~Camera();
     virtual void update();
     virtual glm::mat4 getViewMatrix() const;
-    virtual glm::mat4 getProjectionMatrix(int const windowWidth, int const windowHeight) const;
+    virtual glm::mat4 getProjectionMatrix() const;
     virtual inline glm::vec3 getFront() const {
         return front;
     }

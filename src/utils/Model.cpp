@@ -78,59 +78,8 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     mesh.va.bind();
     mesh.vb = VertexBuffer{mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
     mesh.ib = IndexBuffer {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
-    mesh.va.addBuffer(mesh.vb, m_meshLayout);
+    mesh.va.addBuffer(mesh.vb, getVertexLayout());
     return mesh;
-}
-
-void Model::draw(Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const {
-    shader.bind();
-    for(Mesh const &mesh : m_meshes) {
-        mesh.va.bind();
-        mesh.ib.bind();
-        std::vector<unsigned> texturesToUnbind; // wanna unbind textuers after render
-        if(mesh.textures.size() == 0) {
-            glUniform1i(shader.getUniform("u_material.diffuse"), 0);
-            Texture::unbindStatic(1);
-            glUniform1i(shader.getUniform("u_material.specular"), 1);
-        } else {
-            unsigned int textureCount = 1; // leave 0 for other purposes
-            bool specularSet = false;
-            for(Texture const &texture : mesh.textures) {
-                unsigned location = shader.getUniform("u_material." + texture.type);
-                if(location != -1) {
-                    glUniform1i(location, textureCount);
-                    texture.bind(textureCount);
-                    texturesToUnbind.push_back(textureCount);
-                    ++textureCount;
-                }
-                if(texture.type == "specular") {
-                    specularSet = true;
-                }
-            }
-            if(!specularSet) {
-                Texture::unbindStatic(0);
-                glUniform1i(shader.getUniform("u_material.specular"), 0);
-            }
-        }
-        glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);
-        glm::mat4 normalMat = glm::transpose(glm::inverse(m_modelMat));
-        glUniformMatrix4fv(shader.getUniform("u_model"),     1, GL_FALSE, &m_modelMat[0][0]);
-        glUniformMatrix4fv(shader.getUniform("u_view"),      1, GL_FALSE, &viewMat[0][0]);
-        glUniformMatrix4fv(shader.getUniform("u_projection"),1, GL_FALSE, &projectionMat[0][0]);
-        glUniformMatrix4fv(shader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
-        glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        mesh.va.unbind();
-        mesh.ib.unbind();
-        for(unsigned slot : texturesToUnbind) {
-            Texture::unbindStatic(slot);
-        }
-    }
-    glActiveTexture(GL_TEXTURE0);
-}
-
-void Model::draw(Shader const &shader, Camera const &camera, int const windowWidth, int const windowHeight) const
-{
-    draw(shader, camera.getViewMatrix(), camera.getProjectionMatrix(windowWidth, windowHeight));
 }
 
 Model::Model(std::string const &filepath) : m_filepath(filepath)
@@ -148,7 +97,6 @@ Model::Model(std::string const &filepath) : m_filepath(filepath)
         throw std::runtime_error("failed to import model!");
     } 
     m_directory = filepath.substr(0, filepath.find_last_of('/'));
-    m_meshLayout = getVertexLayout();
     processNode(m_scene->mRootNode);
 }
 Model::~Model()

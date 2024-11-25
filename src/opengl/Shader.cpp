@@ -44,15 +44,27 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
     return true;
 }
 Shader::Shader() = default;
-Shader::Shader(std::string const & filepath) : m_filepath(filepath) {
-    if(!ParceShaderFile(filepath)) throw std::runtime_error("failed to parce shaders!");
-    if(!CompileShaders()) throw std::logic_error("failed to compile shaders!");
+Shader::Shader(std::string const &filepath, bool showLog) : m_filepath(filepath)
+{
+    if(!ParceShaderFile(filepath)) {
+        if(showLog) {
+            LOG_ERROR("shader name: %s\n%s", m_filepath.c_str(), m_log.c_str());
+        }
+        throw std::runtime_error("failed to parce shaders!");
+    }
+    if(!CompileShaders()) {
+        if(showLog) {
+            LOG_ERROR("shader name: %s\n%s", m_filepath.c_str(), m_log.c_str());
+        }
+        throw std::logic_error("failed to compile shaders!");
+    }
+    m_managing = true;
 }
 Shader::~Shader() {
     if(m_managing) {
-        if(VertexShaderID) glDeleteShader(VertexShaderID);
-        if(FragmentShaderID) glDeleteShader(FragmentShaderID);
-        if(ShaderProgramID) glDeleteProgram(ShaderProgramID);
+        glDeleteShader(VertexShaderID);
+        glDeleteShader(FragmentShaderID);
+        glDeleteProgram(ShaderProgramID);
     }
 }
 Shader::Shader(Shader const &other) {
@@ -94,6 +106,7 @@ bool Shader::ParceShaderFile(std::string const &filepath)
     std::ifstream fileStream(filepath, std::ios::in);
     if(!fileStream) {
         LOG_ERROR("failed to open %s", filepath);
+        m_log = "failed to open " + filepath;
         return false;
     }
     std::array<std::stringstream, 2> shaderSourceStreams;
@@ -123,22 +136,21 @@ bool Shader::ParceShaderFile(std::string const &filepath)
 }
 bool Shader::CompileShaders() {
     if(m_managing) {
-        if(VertexShaderID) glDeleteShader(VertexShaderID);
-        if(FragmentShaderID) glDeleteShader(FragmentShaderID);
-        if(ShaderProgramID) glDeleteProgram(ShaderProgramID);
+        glDeleteShader(VertexShaderID);
+        glDeleteShader(FragmentShaderID);
+        glDeleteProgram(ShaderProgramID);
     }
     m_UniformLocationCache.erase(m_UniformLocationCache.begin(), m_UniformLocationCache.end());
-    std::string log;
-    if(!compileShader(VertexShaderID, VertexShaderSource.c_str(), GL_VERTEX_SHADER, log)) {
-        LOG_ERROR("failed to compile vertex shader! log:\n%s", log.c_str());
+    if(!compileShader(VertexShaderID, VertexShaderSource.c_str(), GL_VERTEX_SHADER, m_log)) {
+        m_log.insert(0, "failed to compile vertex shader\n");
         return false;
     }
-    if(!compileShader(FragmentShaderID, FragmentShaderSource.c_str(), GL_FRAGMENT_SHADER, log)) {
-        LOG_ERROR("failed to compile fragment shader! log:\n%s", log.c_str());
+    if(!compileShader(FragmentShaderID, FragmentShaderSource.c_str(), GL_FRAGMENT_SHADER, m_log)) {
+        m_log.insert(0, "failed to compile fragment shader\n");
         return false;
     }
-    if(!linkProgram(ShaderProgramID, VertexShaderID, FragmentShaderID, log)) {
-        LOG_ERROR("failed to link shader program! log:\n%s", log.c_str());
+    if(!linkProgram(ShaderProgramID, VertexShaderID, FragmentShaderID, m_log)) {
+        m_log.insert(0, "failed to link shader program\n");
         return false;
     }
     return true;

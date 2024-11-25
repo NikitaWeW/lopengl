@@ -1,7 +1,7 @@
 #include "glad/gl.h"
 
 #include "VertexBuffer.hpp"
-#include "Renderer.hpp"
+#include "glType.hpp"
 
 VertexBufferLayout::VertexBufferLayout() : m_stride(0) {}
 VertexBufferLayout::~VertexBufferLayout() = default;
@@ -14,6 +14,7 @@ VertexBuffer::VertexBuffer(const void *data, size_t size) {
     glGenBuffers(1, &m_RenderID);
     glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+    m_managing = true;
 }
 VertexBuffer::VertexBuffer() = default;
 VertexBuffer::~VertexBuffer()
@@ -42,7 +43,7 @@ void VertexBuffer::swap(VertexBuffer &&other) {
 }
 void VertexBuffer::bind() const
 {
-    if(m_RenderID) glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
+    glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
 }
 void VertexBuffer::unbind() const {
     glBindBuffer(GL_ARRAY_BUFFER, 0);

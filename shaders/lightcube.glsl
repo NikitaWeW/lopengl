@@ -2,12 +2,12 @@
 #version 430 core
 layout(location = 0) in vec4 a_position;
 
-uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_projection;
+uniform mat4 u_modelMat;
+uniform mat4 u_viewMat;
+uniform mat4 u_projectionMat;
 
 void main() {
-    gl_Position = u_projection * u_view * u_model * a_position;
+    gl_Position = u_projectionMat * u_viewMat * u_modelMat * a_position;
 }
 
 #shader fragment

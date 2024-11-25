@@ -6,6 +6,7 @@ IndexBuffer::IndexBuffer(const GLuint *data, size_t size) : m_size(size) {
     glGenBuffers(1, &m_RenderID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+    m_managing = true;
 }
 IndexBuffer::IndexBuffer() = default;
 IndexBuffer::~IndexBuffer()
@@ -35,7 +36,7 @@ void IndexBuffer::swap(IndexBuffer &&other) {
     std::swap(m_size, other.m_size);
 }
 void IndexBuffer::bind() const {
-    if(m_RenderID) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
 }
 void IndexBuffer::unbind() const {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

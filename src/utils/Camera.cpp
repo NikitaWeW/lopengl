@@ -22,11 +22,12 @@ glm::mat4 Camera::getViewMatrix() const
     return glm::lookAt(position, position + front, up);
 }
 
-glm::mat4 Camera::getProjectionMatrix(int const windowWidth, int const windowHeight) const
+glm::mat4 Camera::getProjectionMatrix() const
 {
-    auto key = std::make_tuple(windowWidth, windowHeight, fov, near, far);
+    if(!windowWidthPx && !windowHeightPx) return glm::mat4{};
+    auto key = std::make_tuple(windowWidthPx, windowHeightPx, fov, near, far);
     if(m_ProjectionMatrixCache.find(key) != m_ProjectionMatrixCache.end()) return m_ProjectionMatrixCache[key];
-    glm::mat4 matrix(glm::perspective(glm::radians(fov), (float) windowWidth / windowHeight, near, far));
+    glm::mat4 matrix(glm::perspective(glm::radians(fov), (float) windowWidthPx / windowHeightPx, near, far));
     m_ProjectionMatrixCache[key] = matrix;
     return matrix;
 }
