@@ -25,25 +25,20 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
     if(ImGui::Button("reload shaders")) {
         for(Shader *shader : shaders) {
             Shader copy = *shader;
-            LOG_INFO("recompiling %s...", shader->getFilePath().c_str());
             if(!shader->ParceShaderFile(shader->getFilePath())) {
                 shader->swap(std::forward<Shader>(copy));
                 failedShaderTemp = shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
-            };
-            LOG_INFO("linking %s...", shader->getFilePath().c_str());
-            if(!shader->CompileShaders()) {
+            } else if(!shader->CompileShaders()) {
                 shader->swap(std::forward<Shader>(copy));
                 failedShaderTemp = shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
+            } else {
+                ImGui::OpenPopup("success");
             }
         }
-        if(failedShaderTemp)
-            LOG_ERROR("failed to reload!");
-        else
-            LOG_INFO("done reloading.");
     }
     ImGui::Separator();
     if(ImGui::Checkbox("wireframe", &app.wireframe)) {
@@ -130,7 +125,7 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         cam.speed = 7.0f;
         cam.sensitivity = 1.0f;
     }
-    if(ImGui::BeginPopup("failed to reload shaders!")) {
+    if(ImGui::BeginPopupModal("failed to reload shaders!")) {
         if(failedShaderTemp) {
             ImGui::Text("shader name: %s", failedShaderTemp->getFilePath().c_str());
             ImGui::Separator();
@@ -139,9 +134,34 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
         } else {
             ImGui::Text("no informaion :(");
         }
+        if(ImGui::Button("ok", {50, 25})) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     } else {
         failedShaderTemp = nullptr;
+    }
+    if(ImGui::BeginPopupModal("opengl error")) {
+        ImGui::TextWrapped("%d: opengl %s of %s severity, raised from %s: %s", 
+            Application::openglError.id, 
+            Application::openglError.type, 
+            Application::openglError.severity, 
+            Application::openglError.source, 
+            Application::openglError.msg);
+        if(Application::openglError.type == "error" && Application::openglError.severity == "high") {
+            ImGui::Text("terminate?");
+            if(ImGui::Button("no", {50, 25})) {
+                ImGui::CloseCurrentPopup();
+            }
+            if(ImGui::Button("yes", {50, 25})) {
+                ImGui::CloseCurrentPopup();
+                throw std::runtime_error("opengl error");
+            }
+        }
+        ImGui::EndPopup();
+    }
+    if(ImGui::BeginPopup("success")) {
+        ImGui::Text("success!");
+        ImGui::Text("for some reason ImGui::SetNextWindowSize does not work so here you go.");
+        ImGui::EndPopup();
     }
     ImGui::End();
 

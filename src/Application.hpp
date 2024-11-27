@@ -3,8 +3,16 @@
 #include "utils/Model.hpp"
 #include "opengl/Texture.hpp"
 #include <stdexcept>
+#include <optional>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+struct OpenGlError {
+    GLuint id;
+    std::string source;
+    std::string type;
+    std::string severity;
+    std::string msg;
+};
 /*
 Application state + initialisation / destruction
 */
@@ -13,6 +21,7 @@ private:
     void loadModel(char const *filepath);
     void loadTexture(char const *filepath);
 public:
+    static OpenGlError openglError;
     GLFWwindow *window;
     glm::vec3 clearColor = glm::vec3{0.0f};
     double deltatime = 0;
@@ -38,7 +47,7 @@ public:
     // glm::vec3 lightPosEnd = glm::vec3{1.5f, -1, 3};
     // float lightSpeed = 0.005f;
 
-
+public:
     Application();
     ~Application();
     void addModel(char const *filepath, bool loadNow = false);

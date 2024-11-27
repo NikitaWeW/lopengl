@@ -9,108 +9,109 @@ all shitty bad initialization/uninitialization goes here
 #include "imgui.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_glfw.h"
+#include "imgui.h"
 
 #include <algorithm>
 #include "Application.hpp"
 
+OpenGlError Application::openglError;
 extern const bool debug;
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length,
                             const GLchar *msg, const void *data)
 {
-    std::string_view _source;
-    std::string_view _type;
-    std::string_view _severity;
+    Application::openglError.id = id;
+    Application::openglError.msg = msg;
 
     switch (source) {
         case GL_DEBUG_SOURCE_API:
-        _source = "api";
+        Application::openglError.source = "api";
         break;
 
         case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-        _source = "window system";
+        Application::openglError.source = "window system";
         break;
 
         case GL_DEBUG_SOURCE_SHADER_COMPILER:
-        _source = "shader compiler";
+        Application::openglError.source = "shader compiler";
         break;
 
         case GL_DEBUG_SOURCE_THIRD_PARTY:
-        _source = "third party";
+        Application::openglError.source = "third party";
         break;
 
         case GL_DEBUG_SOURCE_APPLICATION:
-        _source = "application";
+        Application::openglError.source = "application";
         break;
 
         case GL_DEBUG_SOURCE_OTHER:
-        _source = "unknown";
+        Application::openglError.source = "unknown";
         break;
 
         default:
-        _source = "unknown";
+        Application::openglError.source = "unknown";
         break;
     }
-
     switch (type) {
         case GL_DEBUG_TYPE_ERROR:
-        _type = "error";
+        Application::openglError.type = "error";
         break;
 
         case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        _type = "deprecated behavior";
+        Application::openglError.type = "deprecated behavior";
         break;
 
         case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        _type = "udefined behavior";
+        Application::openglError.type = "udefined behavior";
         break;
 
         case GL_DEBUG_TYPE_PORTABILITY:
-        _type = "portability";
+        Application::openglError.type = "portability";
         break;
 
         case GL_DEBUG_TYPE_PERFORMANCE:
-        _type = "performance";
+        Application::openglError.type = "performance";
         break;
 
         case GL_DEBUG_TYPE_OTHER:
-        _type = "other";
+        Application::openglError.type = "other";
         break;
 
         case GL_DEBUG_TYPE_MARKER:
-        _type = "marker";
+        Application::openglError.type = "marker";
         break;
 
         default:
-        _type = "unknown";
+        Application::openglError.type = "unknown";
         break;
     }
-
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
-        _severity = "high";
+        Application::openglError.severity = "high";
         break;
 
         case GL_DEBUG_SEVERITY_MEDIUM:
-        _severity = "medium";
+        Application::openglError.severity = "medium";
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
-        _severity = "low";
+        Application::openglError.severity = "low";
         break;
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
-        _severity = "notification";
+        Application::openglError.severity = "notification";
         break;
 
         default:
-        _severity = "unknown";
+        Application::openglError.severity = "unknown";
         break;
     }
 
-    LOG_ERROR("%d: %s of %s severity, raised from %s: %s", id, &_type.at(0), &_severity.at(0), &_source.at(0), msg);
-    if(type == GL_DEBUG_TYPE_ERROR && severity == GL_DEBUG_SEVERITY_HIGH) throw std::logic_error("opengl high severity error");
+    // LOG_ERROR("%d: opengl %s of %s severity, raised from %s: %s", id, &_type.at(0), &_severity.at(0), &_source.at(0), msg);
+    // if(type == GL_DEBUG_TYPE_ERROR && severity == GL_DEBUG_SEVERITY_HIGH) throw std::logic_error("opengl high severity error");
+
+    ImGui::OpenPopup("opengl error");
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -119,19 +120,27 @@ void Application::loadModel(char const *filepath)
 {
     std::string newFilepath{filepath};
     std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
-    LOG_INFO("loading model \"%s\"...", filepath);
-    Model model{newFilepath};
-    LOG_INFO("model loaded!");
-    models.push_back(std::move(model));
+    try {
+        LOG_INFO("loading model \"%s\"...", filepath);
+        Model model{newFilepath};
+        LOG_INFO("model loaded!");
+        models.push_back(std::move(model));
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
+    }
     currentModel = &*models.rbegin();
     currentModelIndex = models.size() - 1;
 }
 void Application::loadTexture(char const *filepath)
 {
-    LOG_INFO("loading texture \"%s\"...", filepath);
-    Texture texture{filepath};
-    LOG_INFO("texture loaded!");
-    textures.push_back(texture);
+    try {
+        LOG_INFO("loading texture \"%s\"...", filepath);
+        Texture texture{filepath};
+        LOG_INFO("texture loaded!");
+        textures.push_back(texture);
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
+    }
     currentTexture = &*textures.rbegin(); 
     currentTextureIndex = models.size() - 1;
 }
@@ -187,14 +196,10 @@ Application::~Application() {
 
 void Application::addModel(char const * filepath, bool loadNow)
 {
-    try {
-        if(loadNow) {
-            loadModel(filepath);
-        }
-        modelNames.push_back({filepath});
-    } catch(std::runtime_error &e) {
-        LOG_ERROR("%s", e.what());
+    if(loadNow) {
+        loadModel(filepath);
     }
+    modelNames.push_back({filepath});
 }
 void Application::addTexture(char const * filepath, bool loadNow)
 {

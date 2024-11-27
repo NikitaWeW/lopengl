@@ -25,7 +25,7 @@ void main() {
 #shader fragment
 #version 430 core
 
-out vec4 color;
+out vec4 o_color;
 
 struct Material {
     sampler2D diffuse;
@@ -86,13 +86,13 @@ uniform vec3 u_viewPos;
 void main() {
     vec4 textureColor = texture(u_material.diffuse, v_texCoord);
 
-    color = vec4(0, 0, 0, 1);
+    vec4 color = vec4(0, 0, 0, 1);
     if(u_spotLightCount == 0 && u_dirLightCount == 0 && u_pointLightCount == 0) {
         return;
     }
 
     vec4 specularColor = texture(u_material.specular, v_texCoord);
-    vec3 norm = normalize(v_normal);
+    vec3 norm = normalize(v_normal);a
     vec3 viewDir = normalize(u_viewPos - fragPosition);
 
     for(int i = 0; i < u_pointLightCount; ++i) {
@@ -115,56 +115,59 @@ void main() {
             pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
             (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
 
-        color += vec4(ambient + diffuse + specular, 1.0);
+        color = color + vec4(ambient + diffuse + specular, 1.0);
+        // color += vec4(0.25, 0, 0, 1.0);
     }
-    for(int i = 0; i < u_dirLightCount; ++i) {
-        DirectionalLight light = u_dirLights[i];
-        vec3 lightDir = normalize(-light.direction);
-        vec3 reflectDir = reflect(-lightDir, norm);
+    // for(int i = 0; i < u_dirLightCount; ++i) {
+    //     DirectionalLight light = u_dirLights[i];
+    //     vec3 lightDir = normalize(-light.direction);
+    //     vec3 reflectDir = reflect(-lightDir, norm);
 
-        vec3 ambient = light.ambient;
-        vec3 diffuse = 
-            light.diffuse * 
-            vec3(max(dot(norm, lightDir), 0.0));
-        vec3 specular = 
-            light.specular * 
-            pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
-            (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
+    //     vec3 ambient = light.ambient;
+    //     vec3 diffuse = 
+    //         light.diffuse * 
+    //         vec3(max(dot(norm, lightDir), 0.0));
+    //     vec3 specular = 
+    //         light.specular * 
+    //         pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
+    //         (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
 
-        color += vec4(ambient + diffuse + specular, 1.0);
-    }
-    for(int i = 0; i < u_spotLightCount; ++i) {
-        SpotLight light = u_spotLights[i];
-        vec3 lightDir = normalize(light.position - fragPosition);
-        vec3 reflectDir = reflect(-lightDir, norm);
-        float distanceLightFragment = length(light.position - fragPosition);
-        float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
+    //     color += vec4(ambient + diffuse + specular, 1.0);
+    // }
+    // for(int i = 0; i < u_spotLightCount; ++i) {
+    //     SpotLight light = u_spotLights[i];
+    //     vec3 lightDir = normalize(light.position - fragPosition);
+    //     vec3 reflectDir = reflect(-lightDir, norm);
+    //     float distanceLightFragment = length(light.position - fragPosition);
+    //     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
-        vec3 ambient = 
-            light.ambient * 
-            attenuation;
-        float theta = dot(lightDir, normalize(-light.direction));
-        if(theta > light.outerCutoff) {
-            float epsilon = light.innerCutoff - light.outerCutoff;
-            float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
+    //     vec3 ambient = 
+    //         light.ambient * 
+    //         attenuation;
+    //     float theta = dot(lightDir, normalize(-light.direction));
+    //     if(theta > light.outerCutoff) {
+    //         float epsilon = light.innerCutoff - light.outerCutoff;
+    //         float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
-            vec3 diffuse = 
-                light.diffuse * 
-                intensity *
-                attenuation *
-                vec3(max(dot(norm, lightDir), 0.0));
-            vec3 specular = 
-                light.specular *
-                intensity * 
-                attenuation *
-                pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
-                (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
-            color += vec4(ambient + diffuse + specular, 1.0);
-        } else {
-            color += vec4(ambient, 1.0);
-        }
-    }
+    //         vec3 diffuse = 
+    //             light.diffuse * 
+    //             intensity *
+    //             attenuation *
+    //             vec3(max(dot(norm, lightDir), 0.0));
+    //         vec3 specular = 
+    //             light.specular *
+    //             intensity * 
+    //             attenuation *
+    //             pow(max(dot(viewDir, reflectDir), 0.0), u_material.shininess) * 
+    //             (vec3(specularColor) == vec3(0) ? vec3(.25) : vec3(specularColor));
+    //         color += vec4(ambient + diffuse + specular, 1.0);
+    //     } else {
+    //         color += vec4(ambient, 1.0);
+    //     }
+    // }
 // color = vec4(vec3(fragPosition), 1.0);
 // color = textureColor;
 // color = vec4(vec3(clamp(u_pointLightCount, 0, 2) * 0.5), 1.0);
+
+    o_color = color;
 }
