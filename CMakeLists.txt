@@ -1,6 +1,6 @@
 # This line will be changed if reconfiguration is required: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ligula. 
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.6)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

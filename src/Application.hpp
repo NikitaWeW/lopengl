@@ -14,12 +14,14 @@ struct OpenGlError {
     std::string msg;
 };
 /*
-Application state + initialisation / destruction
+Application state + RAII initialisation / destruction
+this is really bad code, that is only use to test features. fame frog.
 */
 struct Application {
 private:
     void loadModel(char const *filepath);
     void loadTexture(char const *filepath);
+    static bool initialised;
 public:
     static OpenGlError openglError;
     GLFWwindow *window;
@@ -54,4 +56,9 @@ public:
     void addTexture(char const *filepath, bool loadNow = false);
     void applyModel();
     void applyTexture();
+
+    /*
+    return true if application is initialised at least once
+    */
+    inline static bool isInitialised() { return initialised; }
 };

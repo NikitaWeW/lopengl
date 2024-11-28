@@ -1,5 +1,6 @@
 /*
-all shitty bad initialization/uninitialization goes here
+all shitty bad initialization/uninitialization goes here.
+this is really bad code, that is only use to test features. fame frog.
 */
 
 #include "glad/gl.h"
@@ -15,6 +16,7 @@ all shitty bad initialization/uninitialization goes here
 #include "Application.hpp"
 
 OpenGlError Application::openglError;
+bool Application::initialised = false;
 extern const bool debug;
 
 void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
@@ -108,10 +110,13 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
         break;
     }
 
-    // LOG_ERROR("%d: opengl %s of %s severity, raised from %s: %s", id, &_type.at(0), &_severity.at(0), &_source.at(0), msg);
+    LOG_ERROR("%d: opengl %s of %s severity, raised from %s: %s", 
+            Application::openglError.id, 
+            Application::openglError.type.c_str(), 
+            Application::openglError.severity.c_str(), 
+            Application::openglError.source.c_str(), 
+            Application::openglError.msg.c_str());
     // if(type == GL_DEBUG_TYPE_ERROR && severity == GL_DEBUG_SEVERITY_HIGH) throw std::logic_error("opengl high severity error");
-
-    ImGui::OpenPopup("opengl error");
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -121,9 +126,7 @@ void Application::loadModel(char const *filepath)
     std::string newFilepath{filepath};
     std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
     try {
-        LOG_INFO("loading model \"%s\"...", filepath);
         Model model{newFilepath};
-        LOG_INFO("model loaded!");
         models.push_back(std::move(model));
     } catch(std::runtime_error &e) {
         LOG_ERROR("%s", e.what());
@@ -134,9 +137,7 @@ void Application::loadModel(char const *filepath)
 void Application::loadTexture(char const *filepath)
 {
     try {
-        LOG_INFO("loading texture \"%s\"...", filepath);
         Texture texture{filepath};
-        LOG_INFO("texture loaded!");
         textures.push_back(texture);
     } catch(std::runtime_error &e) {
         LOG_ERROR("%s", e.what());
@@ -187,6 +188,7 @@ Application::Application()
     strcpy(loadModelBuffer, "");
     strcpy(loadTextureBuffer, "");
     LOG_DEBUG("running in debug mode!");
+    initialised = true;
 }
 Application::~Application() {
     LOG_INFO("cleaning up.");
