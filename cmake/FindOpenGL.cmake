@@ -8,7 +8,7 @@
 
 include(FetchContent)
 
-if(NOT OPENGL_LIBRARIES)
+if(NOT OPENGL_LIBRARIES OR OPENGL_SET_BY_SCRIPT)
     enable_language(C)
     if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad)
         FetchContent_Populate(
@@ -29,4 +29,5 @@ if(NOT OPENGL_LIBRARIES)
         set(OPENGL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/build/glad/include CACHE STRING "opengl include dirs")
     endif()
     set(OPENGL_LIBRARIES glad CACHE STRING "opengl libraries")
+    set(OPENGL_SET_BY_SCRIPT ON CACHE BOOL "indicates, if <name>_LIBRARIES was not set by the user")
 endif()

@@ -8,7 +8,7 @@
 
 include(FetchContent)
 
-if(NOT STB_INCLUDE_DIRS)
+if(NOT STB_INCLUDE_DIRS OR STB_SET_BY_SCRIPT)
     if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/STB)
         FetchContent_Populate(
             STB
@@ -20,4 +20,5 @@ if(NOT STB_INCLUDE_DIRS)
     set(STB_INSTALL_INCLUDE_DIRS OFF)
     install(DIRECTORY SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb DESTINATION include FILES_MATCHING PATTERN "*.h")
     set(STB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb/ CACHE STRING "STB include dirs")
+    set(STB_SET_BY_SCRIPT ON CACHE BOOL "indicates, if <name>_LIBRARIES was not set by the user")
 endif()

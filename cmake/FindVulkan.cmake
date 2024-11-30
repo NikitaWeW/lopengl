@@ -21,7 +21,7 @@ if((NOT VULKAN_INCLUDE_DIRS OR NOT VULKAN_LIBRARIES) AND NOT EXISTS ${CMAKE_CURR
     )
 endif()
 # wtf is going on?
-if(NOT VULKAN_LIBRARIES)
+if(NOT VULKAN_LIBRARIES OR VULKAN_SET_BY_SCRIPT)
     enable_language(C)
     execute_process(COMMAND ${CMAKE_COMMAND} 
         -S ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Vulkan-Headers 
@@ -57,6 +57,7 @@ if(NOT VULKAN_LIBRARIES)
     endif()
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Vulkan-Loader ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/build/Vulkan-Loader)
     set(VULKAN_LIBRARIES vulkan CACHE STRING "vulkan libraries")
+    set(VULKAN_SET_BY_SCRIPT ON CACHE BOOL "indicates, if <name>_LIBRARIES was not set by the user")
 endif()
 
 if(NOT VULKAN_INCLUDE_DIRS)
