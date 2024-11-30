@@ -143,7 +143,7 @@ void Application::loadTexture(char const *filepath)
         LOG_ERROR("%s", e.what());
     }
     currentTexture = &*textures.rbegin(); 
-    currentTextureIndex = models.size() - 1;
+    currentTextureIndex = textures.size() - 1;
 }
 Application::Application()
 {
@@ -226,7 +226,7 @@ void Application::applyModel()
 }
 void Application::applyTexture()
 {
-    auto texture = std::find_if(textures.begin(), textures.end(), [this](Texture const &texture){ return texture.getFilePath() == textureNames.at(currentModelIndex); });
+    auto texture = std::find_if(textures.begin(), textures.end(), [this](Texture const &texture){ return texture.getFilePath() == textureNames.at(currentTextureIndex); });
     if(texture == textures.end()) {
         loadModel(textureNames.at(currentModelIndex).c_str());
     } else {

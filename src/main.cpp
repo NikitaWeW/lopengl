@@ -33,7 +33,7 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
-void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light);
+void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -59,16 +59,10 @@ int main()
     Model lightCube("res/models/cube.obj");
     PointLight light;
         light.position= glm::vec3{2, 1, 3};
-        light.ambient = glm::vec3{0.1f};
-        light.diffuse = glm::vec3{0.5f};
-        light.specular= glm::vec3{1.0f};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
     SpotLight flashlight;
         flashlight.position= camera.position;
         flashlight.direction=camera.getFront();
-        flashlight.ambient = glm::vec3{0.1f};
-        flashlight.diffuse = glm::vec3{0.5f};
-        flashlight.specular= glm::vec3{1.0f};
     VertexBufferLayout layout;
     std::vector<Shader *> shaders {
         &lightingShader,
@@ -122,7 +116,7 @@ int main()
 
         renderer.draw(lightCube, lightCubeShader, camera);
 
-        imguistuff(app, camera, shaders, light);
+        imguistuff(app, camera, shaders, light, flashlight);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

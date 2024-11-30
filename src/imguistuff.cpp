@@ -8,7 +8,7 @@
 #include "utils/Light.hpp"
 #include "logger.h"
 
-void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light)
+void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light, SpotLight &flashlight)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
@@ -86,20 +86,30 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
     //     app.cuberotation = glm::vec3(0);
     // }
     // ImGui::Separator();
+    ImGui::Text("flashlight");
+    ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
+    ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
+    ImGui::DragFloat("flashlight constant attenuation", &flashlight.constant, 0.01, 0, 50);
+    ImGui::DragFloat("flashlight linear attenuation", &flashlight.linear, 0.01, 0, 50);
+    ImGui::DragFloat("flashlight quadratic attenuation", &flashlight.quadratic, 0.01, 0, 50);
+    if (ImGui::Button("reset flashlight"))
+    {
+        flashlight.color = glm::vec3(1.0);
+        flashlight.constant = 1.0f;
+        flashlight.linear = 0.14f;
+        flashlight.quadratic = 0.07f;
+    }
     ImGui::Text("light");
+    ImGui::Checkbox("light enabled", &light.enabled);
     ImGui::DragFloat3("light position / direction", &light.position.x, 0.01f);
-    ImGui::ColorEdit3("light ambient", &light.ambient.r);
-    ImGui::ColorEdit3("light diffuse", &light.diffuse.r);
-    ImGui::ColorEdit3("light specular", &light.specular.r);
+    ImGui::ColorEdit3("light color", &light.color.r);
     ImGui::DragFloat("light constant attenuation", &light.constant, 0.01, 0, 50);
     ImGui::DragFloat("light linear attenuation", &light.linear, 0.01, 0, 50);
     ImGui::DragFloat("light quadratic attenuation", &light.quadratic, 0.01, 0, 50);
     if (ImGui::Button("reset light"))
     {
         light.position = glm::vec3(2, 1, 3);
-        light.ambient = glm::vec3(0.1);
-        light.diffuse = glm::vec3(0.5);
-        light.specular = glm::vec3(1.0);
+        light.color = glm::vec3(1.0);
         light.constant = 1.0f;
         light.linear = 0.14f;
         light.quadratic = 0.07f;

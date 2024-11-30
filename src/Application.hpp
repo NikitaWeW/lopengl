@@ -44,6 +44,7 @@ public:
     char loadTextureBuffer[1024];
 
     bool wireframe = false;
+    bool flashlight = true;
     // bool moveLight = true;
     // glm::vec3 lightPosBegin = glm::vec3{-1, 1, 1.5f};
     // glm::vec3 lightPosEnd = glm::vec3{1.5f, -1, 3};

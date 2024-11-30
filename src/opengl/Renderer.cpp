@@ -21,22 +21,7 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
     unsigned dirLightCount  = 0;
     unsigned spotLightCount = 0;
     for(int i = 0; i < m_lights.size(); ++i) {
-        m_lights[i]->setUniforms(shader, i);
-        switch (m_lights[i]->type)
-        {
-        case POINT:
-            ++pointLightCount;
-            break;
-        case DIRECTIONAL:
-            ++dirLightCount;
-            break;
-        case SPOT:
-            ++spotLightCount;
-            break;
-        default:
-            LOG_WARN("unrecognised light type!");
-            break;
-        }
+        if(m_lights[i]->enabled) m_lights[i]->setUniforms(shader, pointLightCount, dirLightCount, spotLightCount);
     }
     glUniform1i(shader.getUniform("u_pointLightCount"), pointLightCount);
     glUniform1i(shader.getUniform("u_dirLightCount"),   dirLightCount);

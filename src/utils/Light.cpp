@@ -7,13 +7,11 @@ PointLight::PointLight()
     type = LightType::POINT;
 }
 
-void PointLight::setUniforms(Shader const &shader, unsigned index) const
+void PointLight::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     shader.bind();
-    std::string element = "u_pointLights[" + std::to_string(index) + ']';
-    glUniform3fv(shader.getUniform(element + ".ambient"),  1, &ambient.r);
-    glUniform3fv(shader.getUniform(element + ".diffuse"),  1, &diffuse.r);
-    glUniform3fv(shader.getUniform(element + ".specular"), 1, &specular.r);
+    std::string element = "u_pointLights[" + std::to_string(pointLightCount++) + ']';
+    glUniform3fv(shader.getUniform(element + ".color"), 1,    &color.r);
     glUniform1f (shader.getUniform(element + ".constant"),     constant);
     glUniform1f (shader.getUniform(element + ".linear"),       linear);
     glUniform1f (shader.getUniform(element + ".quadratic"),    quadratic);
@@ -25,13 +23,11 @@ DirectionalLight::DirectionalLight()
     type = LightType::DIRECTIONAL;
 }
 
-void DirectionalLight::setUniforms(Shader const &shader, unsigned index) const
+void DirectionalLight::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     shader.bind();
-    std::string element = "u_dirLights[" + index + ']';
-    glUniform3fv(shader.getUniform(element + ".ambient"),  1, &ambient.r);
-    glUniform3fv(shader.getUniform(element + ".diffuse"),  1, &diffuse.r);
-    glUniform3fv(shader.getUniform(element + ".specular"), 1, &specular.r);
+    std::string element = "u_dirLights[" + std::to_string(dirLightCount++) + ']';
+    glUniform3fv(shader.getUniform(element + ".color"), 1,    &color.r);
     glUniform1f (shader.getUniform(element + ".constant"),     constant);
     glUniform1f (shader.getUniform(element + ".linear"),       linear);
     glUniform1f (shader.getUniform(element + ".quadratic"),    quadratic);
@@ -43,13 +39,11 @@ SpotLight::SpotLight()
     type = LightType::SPOT;
 }
 
-void SpotLight::setUniforms(Shader const &shader, unsigned index) const
+void SpotLight::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     shader.bind();
-    std::string element = "u_spotLights[" + index + ']';
-    glUniform3fv(shader.getUniform(element + ".ambient"),  1, &ambient.r);
-    glUniform3fv(shader.getUniform(element + ".diffuse"),  1, &diffuse.r);
-    glUniform3fv(shader.getUniform(element + ".specular"), 1, &specular.r);
+    std::string element = "u_spotLights[" + std::to_string(spotLightCount++) + ']';
+    glUniform3fv(shader.getUniform(element + ".color"), 1,    &color.r);
     glUniform1f (shader.getUniform(element + ".constant"),     constant);
     glUniform1f (shader.getUniform(element + ".linear"),       linear);
     glUniform1f (shader.getUniform(element + ".quadratic"),    quadratic);
@@ -59,7 +53,7 @@ void SpotLight::setUniforms(Shader const &shader, unsigned index) const
     glUniform1f (shader.getUniform(element + ".outerCutoff"),  outerCutoff);
 }
 
-void Light::setUniforms(Shader const &shader, unsigned index) const
+void Light::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     LOG_WARN("calling setUniforms for a base class (not good)");
 }

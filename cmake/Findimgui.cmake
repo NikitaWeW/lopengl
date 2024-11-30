@@ -29,5 +29,6 @@ if(NOT DEFINED IMGUI_LIBRARIES)
     
     add_library(imgui ${IMGUI_SOURCES})
     target_include_directories(imgui PRIVATE ${IMGUI_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${VULKAN_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS}) 
+    set_target_properties(imgui PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/build/imgui")
     set(IMGUI_LIBRARIES imgui CACHE STRING "path to imgui libraries")
 endif()
