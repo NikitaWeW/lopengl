@@ -16,12 +16,9 @@ this is really bad code, that is only use to test features. fame frog.
 #include "Application.hpp"
 
 OpenGlError Application::openglError;
-bool Application::initialised = false;
 extern const bool debug;
 
-void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
-                            GLenum severity, GLsizei length,
-                            const GLchar *msg, const void *data)
+void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
 {
     Application::openglError.id = id;
     Application::openglError.msg = msg;
@@ -110,13 +107,12 @@ void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
         break;
     }
 
-    LOG_ERROR("%d: opengl %s of %s severity, raised from %s: %s", 
+    LOG_WARN("%d: opengl %s message of %s severity, raised from %s:\n\t%s", 
             Application::openglError.id, 
             Application::openglError.type.c_str(), 
             Application::openglError.severity.c_str(), 
             Application::openglError.source.c_str(), 
             Application::openglError.msg.c_str());
-    // if(type == GL_DEBUG_TYPE_ERROR && severity == GL_DEBUG_SEVERITY_HIGH) throw std::logic_error("opengl high severity error");
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -184,13 +180,13 @@ Application::Application()
     ImGui_ImplOpenGL3_Init("#version 330");
     ImGui::StyleColorsDark();
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(GLDebugMessageCallback, nullptr);
+    glDebugMessageCallback(DebugCallback, nullptr);
     strcpy(loadModelBuffer, "");
     strcpy(loadTextureBuffer, "");
     LOG_DEBUG("running in debug mode!");
-    initialised = true;
 }
-Application::~Application() {
+Application::~Application()
+{
     LOG_INFO("cleaning up.");
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -228,7 +224,7 @@ void Application::applyTexture()
 {
     auto texture = std::find_if(textures.begin(), textures.end(), [this](Texture const &texture){ return texture.getFilePath() == textureNames.at(currentTextureIndex); });
     if(texture == textures.end()) {
-        loadModel(textureNames.at(currentModelIndex).c_str());
+        loadTexture(textureNames.at(currentTextureIndex).c_str());
     } else {
         currentTexture = &*texture;
     }

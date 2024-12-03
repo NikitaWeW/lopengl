@@ -21,7 +21,6 @@ struct Application {
 private:
     void loadModel(char const *filepath);
     void loadTexture(char const *filepath);
-    static bool initialised;
 public:
     static OpenGlError openglError;
     GLFWwindow *window;
@@ -45,10 +44,9 @@ public:
 
     bool wireframe = false;
     bool flashlight = true;
-    // bool moveLight = true;
-    // glm::vec3 lightPosBegin = glm::vec3{-1, 1, 1.5f};
-    // glm::vec3 lightPosEnd = glm::vec3{1.5f, -1, 3};
-    // float lightSpeed = 0.005f;
+
+    int currentShaderIndex = 0;
+    std::vector<Shader> shaders;
 
 public:
     Application();
@@ -57,9 +55,4 @@ public:
     void addTexture(char const *filepath, bool loadNow = false);
     void applyModel();
     void applyTexture();
-
-    /*
-    return true if application is initialised at least once
-    */
-    inline static bool isInitialised() { return initialised; }
 };

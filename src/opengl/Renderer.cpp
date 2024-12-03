@@ -26,7 +26,13 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
     glUniform1i(shader.getUniform("u_pointLightCount"), pointLightCount);
     glUniform1i(shader.getUniform("u_dirLightCount"),   dirLightCount);
     glUniform1i(shader.getUniform("u_spotLightCount"),  spotLightCount);
+    glm::mat4 normalMat = glm::transpose(glm::inverse(model.getModelMat()));
+    glUniformMatrix4fv(shader.getUniform("u_modelMat"),     1, GL_FALSE, &model.getModelMat()[0][0]);
+    glUniformMatrix4fv(shader.getUniform("u_viewMat"),      1, GL_FALSE, &viewMat[0][0]);
+    glUniformMatrix4fv(shader.getUniform("u_projectionMat"),1, GL_FALSE, &projectionMat[0][0]);
+    glUniformMatrix4fv(shader.getUniform("u_normalMat"),    1, GL_FALSE, &normalMat[0][0]);
 
+    bool specularSet = false;
     for(Mesh const &mesh : model.getMeshes()) {
         mesh.va.bind();
         mesh.ib.bind();
@@ -39,7 +45,6 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
             glUniform1i(shader.getUniform("u_material.specular"), 1);
         }
         unsigned int textureCount = 1; // leave 0 for other purposes
-        bool specularSet = false;
         for(Texture const &texture : mesh.textures) {
             unsigned location = shader.getUniform("u_material." + texture.type);
             if(location != -1) {
@@ -57,12 +62,7 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
             glUniform1i(shader.getUniform("u_material.specular"), textureCount);
         }
 
-        glm::mat4 normalMat = glm::transpose(glm::inverse(model.getModelMat()));
         glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);
-        glUniformMatrix4fv(shader.getUniform("u_modelMat"),     1, GL_FALSE, &model.getModelMat()[0][0]);
-        glUniformMatrix4fv(shader.getUniform("u_viewMat"),      1, GL_FALSE, &viewMat[0][0]);
-        glUniformMatrix4fv(shader.getUniform("u_projectionMat"),1, GL_FALSE, &projectionMat[0][0]);
-        glUniformMatrix4fv(shader.getUniform("u_normalMat"),    1, GL_FALSE, &normalMat[0][0]);
         glUniform1i(shader.getUniform("u_specularSet"), specularSet);
         glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
         mesh.va.unbind();

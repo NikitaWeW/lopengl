@@ -32,8 +32,10 @@ extern const bool debug = false;
 #else
 extern const bool debug = true;
 #endif
+#define SHOW_LOGS true
+#define LOAD_NOW true
 
-void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light, SpotLight &flashlight);
+void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -54,8 +56,7 @@ int main()
     printf("loading...\n"); // TODO: cool console progress bar
     Application app;
     GLFWwindow *window = app.window;
-    Shader lightingShader("shaders/lighting.glsl", true);
-    Shader lightCubeShader("shaders/lightcube.glsl", true);
+    Shader lightCubeShader{"shaders/lightcube.glsl", SHOW_LOGS};
     Model lightCube("res/models/cube.obj");
     PointLight light;
         light.position= glm::vec3{2, 1, 3};
@@ -64,20 +65,27 @@ int main()
         flashlight.position= camera.position;
         flashlight.direction=camera.getFront();
     VertexBufferLayout layout;
-    std::vector<Shader *> shaders {
-        &lightingShader,
-        &lightCubeShader
-    }; // for shader reloading. on reload contents will be recompiled, if fails failed shader will be restored.
+    app.shaders = {
+        Shader{"shaders/lighting.glsl", SHOW_LOGS},
+        Shader{"shaders/basic.glsl",    SHOW_LOGS},
+        Shader{"shaders/test.glsl",     SHOW_LOGS}
+    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
     Renderer renderer;
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
 
-    app.addModel("res/models/cube.obj", true);
-    app.addModel("res/models/backpack/backpack.obj", false);
-    app.addTexture("res/textures/tile.png", true);
-    app.addTexture("res/textures/white.png", true);
-    app.currentModel = &app.models[0];
+//   ==========================================================
+    app.addModel("res/models/cube.obj",               LOAD_NOW);
+    app.addModel("res/models/backpack/backpack.obj", !LOAD_NOW);
+//   ==========================================================
+    app.addTexture("res/textures/tile.png",           LOAD_NOW);
+    app.addTexture("res/textures/white.png",          LOAD_NOW);
+    app.addTexture("res/textures/oak.jpg",           !LOAD_NOW);
+    app.addTexture("res/textures/concrete.jpg",      !LOAD_NOW);
+    app.addTexture("res/textures/brick_wall.jpg",    !LOAD_NOW);
+//   ==========================================================
 
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
@@ -106,7 +114,7 @@ int main()
             app.currentModel->translate(cubePositions[i] * 2.0f);
             app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
             if(app.currentTexture) app.currentTexture->bind();
-            renderer.draw(*app.currentModel, lightingShader, camera);
+            renderer.draw(*app.currentModel, app.shaders[app.currentShaderIndex], camera);
             if(app.currentTexture) app.currentTexture->unbind();
         }
         
@@ -116,7 +124,7 @@ int main()
 
         renderer.draw(lightCube, lightCubeShader, camera);
 
-        imguistuff(app, camera, shaders, light, flashlight);
+        imguistuff(app, camera, light, flashlight);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

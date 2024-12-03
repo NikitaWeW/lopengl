@@ -81,12 +81,22 @@ void Shader::copy(Shader const &other) {
     VertexShaderID = other.VertexShaderID;
     FragmentShaderID = other.FragmentShaderID;
     ShaderProgramID = other.ShaderProgramID;
+    m_UniformLocationCache = other.m_UniformLocationCache;
+    m_filepath = other.m_filepath;
+    m_log = other.m_log;
+    VertexShaderSource = other.VertexShaderSource;
+    FragmentShaderSource = other.FragmentShaderSource;
 }
 void Shader::swap(Shader &&other) {
     std::swap(m_managing, other.m_managing);
     std::swap(VertexShaderID, other.VertexShaderID);
     std::swap(FragmentShaderID, other.FragmentShaderID);
     std::swap(ShaderProgramID, other.ShaderProgramID);
+    std::swap(m_UniformLocationCache, other.m_UniformLocationCache);
+    std::swap(m_filepath, other.m_filepath);
+    std::swap(m_log, other.m_log);
+    std::swap(VertexShaderSource, other.VertexShaderSource);
+    std::swap(FragmentShaderSource, other.FragmentShaderSource);
 }
 void Shader::bind() const {
     glUseProgram(ShaderProgramID);
@@ -105,12 +115,11 @@ bool Shader::ParceShaderFile(std::string const &filepath)
 {
     std::ifstream fileStream(filepath, std::ios::in);
     if(!fileStream) {
-        LOG_ERROR("failed to open %s", filepath);
         m_log = "failed to open " + filepath;
         return false;
     }
-    std::array<std::stringstream, 2> shaderSourceStreams;
-    unsigned currentIndex;
+    std::array<std::stringstream, 3> shaderSourceStreams;
+    unsigned currentIndex = 0;
     std::string line;
     while (getline(fileStream, line))
     {
@@ -118,20 +127,20 @@ bool Shader::ParceShaderFile(std::string const &filepath)
         {
             if (line.find("vertex") != std::string::npos)
             {
+                currentIndex = 1;
+            } else if (line.find("fragment") != std::string::npos)
+            {
+                currentIndex = 2;
+            } else {
                 currentIndex = 0;
             }
-            else if (line.find("fragment") != std::string::npos)
-            {
-                currentIndex = 1;
-            }
-        }
-        else
+        } else
         {
             shaderSourceStreams[currentIndex] << line << '\n';
         }
     }
-    VertexShaderSource = shaderSourceStreams[0].str();
-    FragmentShaderSource = shaderSourceStreams[1].str();
+    VertexShaderSource = shaderSourceStreams[1].str();
+    FragmentShaderSource = shaderSourceStreams[2].str();
     return true;
 }
 bool Shader::CompileShaders() {

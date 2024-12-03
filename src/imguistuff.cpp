@@ -8,7 +8,7 @@
 #include "utils/Light.hpp"
 #include "logger.h"
 
-void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *> shaders, PointLight &light, SpotLight &flashlight)
+void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
@@ -18,19 +18,22 @@ void imguistuff(Application &app, ControllableCamera &cam, std::vector<Shader *>
     ImGui::Text("delta time: %f", app.deltatime);
     ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
     ImGui::Separator();
+    std::vector<const char *> shaderNames;
+    for(Shader &shader : app.shaders) shaderNames.push_back(shader.getFilePath().c_str());
+    ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
     static Shader *failedShaderTemp = nullptr;
     if(ImGui::Button("reload shaders")) {
-        for(Shader *shader : shaders) {
-            Shader copy = *shader;
-            if(!shader->ParceShaderFile(shader->getFilePath())) {
-                shader->swap(std::forward<Shader>(copy));
-                failedShaderTemp = shader;
+        for(Shader &shader : app.shaders) {
+            Shader copy = shader;
+            if(!shader.ParceShaderFile(shader.getFilePath())) {
+                shader.swap(std::forward<Shader>(copy));
+                failedShaderTemp = &shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
             };
-            if(!shader->CompileShaders()) {
-                shader->swap(std::forward<Shader>(copy));
-                failedShaderTemp = shader;
+            if(!shader.CompileShaders()) {
+                shader.swap(std::forward<Shader>(copy));
+                failedShaderTemp = &shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
             }
