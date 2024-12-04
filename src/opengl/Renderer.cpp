@@ -7,10 +7,10 @@
 
 Renderer::Renderer() = default;
 
-void Renderer::clear(float r, float g, float b) const
+void Renderer::clear(glm::vec3 clearColor) const
 {
-    glClearColor(r, g, b, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(clearColor.r, clearColor.g, clearColor.b, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const

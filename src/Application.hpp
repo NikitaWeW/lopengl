@@ -24,30 +24,33 @@ private:
 public:
     static OpenGlError openglError;
     GLFWwindow *window;
+
+    glm::vec3 outlineColor = glm::vec3{0.4, 0.4, 0.0};
     glm::vec3 clearColor = glm::vec3{0.0f};
+
     double deltatime = 0;
     unsigned frameCounter = 0;
     unsigned updateCounter = 0;
-    glm::vec3 cuberotation{0};
-
-    Model *currentModel = nullptr;
-    int currentModelIndex = 0; 
-    std::vector<Model> models;
-    std::vector<std::string> modelNames;
-    char loadModelBuffer[1024];
 
     Texture *currentTexture = nullptr;
-    int currentTextureIndex = textureNames.size() - 1;
+    Model *currentModel = nullptr;
+    int currentModelIndex = 0; 
+    int currentShaderIndex = 0;
+    int currentTextureIndex = 0;
+
+    std::vector<Model> models;
+    std::vector<Shader> shaders;
     std::vector<Texture> textures;
+
     std::vector<std::string> textureNames;
+    std::vector<std::string> modelNames;
+
+    char loadModelBuffer[1024];
     char loadTextureBuffer[1024];
 
     bool wireframe = false;
     bool flashlight = true;
-
-    int currentShaderIndex = 0;
-    std::vector<Shader> shaders;
-
+    bool objectOutline = false;
 public:
     Application();
     ~Application();

@@ -56,7 +56,7 @@ int main()
     printf("loading...\n"); // TODO: cool console progress bar
     Application app;
     GLFWwindow *window = app.window;
-    Shader lightCubeShader{"shaders/lightcube.glsl", SHOW_LOGS};
+    Shader plainColorShader{"shaders/plain_color.glsl", SHOW_LOGS};
     Model lightCube("res/models/cube.obj");
     PointLight light;
         light.position= glm::vec3{2, 1, 3};
@@ -64,6 +64,7 @@ int main()
     SpotLight flashlight;
         flashlight.position= camera.position;
         flashlight.direction=camera.getFront();
+        flashlight.enabled = false;
     VertexBufferLayout layout;
     app.shaders = {
         Shader{"shaders/lighting.glsl", SHOW_LOGS},
@@ -74,7 +75,6 @@ int main()
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
 
-//   ==========================================================
     app.addModel("res/models/cube.obj",               LOAD_NOW);
     app.addModel("res/models/backpack/backpack.obj", !LOAD_NOW);
 //   ==========================================================
@@ -83,12 +83,11 @@ int main()
     app.addTexture("res/textures/oak.jpg",           !LOAD_NOW);
     app.addTexture("res/textures/concrete.jpg",      !LOAD_NOW);
     app.addTexture("res/textures/brick_wall.jpg",    !LOAD_NOW);
-//   ==========================================================
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glfwSwapInterval(1);
     glfwSetInputMode(window, GLFW_CURSOR, camera.mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
@@ -106,23 +105,45 @@ int main()
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
 
-        glClearColor(app.clearColor.x, app.clearColor.y, app.clearColor.z, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        renderer.clear(app.clearColor);
 
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         for(unsigned i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
+            if(app.currentTexture) app.currentTexture->bind();
             app.currentModel->resetMatrix();    
             app.currentModel->translate(cubePositions[i] * 2.0f);
             app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
-            if(app.currentTexture) app.currentTexture->bind();
+
+            glEnable(GL_DEPTH_TEST);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
+
             renderer.draw(*app.currentModel, app.shaders[app.currentShaderIndex], camera);
+            if(app.objectOutline) {
+                glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+                glStencilMask(0x00);
+                glDisable(GL_DEPTH_TEST);
+
+                app.currentModel->scale(glm::vec3{1.01});
+                plainColorShader.bind();
+                glUniform3fv(plainColorShader.getUniform("u_color"), 1, &app.outlineColor.x);
+                renderer.draw(*app.currentModel, plainColorShader, camera);
+                
+                glStencilMask(0xFF);
+            }
+
             if(app.currentTexture) app.currentTexture->unbind();
         }
         
         lightCube.resetMatrix();
         lightCube.translate(light.position);
-        lightCube.scale(glm::vec3{0.0625});
+        lightCube.scale(glm::vec3{0.03125});
 
-        renderer.draw(lightCube, lightCubeShader, camera);
+        if(light.enabled) {
+            plainColorShader.bind();
+            glUniform3fv(plainColorShader.getUniform("u_color"), 1, &light.color.x);
+            renderer.draw(lightCube, plainColorShader, camera);
+        }
 
         imguistuff(app, camera, light, flashlight);
 
