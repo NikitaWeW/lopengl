@@ -8,7 +8,7 @@
 #include "glad/gl.h"
 #include "glm/gtc/matrix_transform.hpp"
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName) { 
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName, bool flipTextures) { 
     std::vector<Texture> textures;
     aiString str;
     for(unsigned int i = 0; i < material->GetTextureCount(type); i++) {
@@ -22,7 +22,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
             }
         }
         if(!alreadyLoaded) {
-            Texture texture{m_directory + '/' + str.C_Str(), false};
+            Texture texture{m_directory + '/' + str.C_Str(), flipTextures};
             texture.type = typeName;
             textures.push_back(texture);
             m_loadedTextures.push_back(texture);
@@ -30,15 +30,15 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
     }
     return textures;
 }
-void Model::processNode(aiNode *node) {
+void Model::processNode(aiNode *node, bool flipTextures) {
     for(unsigned i = 0; i < node->mNumMeshes; ++i) {
-        m_meshes.push_back(processMesh(m_scene->mMeshes[node->mMeshes[i]]));
+        m_meshes.push_back(processMesh(m_scene->mMeshes[node->mMeshes[i]], flipTextures));
     }
     for(unsigned i = 0; i < node->mNumChildren; ++i) {
-        processNode(node->mChildren[i]);
+        processNode(node->mChildren[i], flipTextures);
     }
 }
-Mesh Model::processMesh(aiMesh *aimesh) {
+Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     Mesh mesh;
     for(int i = 0; i < aimesh->mNumVertices; ++i) {
         Vertex vertex;
@@ -57,16 +57,16 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     if(aimesh->mMaterialIndex >= 0) {
         aiMaterial *material = m_scene->mMaterials[aimesh->mMaterialIndex];
 
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
+        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse", flipTextures);
         mesh.textures.insert(mesh.textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
+        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular", flipTextures);
         mesh.textures.insert(mesh.textures.end(), specularMaps.begin(), specularMaps.end());
 
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal");
+        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal", flipTextures);
         mesh.textures.insert(mesh.textures.end(), normalMaps.begin(), normalMaps.end());
 
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "height");
+        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "height", flipTextures);
         mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
         
         aiColor4D color;
@@ -82,7 +82,7 @@ Mesh Model::processMesh(aiMesh *aimesh) {
     return mesh;
 }
 
-Model::Model(std::string const &filepath) : m_filepath(filepath)
+Model::Model(std::string const &filepath, bool flipTextures) : m_filepath(filepath)
 {
     Assimp::Importer importer;
 
@@ -97,7 +97,7 @@ Model::Model(std::string const &filepath) : m_filepath(filepath)
         throw std::runtime_error("failed to import model!");
     } 
     m_directory = filepath.substr(0, filepath.find_last_of('/'));
-    processNode(m_scene->mRootNode);
+    processNode(m_scene->mRootNode, flipTextures);
 }
 Model::~Model()
 {

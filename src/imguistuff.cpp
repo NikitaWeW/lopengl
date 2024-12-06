@@ -18,6 +18,10 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Text("delta time: %f", app.deltatime);
     ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
     ImGui::Separator();
+    std::vector<const char *> sceneNames;
+    for(Scene *scene : app.scenes) sceneNames.push_back(scene->getName());
+    ImGui::ListBox("scenes", &app.currentSceneIndex, sceneNames.data(), sceneNames.size());
+    ImGui::Separator();
     std::vector<const char *> shaderNames;
     for(Shader &shader : app.shaders) shaderNames.push_back(shader.getFilePath().c_str());
     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
@@ -43,8 +47,6 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     if(ImGui::Checkbox("wireframe", &app.wireframe)) {
         glPolygonMode(GL_FRONT_AND_BACK, app.wireframe ? GL_LINE : GL_FILL);
     }
-    ImGui::Checkbox("object outline", &app.objectOutline);
-    if(app.objectOutline) ImGui::ColorEdit3("outline color", &app.outlineColor.x);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
     if(app.currentModel) {
@@ -54,6 +56,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         }
         ImGui::Text("%u triangles", triangles);
     }
+    ImGui::Checkbox("flip textures on load", &app.flipTextures);
     if(app.modelNames.size() > 0) {
         std::vector<const char *> modelCNames;
         for(std::string &name : app.modelNames) modelCNames.push_back(name.c_str());
@@ -78,19 +81,14 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         app.addTexture(app.loadTextureBuffer);
     }
     ImGui::Separator();
-    // ImGui::Text("model");
-    // ImGui::DragFloat3("model position", &app.currentModel->m_position.x, 0.01f);
-    // ImGui::DragFloat3("rotation", &app.currentModel->m_rotation.x, 0.5f);
-    // ImGui::DragFloat3("scale", &app.currentModel->m_scale.x, 0.01f);
-    // ImGui::InputFloat3("rotation per ms", &app.cuberotation.x);
-    // if (ImGui::Button("reset model"))
-    // {
-    //     app.currentModel->m_position = glm::vec3(0);
-    //     app.currentModel->m_rotation = glm::vec3(0);
-    //     app.currentModel->m_scale = glm::vec3(1);
-    //     app.cuberotation = glm::vec3(0);
-    // }
-    // ImGui::Separator();
+    ImGui::Checkbox("scene controls in a separate window", &app.sceneControlsInSeparateWindow);
+    bool separateWindow = app.sceneControlsInSeparateWindow; // in case it will be changed in onImGuiRender callback
+    if(separateWindow) {
+        ImGui::End();
+        ImGui::Begin("scene");
+    }
+    app.scenes[app.currentSceneIndex]->onImGuiRender(app);
+    ImGui::Separator();
     ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
     if(flashlight.enabled) {
         ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
@@ -122,7 +120,6 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
             light.quadratic = 0.07f;
         }
     }
-    ImGui::Separator();
     ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
     ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
     ImGui::DragFloat("camera near plane", &cam.near, 0.001f);
@@ -138,6 +135,10 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         cam.far = 1000.0f;
         cam.speed = 7.0f;
         cam.sensitivity = 1.0f;
+    }
+    if(separateWindow) {
+        ImGui::End();
+        ImGui::Begin("properties");
     }
     if(ImGui::BeginPopup("failed to reload shaders!")) {
         if(failedShaderTemp) {

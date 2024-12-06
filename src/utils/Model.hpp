@@ -15,15 +15,16 @@ private:
     std::string m_filepath;
     glm::mat4 m_modelMat;
 private:
-    std::vector<Texture> loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName);
-    void processNode(aiNode *node);
-    Mesh processMesh(aiMesh *aimesh);
+    std::vector<Texture> loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName, bool flipTextures);
+    void processNode(aiNode *node, bool flipTextures);
+    Mesh processMesh(aiMesh *aimesh, bool flipTextures);
+
 public:
     glm::vec3 m_position = glm::vec3{0}; // does not do anythyng.
     glm::vec3 m_rotation = glm::vec3{0};
     glm::vec3 m_scale = glm::vec3{1};
 public:
-    Model(const std::string &filepath);
+    Model(const std::string &filepath, bool flipTextures = false);
     ~Model();
     void resetMatrix();
     void translate(glm::vec3 const &translation);

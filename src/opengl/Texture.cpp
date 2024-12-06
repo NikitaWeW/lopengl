@@ -6,7 +6,7 @@
 #include "Texture.hpp"
 
 Texture::Texture(std::string const &filepath, bool flip) :
-    m_FilePath(filepath), m_Buffer(nullptr), m_Width(0), m_Height(0), m_BPP(0) {
+    m_FilePath(filepath) {
 
     stbi_set_flip_vertically_on_load(flip);
     m_Buffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);

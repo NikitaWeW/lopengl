@@ -1,5 +1,7 @@
 #pragma once
 #include <cstddef>
+#include "glad/gl.h"
+
 class IndexBuffer {
 private:
     unsigned m_RenderID = 0;

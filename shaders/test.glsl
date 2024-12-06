@@ -31,5 +31,6 @@ in vec2 v_texCoord;
 uniform Material u_material;
 
 void main() {
-    o_color = texture(u_material.diffuse, v_texCoord);
+    // o_color = texture(u_material.diffuse, v_texCoord);
+    o_color = vec4(vec3(v_texCoord, 1), 0);
 }

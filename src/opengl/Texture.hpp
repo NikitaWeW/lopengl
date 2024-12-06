@@ -6,8 +6,8 @@ class Texture
 private:
     unsigned m_RenderID = 0;
     std::string m_FilePath;
-    unsigned char *m_Buffer;
-    int m_Width, m_Height, m_BPP;
+    unsigned char *m_Buffer = nullptr;
+    int m_Width = 0, m_Height = 0, m_BPP = 0;
     mutable bool m_managing = false;
 public:
     std::string type; 

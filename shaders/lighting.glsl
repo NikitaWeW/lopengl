@@ -78,12 +78,11 @@ uniform int u_spotLightCount;
 uniform vec3 u_viewPos;
 uniform bool u_specularSet;
 
-// vec3 light(Light light, Material material, vec3 norm, vec3 viewDir);
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir);
 vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir);
 vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir);
 
-void main() {
+void main() { // TODO: displacement
     vec4 lightColor = vec4(0, 0, 0, 1);
 
     vec3 norm = normalize(v_normal);

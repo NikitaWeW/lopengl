@@ -1,0 +1,53 @@
+#include "scenes.hpp"
+
+glm::vec3 cubePositions[] = {
+    glm::vec3( 0.0f, 0.0f, 0.0f),
+    glm::vec3( 2.0f, 5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3( 2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f, 3.0f, -7.5f),
+    glm::vec3( 1.3f, -2.0f, -2.5f),
+    glm::vec3( 1.5f, 2.0f, -2.5f),
+    glm::vec3( 1.5f, 0.2f, -1.5f),
+    glm::vec3(-1.3f, 1.0f, -1.5f)
+};
+
+void scenes::CubePartyScene::onRender(Application &app, Renderer &renderer, Camera &camera)
+{
+    renderer.clear(app.clearColor);
+
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    for(unsigned i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) { // instanced rendering some day
+        if(app.currentTexture) app.currentTexture->bind();
+        app.currentModel->resetMatrix();    
+        app.currentModel->translate(cubePositions[i] * 2.0f);
+        app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
+
+        glEnable(GL_DEPTH_TEST);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+
+        renderer.draw(*app.currentModel, app.shaders[app.currentShaderIndex], camera);
+        if(app.objectOutline) {
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilMask(0x00);
+            glDisable(GL_DEPTH_TEST);
+
+            app.currentModel->scale(glm::vec3{1.01});
+            app.plainColorShader.bind();
+            glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &app.outlineColor.x);
+            renderer.draw(*app.currentModel, app.plainColorShader, camera);
+            
+            glStencilMask(0xFF);
+        }
+
+        if(app.currentTexture) app.currentTexture->unbind();
+    }
+}
+
+void scenes::CubePartyScene::onImGuiRender(Application &app)
+{
+    ImGui::Checkbox("object outline", &app.objectOutline);
+    if(app.objectOutline) ImGui::ColorEdit3("outline color", &app.outlineColor.x);
+}

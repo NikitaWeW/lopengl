@@ -12,15 +12,9 @@
 #include "assimp/postprocess.h"
 
 #include "Application.hpp"
-#include "opengl/VertexBuffer.hpp"
-#include "opengl/VertexArray.hpp"
-#include "opengl/Texture.hpp"
-#include "opengl/Shader.hpp"
-#include "opengl/IndexBuffer.hpp"
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
-#include "utils/Model.hpp"
-#include "utils/Light.hpp"
+#include "scene/scenes.hpp"
 
 #include <chrono>
 #include <memory>
@@ -32,7 +26,7 @@ extern const bool debug = false;
 #else
 extern const bool debug = true;
 #endif
-#define SHOW_LOGS true
+#define SHOW_LOGS true // for readability
 #define LOAD_NOW true
 
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
@@ -41,43 +35,49 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 int main()
 {
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f, 0.0f, 0.0f),
-        glm::vec3( 2.0f, 5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f, 3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f, 2.0f, -2.5f),
-        glm::vec3( 1.5f, 0.2f, -1.5f),
-        glm::vec3(-1.3f, 1.0f, -1.5f)
-    };
     printf("loading...\n"); // TODO: cool console progress bar
     Application app;
     GLFWwindow *window = app.window;
-    Shader plainColorShader{"shaders/plain_color.glsl", SHOW_LOGS};
     Model lightCube("res/models/cube.obj");
-    PointLight light;
-        light.position= glm::vec3{2, 1, 3};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
+    PointLight light;
     SpotLight flashlight;
-        flashlight.position= camera.position;
-        flashlight.direction=camera.getFront();
-        flashlight.enabled = false;
     VertexBufferLayout layout;
-    app.shaders = {
-        Shader{"shaders/lighting.glsl", SHOW_LOGS},
-        Shader{"shaders/basic.glsl",    SHOW_LOGS},
-        Shader{"shaders/test.glsl",     SHOW_LOGS}
-    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
     Renderer renderer;
+    scenes::CubePartyScene cubeParty;
+    scenes::SingleModelScene singleModel;
+
+//  =========================================== 
+
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
 
-    app.addModel("res/models/cube.obj",               LOAD_NOW);
-    app.addModel("res/models/backpack/backpack.obj", !LOAD_NOW);
-//   ==========================================================
+    app.shaders = {
+        {"shaders/lighting.glsl", SHOW_LOGS},
+        {"shaders/basic.glsl",    SHOW_LOGS},
+        {"shaders/test.glsl",     SHOW_LOGS}
+    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
+    app.scenes = {
+        &cubeParty,
+        &singleModel
+    };
+
+    flashlight.position  = camera.position;
+    flashlight.direction = camera.getFront();
+    flashlight.enabled   = false;
+
+    light.position= glm::vec3{2, 1, 3};
+
+    app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
+
+//   ==================================================================
+
+    app.addModel("res/models/cube.obj",                             LOAD_NOW);
+    app.addModel("res/models/backpack/backpack.obj",               !LOAD_NOW);
+    app.addModel("res/models/rock/namaqualand_cliff_02_4k.gltf",   !LOAD_NOW, true);
+    app.addModel("res/models/lemon/lemon_4k.gltf",                 !LOAD_NOW, true);
+    app.addModel("res/models/apple/food_apple_01_4k.gltf",         !LOAD_NOW, true);
+//   =======================================================================
     app.addTexture("res/textures/tile.png",           LOAD_NOW);
     app.addTexture("res/textures/white.png",          LOAD_NOW);
     app.addTexture("res/textures/oak.jpg",           !LOAD_NOW);
@@ -104,45 +104,17 @@ int main()
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
-
-        renderer.clear(app.clearColor);
-
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        for(unsigned i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) {
-            if(app.currentTexture) app.currentTexture->bind();
-            app.currentModel->resetMatrix();    
-            app.currentModel->translate(cubePositions[i] * 2.0f);
-            app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
-
-            glEnable(GL_DEPTH_TEST);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilMask(0xFF);
-
-            renderer.draw(*app.currentModel, app.shaders[app.currentShaderIndex], camera);
-            if(app.objectOutline) {
-                glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-                glStencilMask(0x00);
-                glDisable(GL_DEPTH_TEST);
-
-                app.currentModel->scale(glm::vec3{1.01});
-                plainColorShader.bind();
-                glUniform3fv(plainColorShader.getUniform("u_color"), 1, &app.outlineColor.x);
-                renderer.draw(*app.currentModel, plainColorShader, camera);
-                
-                glStencilMask(0xFF);
-            }
-
-            if(app.currentTexture) app.currentTexture->unbind();
-        }
         
+        app.scenes[app.currentSceneIndex]->onRender(app, renderer, camera);
+
         lightCube.resetMatrix();
         lightCube.translate(light.position);
         lightCube.scale(glm::vec3{0.03125});
 
         if(light.enabled) {
-            plainColorShader.bind();
-            glUniform3fv(plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.draw(lightCube, plainColorShader, camera);
+            app.plainColorShader.bind();
+            glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
+            renderer.draw(lightCube, app.plainColorShader, camera);
         }
 
         imguistuff(app, camera, light, flashlight);
