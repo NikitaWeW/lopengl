@@ -98,7 +98,7 @@ void main() { // TODO: displacement
         lightColor += light(u_spotLights[i], u_material, norm, viewDir);
     }
 
-    o_color = lightColor * texture2D(u_material.diffuse, v_texCoord);
+    o_color = lightColor * texture(u_material.diffuse, v_texCoord);
 }
 
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
