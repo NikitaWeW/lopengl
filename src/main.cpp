@@ -44,8 +44,10 @@ int main()
     SpotLight flashlight;
     VertexBufferLayout layout;
     Renderer renderer;
+
     scenes::CubePartyScene cubeParty;
     scenes::SingleModelScene singleModel;
+    scenes::Blending blending;
 
 //  =========================================== 
 
@@ -59,16 +61,18 @@ int main()
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
     app.scenes = {
         &cubeParty,
-        &singleModel
+        &singleModel,
+        &blending
     };
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
-    flashlight.enabled   = false;
 
     light.position= glm::vec3{2, 1, 3};
 
     app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
+    app.quad = Model{"res/models/quad.obj"};
+    app.cube = Model{"res/models/cube.obj"};
 
 //   ==================================================================
 

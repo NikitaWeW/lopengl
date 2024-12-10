@@ -24,12 +24,18 @@ public:
     glm::vec3 m_rotation = glm::vec3{0};
     glm::vec3 m_scale = glm::vec3{1};
 public:
+    Model() = default;
     Model(const std::string &filepath, bool flipTextures = false);
-    ~Model();
+    ~Model() = default;
     void resetMatrix();
     void translate(glm::vec3 const &translation);
     void rotate(glm::vec3 const &rotation);
     void scale(glm::vec3 const &scale);
+    
+    inline void translate() { translate(m_position); }
+    inline void rotate() { rotate(m_rotation); }
+    inline void scale() { scale(m_scale); }
+
     bool operator==(Model const &other);
     inline aiScene const *getScene() const { return m_scene; }
     inline std::string const &getFilepath() const { return m_filepath; }

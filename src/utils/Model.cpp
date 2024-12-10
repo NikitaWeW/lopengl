@@ -99,9 +99,6 @@ Model::Model(std::string const &filepath, bool flipTextures) : m_filepath(filepa
     m_directory = filepath.substr(0, filepath.find_last_of('/'));
     processNode(m_scene->mRootNode, flipTextures);
 }
-Model::~Model()
-{
-}
 
 void Model::resetMatrix()
 {

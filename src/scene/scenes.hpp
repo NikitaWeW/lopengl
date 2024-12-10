@@ -17,4 +17,16 @@ namespace scenes {
         virtual void onImGuiRender(Application &app) override;
         virtual inline char const *getName() const override { return "single model"; }
     };
+    class Blending : public Scene {
+    private:
+        Texture floorTexture  = Texture{"res/textures/sandy_gravel.jpg"}; 
+        Texture grassTexture  = Texture{"res/textures/grass.png"}; 
+        Shader lightingShader = Shader {"shaders/lighting.glsl", true};
+    public: 
+        int quality = 25;
+        Blending();
+        virtual void onRender(Application &app, Renderer &renderer, Camera &camera) override;
+        virtual void onImGuiRender(Application &app) override;
+        virtual inline char const *getName() const override { return "blending demo"; }
+    };
 }

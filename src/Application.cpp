@@ -122,9 +122,6 @@ void Application::loadModel(char const *filepath, std::optional<bool> flipTextur
     std::string newFilepath{filepath};
     std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
     try {
-        // Model model{newFilepath, flipTextures.value_or(this->flipTextures)};
-        // models.push_back(std::move(model));
-        
         if(flipTextures.has_value()) {
             Model model{newFilepath, flipTextures.value()};
             models.push_back(model);
@@ -194,7 +191,7 @@ Application::Application()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-    if(getenv("XDG_SESSION_TYPE") != "wayland") {
+    if(getenv("XDG_SESSION_TYPE") == "wayland") {
         LOG_INFO("wayland detected! imgui multiple wiewports feature is not supported!");
     } else {
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // there are issues with wayland
