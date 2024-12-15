@@ -8,6 +8,12 @@
 
 struct Mesh {
     Material material;
+/*
+    GL_CW   for clockwise
+    GL_CCW  for counter-clockwise
+    GL_NONE to diable face culling
+*/
+    GLenum winding;
 
     std::vector<Vertex> vertices;
     std::vector<unsigned> indices;

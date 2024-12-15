@@ -43,7 +43,7 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     for(int i = 0; i < aimesh->mNumVertices; ++i) {
         Vertex vertex;
         vertex.position = { aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z };
-        vertex.normals = { aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z };
+        vertex.normal = { aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z };
         if(aimesh->mTextureCoords[0]) {
             vertex.textureCoords = { aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y };
         }
@@ -74,7 +74,18 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
             mesh.material.shininess = color.r ? color.r : 32.0f;
         }
     }
-    
+
+/*
+    TODO: FIXME some day
+    mesh.winding = glm::dot(
+        mesh.vertices[mesh.indices[0 + 0]].normal, // imported normal
+        glm::cross(                            // expected normal
+            mesh.vertices[mesh.indices[0 + 0]].position, 
+            mesh.vertices[mesh.indices[2 + 0]].position
+        )
+    ) > 0 ? GL_CCW : GL_CW;
+*/
+
     mesh.va.bind();
     mesh.vb = VertexBuffer{mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
     mesh.ib = IndexBuffer {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
@@ -90,6 +101,8 @@ Model::Model(std::string const &filepath, bool flipTextures) : m_filepath(filepa
         aiProcess_CalcTangentSpace       |
         aiProcess_Triangulate            |
         aiProcess_JoinIdenticalVertices  |
+        aiProcess_OptimizeMeshes         |
+        aiProcess_OptimizeGraph          |
         aiProcess_SortByPType);
 
     if (!m_scene) {

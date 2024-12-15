@@ -23,6 +23,7 @@ private:
     void loadModel(char const *filepath, std::optional<bool> flipTextures);
     void loadTexture(char const *filepath, std::optional<bool> flipTextures);
     std::map<std::string, bool> flipTexturesMap;
+    std::map<std::string, unsigned> windingMap;
 public:
     static OpenGlError openglError;
     GLFWwindow *window;
@@ -45,6 +46,7 @@ public:
     int currentShaderIndex = 0;
     int currentTextureIndex = 0;
     int currentSceneIndex = 0;
+    int windingIndex = 0;
 
     std::vector<Model> models;
     std::vector<Shader> shaders;
@@ -65,7 +67,7 @@ public:
 public:
     Application();
     ~Application();
-    void addModel(char const *filepath, bool loadNow = false, std::optional<bool> flipTextures = {});
+    void addModel(char const *filepath, unsigned winding, bool loadNow = false, std::optional<bool> flipTextures = {});
     void addTexture(char const *filepath, bool loadNow = false, std::optional<bool> flipTextures = {});
     void applyModel();
     void applyTexture();

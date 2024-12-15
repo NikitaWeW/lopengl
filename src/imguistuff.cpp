@@ -8,6 +8,8 @@
 #include "utils/Light.hpp"
 #include "logger.h"
 
+char const *windingOptions[] = { "clockwise", "counter-clockwise", "no face culling" };
+
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight)
 {
     ImGuiIO &io = ImGui::GetIO();
@@ -17,10 +19,6 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Begin("properties");
     ImGui::Text("delta time: %f", app.deltatime);
     ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
-    ImGui::Separator();
-    std::vector<const char *> sceneNames;
-    for(Scene *scene : app.scenes) sceneNames.push_back(scene->getName());
-    ImGui::ListBox("scenes", &app.currentSceneIndex, sceneNames.data(), sceneNames.size());
     ImGui::Separator();
     std::vector<const char *> shaderNames;
     for(Shader &shader : app.shaders) shaderNames.push_back(shader.getFilePath().c_str());
@@ -56,6 +54,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         }
         ImGui::Text("%u triangles", triangles);
     }
+    ImGui::ListBox("model winding order (for face culling)", &app.windingIndex, windingOptions, 3);
     ImGui::Checkbox("flip textures on load", &app.flipTextures);
     if(app.modelNames.size() > 0) {
         std::vector<const char *> modelCNames;
@@ -66,7 +65,20 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     }
     ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
     if(ImGui::Button("load model")) {
-        app.addModel(app.loadModelBuffer);
+        GLenum winding;
+        switch (app.windingIndex)
+        {
+        case 0:
+            winding = GL_CW;
+            break;
+        case 1:
+            winding = GL_CCW;
+            break;
+        default:
+            winding = GL_NONE;
+            break;
+        }
+        app.addModel(app.loadModelBuffer, winding);
     }
     ImGui::Separator();
     if(app.modelNames.size() > 0) {
@@ -87,6 +99,10 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         ImGui::End();
         ImGui::Begin("scene");
     }
+    std::vector<const char *> sceneNames;
+    for(Scene *scene : app.scenes) sceneNames.push_back(scene->getName());
+    ImGui::ListBox("scenes", &app.currentSceneIndex, sceneNames.data(), sceneNames.size());
+    ImGui::Separator();
     app.scenes[app.currentSceneIndex]->onImGuiRender(app);
     ImGui::Separator();
     ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
