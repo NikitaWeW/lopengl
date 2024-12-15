@@ -66,12 +66,6 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
             glDisable(GL_CULL_FACE);
         } else {
             glEnable(GL_CULL_FACE);
-            // assert(mesh.winding == GL_CW || mesh.winding == GL_CCW);
-            LOG_DEBUG("+--------------+");
-            LOG_DEBUG("GL_CW: %u", GL_CW);
-            LOG_DEBUG("GL_CCW: %u", GL_CCW);
-            LOG_DEBUG("mesh.winding: %u", mesh.winding);
-            LOG_DEBUG("+--------------+");
             glFrontFace(mesh.winding);
         }
         glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);

@@ -13,7 +13,7 @@ struct Mesh {
     GL_CCW  for counter-clockwise
     GL_NONE to diable face culling
 */
-    GLenum winding;
+    GLenum winding = GL_CCW;
 
     std::vector<Vertex> vertices;
     std::vector<unsigned> indices;

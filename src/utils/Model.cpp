@@ -75,17 +75,6 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
         }
     }
 
-/*
-    TODO: FIXME some day
-    mesh.winding = glm::dot(
-        mesh.vertices[mesh.indices[0 + 0]].normal, // imported normal
-        glm::cross(                            // expected normal
-            mesh.vertices[mesh.indices[0 + 0]].position, 
-            mesh.vertices[mesh.indices[2 + 0]].position
-        )
-    ) > 0 ? GL_CCW : GL_CW;
-*/
-
     mesh.va.bind();
     mesh.vb = VertexBuffer{mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
     mesh.ib = IndexBuffer {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
@@ -93,7 +82,12 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     return mesh;
 }
 
-Model::Model(std::string const &filepath, bool flipTextures) : m_filepath(filepath)
+Model::Model(std::string const &filepath, bool flipTextures, bool flipWindingOrder) : m_filepath(filepath)
+{
+    if(!load(filepath, flipTextures, flipWindingOrder)) throw std::runtime_error("failed to import model!");
+}
+
+bool Model::load(const std::string &filepath, bool flipTextures, bool flipWindingOrder)
 {
     Assimp::Importer importer;
 
@@ -103,14 +97,16 @@ Model::Model(std::string const &filepath, bool flipTextures) : m_filepath(filepa
         aiProcess_JoinIdenticalVertices  |
         aiProcess_OptimizeMeshes         |
         aiProcess_OptimizeGraph          |
-        aiProcess_SortByPType);
+        aiProcess_SortByPType            |
+        flipWindingOrder ? aiProcess_FlipWindingOrder : 0);
 
     if (!m_scene) {
-        LOG_ERROR("error parcing \"%s\": %s", filepath.c_str(), importer.GetErrorString());
-        throw std::runtime_error("failed to import model!");
+        m_log = "error parcing \"" + filepath + "\": %s" + importer.GetErrorString();
+        return false;
     } 
     m_directory = filepath.substr(0, filepath.find_last_of('/'));
     processNode(m_scene->mRootNode, flipTextures);
+    return true;
 }
 
 void Model::resetMatrix()

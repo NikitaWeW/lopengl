@@ -34,6 +34,9 @@ public:
 
     glm::vec3 outlineColor = glm::vec3{0.4, 0.4, 0.0};
     glm::vec3 clearColor = glm::vec3{0.0f};
+    glm::vec3 currentModelPosition = glm::vec3{0};
+    glm::vec3 currentModelRotation = glm::vec3{0};
+    glm::vec3 currentModelScale = glm::vec3{1};
 
     double deltatime = 0;
     unsigned frameCounter = 0;

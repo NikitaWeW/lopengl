@@ -6,6 +6,7 @@
 #include "Camera.hpp"
 #include "Mesh.hpp"
 
+#include "logger.h" // REMOVE ME
 class Model { 
 private:
     aiScene const *m_scene;
@@ -14,29 +15,29 @@ private:
     std::string m_directory;
     std::string m_filepath;
     glm::mat4 m_modelMat;
+    std::string m_log;
 private:
     std::vector<Texture> loadMaterialTextures(aiMaterial *material, aiTextureType const type, std::string const &typeName, bool flipTextures);
     void processNode(aiNode *node, bool flipTextures);
     Mesh processMesh(aiMesh *aimesh, bool flipTextures);
-
-public:
-    glm::vec3 m_position = glm::vec3{0}; // does not do anythyng.
-    glm::vec3 m_rotation = glm::vec3{0};
-    glm::vec3 m_scale = glm::vec3{1};
 public:
     Model() = default;
-    Model(const std::string &filepath, bool flipTextures = false);
+    Model(const std::string &filepath, bool flipTextures = false, bool flipWindingOrder = false);
     ~Model() = default;
+
+    bool load(const std::string &filepath, bool flipTextures = false, bool flipWindingOrder = false);
+    
     void resetMatrix();
     void translate(glm::vec3 const &translation);
     void rotate(glm::vec3 const &rotation);
     void scale(glm::vec3 const &scale);
     
-    inline void translate() { translate(m_position); }
-    inline void rotate() { rotate(m_rotation); }
-    inline void scale() { scale(m_scale); }
+    inline void translate() { LOG_WARN("deprecated"); }
+    inline void rotate() { LOG_WARN("deprecated"); }
+    inline void scale() { LOG_WARN("deprecated"); }
 
     bool operator==(Model const &other);
+    inline std::string const &getLog() const { return m_log; }; 
     inline aiScene const *getScene() const { return m_scene; }
     inline std::string const &getFilepath() const { return m_filepath; }
     inline std::vector<Mesh> const &getMeshes() const { return m_meshes; }
