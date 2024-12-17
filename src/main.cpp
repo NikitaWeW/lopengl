@@ -28,9 +28,6 @@ extern const bool debug = true;
 #endif
 #define SHOW_LOGS true // for readability
 #define LOAD_NOW true
-#define FLIP_TEXTURES true
-#define CW GL_CW
-#define CCW GL_CCW
 
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -77,15 +74,13 @@ int main()
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
-    app.quad.getMeshes().at(0).winding = GL_NONE;
-// TODO: fix everythymg
 //   ==================================================================
 
-    app.addModel("res/models/cube.obj",                           CW,  LOAD_NOW, !FLIP_TEXTURES);
-    app.addModel("res/models/backpack/backpack.obj",             CCW, !LOAD_NOW, !FLIP_TEXTURES);
-    app.addModel("res/models/rock/namaqualand_cliff_02_4k.gltf", CCW, !LOAD_NOW,  FLIP_TEXTURES);
-    app.addModel("res/models/lemon/lemon_4k.gltf",               CCW, !LOAD_NOW,  FLIP_TEXTURES);
-    app.addModel("res/models/apple/food_apple_01_4k.gltf",       CCW, !LOAD_NOW,  FLIP_TEXTURES);
+    app.addModel("res/models/cube.obj",                             LOAD_NOW);
+    app.addModel("res/models/backpack/backpack.obj",               !LOAD_NOW);
+    app.addModel("res/models/rock/namaqualand_cliff_02_4k.gltf",   !LOAD_NOW, true);
+    app.addModel("res/models/lemon/lemon_4k.gltf",                 !LOAD_NOW, true);
+    app.addModel("res/models/apple/food_apple_01_4k.gltf",         !LOAD_NOW, true);
 //   =======================================================================
     app.addTexture("res/textures/tile.png",           LOAD_NOW);
     app.addTexture("res/textures/white.png",          LOAD_NOW);
@@ -96,7 +91,6 @@ int main()
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glfwSwapInterval(1);
@@ -119,7 +113,7 @@ int main()
 
         lightCube.resetMatrix();
         lightCube.translate(light.position);
-        lightCube.scale(glm::vec3{1 / glm::pow(2, 6)});
+        lightCube.scale(glm::vec3{0.03125});
 
         if(light.enabled) {
             app.plainColorShader.bind();

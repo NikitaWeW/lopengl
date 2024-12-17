@@ -62,12 +62,6 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
             glUniform1i(shader.getUniform("u_material.specular"), textureCount);
         }
 
-        if(mesh.winding == GL_NONE) {
-            glDisable(GL_CULL_FACE);
-        } else {
-            glEnable(GL_CULL_FACE);
-            glFrontFace(mesh.winding);
-        }
         glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);
         glUniform1i(shader.getUniform("u_specularSet"), specularSet);
         glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);

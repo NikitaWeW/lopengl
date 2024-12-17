@@ -43,7 +43,7 @@ void scenes::Blending::onRender(Application &app, Renderer &renderer, Camera &ca
     std::map<std::pair<float, float>, std::pair<glm::vec3, glm::vec3>, comparator> sorted;
     for(glm::vec2 const &position : grassPositions) { // generate grass bushes and sort them so 
 
-        for(unsigned i = 0; i < quality; ++i) {
+        for(int i = 0; i < quality; ++i) {
             app.quad.m_position = {position.x, 0, position.y};
             app.quad.m_rotation = {std::sin(i) * 10, i * 360 / quality, std::sin(i) * 10};
             app.quad.rotate();

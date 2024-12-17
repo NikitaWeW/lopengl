@@ -1,6 +1,6 @@
 /*
 all shitty bad initialization/uninitialization goes here.
-this is really bad code, that is only use to test features.
+this is really bad code, that is only use to test features. fame frog.
 */
 
 #include "glad/gl.h"
@@ -17,7 +17,7 @@ this is really bad code, that is only use to test features.
 
 OpenGlError Application::openglError;
 extern const bool debug;
-// TODO: clean model / texture loading
+
 void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
 {
     Application::openglError.id = id;
@@ -122,16 +122,16 @@ void Application::loadModel(char const *filepath, std::optional<bool> flipTextur
     std::string newFilepath{filepath};
     std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
     try {
-        Model model;
         if(flipTextures.has_value()) {
-            model = {newFilepath, flipTextures.value()};
+            Model model{newFilepath, flipTextures.value()};
+            models.push_back(model);
         } else if(flipTexturesMap.find(filepath) != flipTexturesMap.end()) {
-            model = {newFilepath, flipTexturesMap.at(filepath)};
+            Model model{newFilepath, flipTexturesMap.at(filepath)};
+            models.push_back(model);
         } else {
-            model = {newFilepath, this->flipTextures};
+            Model model{newFilepath, this->flipTextures};
+            models.push_back(model);
         }
-        for(Mesh &mesh : model.getMeshes()) mesh.winding = windingMap.at(filepath);
-        models.push_back(model);
     } catch(std::runtime_error &e) {
         LOG_ERROR("%s", e.what());
     }
@@ -212,9 +212,8 @@ Application::~Application()
     glfwTerminate();
 }
 
-void Application::addModel(char const *filepath, GLenum winding, bool loadNow, std::optional<bool> flipTextures)
+void Application::addModel(char const *filepath, bool loadNow, std::optional<bool> flipTextures)
 {
-    windingMap[filepath] = winding;
     if(loadNow) {
         loadModel(filepath, flipTextures);
     } else if(flipTextures.has_value()) {

@@ -143,7 +143,7 @@ bool Shader::ParceShaderFile(std::string const &filepath)
     FragmentShaderSource = shaderSourceStreams[2].str();
     return true;
 }
-bool Shader::CompileShaders() { // TODO: create backup and restore on faliure
+bool Shader::CompileShaders() {
     if(m_managing) {
         glDeleteShader(VertexShaderID);
         glDeleteShader(FragmentShaderID);

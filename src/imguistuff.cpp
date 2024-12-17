@@ -8,8 +8,6 @@
 #include "utils/Light.hpp"
 #include "logger.h"
 
-char const *windingOptions[] = { "clockwise", "counter-clockwise", "no face culling" };
-
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight)
 {
     ImGuiIO &io = ImGui::GetIO();
@@ -80,20 +78,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     }
     ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
     if(ImGui::Button("load model")) {
-        GLenum winding;
-        switch (app.windingIndex)
-        {
-        case 0:
-            winding = GL_CW;
-            break;
-        case 1:
-            winding = GL_CCW;
-            break;
-        default:
-            winding = GL_NONE;
-            break;
-        }
-        app.addModel(app.loadModelBuffer, winding);
+        app.addModel(app.loadModelBuffer);
     }
     ImGui::Separator();
 
