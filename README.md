@@ -1,5 +1,5 @@
-# idontknowhowtocallitsorry
-that is setup for graphic programming / learning projectthat i use. dont expect it to work. lol.
+# learning opengl
+this is repository with my opngl expirience. there is some bad code and this is a mess.
 
 # building
 uses cmake:

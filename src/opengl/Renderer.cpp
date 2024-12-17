@@ -20,7 +20,7 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
     unsigned pointLightCount= 0;
     unsigned dirLightCount  = 0;
     unsigned spotLightCount = 0;
-    for(int i = 0; i < m_lights.size(); ++i) {
+    for(unsigned i = 0; i < m_lights.size(); ++i) {
         if(m_lights[i]->enabled) m_lights[i]->setUniforms(shader, pointLightCount, dirLightCount, spotLightCount);
     }
     glUniform1i(shader.getUniform("u_pointLightCount"), pointLightCount);
@@ -46,7 +46,7 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
         }
         unsigned int textureCount = 1; // leave 0 for other purposes
         for(Texture const &texture : mesh.textures) {
-            unsigned location = shader.getUniform("u_material." + texture.type);
+            int location = shader.getUniform("u_material." + texture.type);
             if(location != -1) {
                 glUniform1i(location, textureCount);
                 texture.bind(textureCount);

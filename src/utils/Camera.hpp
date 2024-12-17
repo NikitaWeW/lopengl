@@ -20,16 +20,10 @@ public:
 public:
     Camera(glm::vec3 const &pos = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
     virtual ~Camera();
-    virtual void update();
+    virtual void update(double deltatime);
     virtual glm::mat4 getViewMatrix() const;
     virtual glm::mat4 getProjectionMatrix() const;
-    virtual inline glm::vec3 getFront() const {
-        return front;
-    }
-    virtual inline glm::vec3 getRight() const {
-        return right;
-    }
-    virtual inline glm::vec3 getUp() const {
-        return up;
-    }
+    virtual inline glm::vec3 getFront() const { return front; }
+    virtual inline glm::vec3 getRight() const { return right; }
+    virtual inline glm::vec3 getUp() const { return up; }
 };

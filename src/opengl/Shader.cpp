@@ -24,7 +24,7 @@ bool compileShader(unsigned &shader, const char *shaderSource, const int mode, s
     }
     return true;
 }
-bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log) {
+bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log) { // thats stupid. wont fix it
     program = glCreateProgram();
     glAttachShader(program, vertexShaderID);
     glAttachShader(program, fragmentShaderID);

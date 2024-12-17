@@ -191,7 +191,7 @@ Application::Application()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-    if(getenv("XDG_SESSION_TYPE") == "wayland") {
+    if(getenv("WAYLAND_DISPLAY")) {
         LOG_INFO("wayland detected! imgui multiple wiewports feature is not supported!");
     } else {
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // there are issues with wayland

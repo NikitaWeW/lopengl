@@ -6,7 +6,7 @@ Camera::Camera(glm::vec3 const &pos, glm::vec3 const &rotation) : position(pos),
 
 Camera::~Camera() {}
 
-void Camera::update()
+void Camera::update(double deltatime)
 {
     front = glm::normalize(glm::vec3(
         cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y)),

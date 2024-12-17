@@ -9,7 +9,7 @@ ControllableCamera::ControllableCamera(GLFWwindow *window, glm::vec3 const &posi
 ControllableCamera::~ControllableCamera() = default;
 
 void ControllableCamera::update(double deltatime) {
-    Camera::update();
+    Camera::update(deltatime);
     processPosition(deltatime);
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);

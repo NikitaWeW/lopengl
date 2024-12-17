@@ -40,7 +40,7 @@ void Model::processNode(aiNode *node, bool flipTextures) {
 }
 Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     Mesh mesh;
-    for(int i = 0; i < aimesh->mNumVertices; ++i) {
+    for(unsigned i = 0; i < aimesh->mNumVertices; ++i) {
         Vertex vertex;
         vertex.position = { aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z };
         vertex.normal = { aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z };
@@ -49,9 +49,9 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
         }
         mesh.vertices.push_back(vertex);
     }
-    for(int i = 0; i < aimesh->mNumFaces; ++i) {
+    for(unsigned i = 0; i < aimesh->mNumFaces; ++i) {
         aiFace face = aimesh->mFaces[i];
-        for(int j = 0; j < face.mNumIndices; ++j)
+        for(unsigned j = 0; j < face.mNumIndices; ++j)
             mesh.indices.push_back(face.mIndices[j]);
     }
     if(aimesh->mMaterialIndex >= 0) {
@@ -83,18 +83,27 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
 }
 
 Model::Model(std::string const &filepath, bool flipTextures, bool flipWindingOrder) : m_filepath(filepath)
+<<<<<<< HEAD
 {
     if(!load(filepath, flipTextures, flipWindingOrder)) throw std::runtime_error("failed to import model!");
 }
 
 bool Model::load(const std::string &filepath, bool flipTextures, bool flipWindingOrder)
+=======
+>>>>>>> e23a067 (flip winding order option)
 {
+    if(!load(filepath, flipTextures)) throw std::runtime_error("failed to import model!");
+}
+
+bool Model::load(std::string const &filepath, bool flipTextures, bool flipWindingOrder) {
+
     Assimp::Importer importer;
 
     m_scene = importer.ReadFile( filepath,
         aiProcess_CalcTangentSpace       |
         aiProcess_Triangulate            |
         aiProcess_JoinIdenticalVertices  |
+<<<<<<< HEAD
         aiProcess_OptimizeMeshes         |
         aiProcess_OptimizeGraph          |
         aiProcess_SortByPType            |
@@ -102,6 +111,16 @@ bool Model::load(const std::string &filepath, bool flipTextures, bool flipWindin
 
     if (!m_scene) {
         m_log = "error parcing \"" + filepath + "\": %s" + importer.GetErrorString();
+=======
+        aiProcess_SortByPType            |
+        aiProcess_OptimizeGraph          |
+        aiProcess_OptimizeMeshes         |
+        (flipWindingOrder ? flipWindingOrder : 0)
+    );
+
+    if (!m_scene) {
+        LOG_ERROR("error parcing \"%s\": %s", filepath.c_str(), importer.GetErrorString());
+>>>>>>> e23a067 (flip winding order option)
         return false;
     } 
     m_directory = filepath.substr(0, filepath.find_last_of('/'));

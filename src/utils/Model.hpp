@@ -23,6 +23,10 @@ private:
 public:
     Model() = default;
     Model(const std::string &filepath, bool flipTextures = false, bool flipWindingOrder = false);
+<<<<<<< HEAD
+=======
+    bool load(std::string const &filepath, bool flipTextures = false, bool flipWindingOrder = false);
+>>>>>>> e23a067 (flip winding order option)
     ~Model() = default;
 
     bool load(const std::string &filepath, bool flipTextures = false, bool flipWindingOrder = false);

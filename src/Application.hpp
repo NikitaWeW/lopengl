@@ -38,6 +38,10 @@ public:
     glm::vec3 currentModelRotation = glm::vec3{0};
     glm::vec3 currentModelScale = glm::vec3{1};
 
+    // glm::vec3 currentModelPosition = glm::vec3{0.0f};
+    // glm::vec3 currentModelRotation = glm::vec3{0.0f};
+    // glm::vec3 currentModelScale    = glm::vec3{1.0f};
+
     double deltatime = 0;
     unsigned frameCounter = 0;
     unsigned updateCounter = 0;
