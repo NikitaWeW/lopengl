@@ -77,15 +77,15 @@ int main(int argc, char **argv)
 
 //   ==================================================================
 
-                  app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
     if(!fastLoad) app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
     if(!fastLoad) app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-                  app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-                  app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-                  app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
-                  app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
+    app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
+    app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
     if(!fastLoad) app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
-                  app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
+    app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
     if(!fastLoad) app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 
     glEnable(GL_STENCIL_TEST);
@@ -100,6 +100,12 @@ int main(int argc, char **argv)
     glfwSetScrollCallback(window, scroll_callback);
 
     LOG_INFO("loaded!");
+
+    std::thread flash = std::thread{[&app](){
+        app.clearColor = glm::vec4{0.5, 0.5, 0.5, 1};
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        app.clearColor = glm::vec4{0, 0, 0, 1};
+    }};
 
     while (!glfwWindowShouldClose(window))
     {
@@ -128,6 +134,7 @@ int main(int argc, char **argv)
         ++app.frameCounter;
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
+    flash.join();
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
