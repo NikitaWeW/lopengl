@@ -19,30 +19,30 @@ void scenes::CubePartyScene::onRender(Application &app, Renderer &renderer, Came
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     for(unsigned i = 0; i < sizeof(cubePositions) / sizeof(*cubePositions); i++) { // instanced rendering some day
-        if(app.currentTexture) app.currentTexture->bind();
-        app.currentModel->resetMatrix();    
-        app.currentModel->translate(cubePositions[i] * 2.0f);
-        app.currentModel->rotate({20.0f * i, 13.0f * i, 1.5f * i});
+        app.textures[app.currentTextureIndex].bind();
+        app.models[app.currentModelIndex].resetMatrix();    
+        app.models[app.currentModelIndex].translate(cubePositions[i] * 2.0f);
+        app.models[app.currentModelIndex].rotate({20.0f * i, 13.0f * i, 1.5f * i});
 
         glEnable(GL_DEPTH_TEST);
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilMask(0xFF);
 
-        renderer.draw(*app.currentModel, app.shaders[app.currentShaderIndex], camera);
+        renderer.draw(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera);
         if(app.objectOutline) {
             glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
             glStencilMask(0x00);
             glDisable(GL_DEPTH_TEST);
 
-            app.currentModel->scale(glm::vec3{1.01});
+            app.models[app.currentModelIndex].scale(glm::vec3{1.01});
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &app.outlineColor.x);
-            renderer.draw(*app.currentModel, app.plainColorShader, camera);
+            renderer.draw(app.models[app.currentModelIndex], app.plainColorShader, camera);
             
             glStencilMask(0xFF);
         }
 
-        if(app.currentTexture) app.currentTexture->unbind();
+        app.textures[app.currentTextureIndex].unbind();
     }
 }
 

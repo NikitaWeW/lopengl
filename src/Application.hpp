@@ -4,7 +4,6 @@
 #include "opengl/Texture.hpp"
 #include <stdexcept>
 #include <optional>
-#include "scene/Scene.hpp"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 struct OpenGlError {
@@ -15,14 +14,20 @@ struct OpenGlError {
     std::string msg;
 };
 /*
+to organise loading ¯⁠\⁠_⁠(⁠ツ⁠)⁠_⁠/⁠¯
+*/
+struct LoadModelQuery {
+    bool flipTextures = false;
+    bool flipWindingOrder = false;
+};
+struct LoadTextureQuery {
+    bool flipTexture = false;
+};
+/*
 Application state + RAII initialisation / destruction + model / texture loading UI
 this is really bad code, that is only use to test features. fame frog.
 */
 struct Application {
-private:
-    void loadModel(char const *filepath, std::optional<bool> flipTextures);
-    void loadTexture(char const *filepath, std::optional<bool> flipTextures);
-    std::map<std::string, bool> flipTexturesMap;
 public:
     static OpenGlError openglError;
     GLFWwindow *window;
@@ -42,9 +47,6 @@ public:
     unsigned frameCounter = 0;
     unsigned updateCounter = 0;
 
-    Texture *currentTexture = nullptr; // i know that could be deleted, and be accessed via textures[currentTextureIndex], maybe i will fix this in the future who knows
-    Model *currentModel = nullptr;
-
     int currentModelIndex = 0; 
     int currentShaderIndex = 0;
     int currentTextureIndex = 0;
@@ -53,10 +55,6 @@ public:
     std::vector<Model> models;
     std::vector<Shader> shaders;
     std::vector<Texture> textures;
-    std::vector<Scene *> scenes; // because of virtual functions, i need to store the reference of base class with derived data (makes sence)
-
-    std::vector<std::string> textureNames;
-    std::vector<std::string> modelNames;
 
     char loadModelBuffer[1024];
     char loadTextureBuffer[1024];
@@ -66,11 +64,11 @@ public:
     bool objectOutline = false;
     bool sceneControlsInSeparateWindow = false;
     bool flipTextures = false;
+    bool flipWinding = false;
 public:
     Application();
     ~Application();
-    void addModel(char const *filepath, bool loadNow = false, std::optional<bool> flipTextures = {});
-    void addTexture(char const *filepath, bool loadNow = false, std::optional<bool> flipTextures = {});
-    void applyModel();
-    void applyTexture();
+
+    void loadModel(char const *filepath, LoadModelQuery query);
+    void loadTexture(char const *filepath, LoadTextureQuery query);
 };

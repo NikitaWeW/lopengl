@@ -1,3 +1,8 @@
+/*
+i use this
+cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall'
+*/
+
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
@@ -14,7 +19,6 @@
 #include "Application.hpp"
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
-#include "scene/scenes.hpp"
 
 #include <chrono>
 #include <memory>
@@ -26,16 +30,21 @@ extern const bool debug = false;
 #else
 extern const bool debug = true;
 #endif
-#define SHOW_LOGS true // for readability
-#define LOAD_NOW true
+#define SHOW_LOGS         true // for readability
+#define LOAD_NOW          true
+#define FLIP_TEXTURES     true
+#define FLIP_WINING_ORDER true
 
+void renderthing(Application &app, Renderer &renderer, Camera &camera);
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
-int main()
+int main(int argc, char **argv)
 {
-    printf("loading...\n"); // TODO: cool console progress bar
+    bool fastLoad = false;
+    for(int i = 0; i < argc; ++i) if(strcmp(argv[i], "--fast") == 0) fastLoad = true;
+    printf("loading...\n"); // TODO: cool progress bar
     Application app;
     GLFWwindow *window = app.window;
     Model lightCube("res/models/cube.obj");
@@ -44,10 +53,6 @@ int main()
     SpotLight flashlight;
     VertexBufferLayout layout;
     Renderer renderer;
-
-    scenes::CubePartyScene cubeParty;
-    scenes::SingleModelScene singleModel;
-    scenes::Blending blending;
 
 //  =========================================== 
 
@@ -59,11 +64,6 @@ int main()
         {"shaders/basic.glsl",    SHOW_LOGS},
         {"shaders/test.glsl",     SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
-    app.scenes = {
-        &cubeParty,
-        &singleModel,
-        &blending
-    };
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -73,20 +73,20 @@ int main()
     app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
+// TODO: why tf is cube black?
 
 //   ==================================================================
 
-    app.addModel("res/models/cube.obj",                             LOAD_NOW);
-    app.addModel("res/models/backpack/backpack.obj",               !LOAD_NOW);
-    app.addModel("res/models/rock/namaqualand_cliff_02_4k.gltf",   !LOAD_NOW, true);
-    app.addModel("res/models/lemon/lemon_4k.gltf",                 !LOAD_NOW, true);
-    app.addModel("res/models/apple/food_apple_01_4k.gltf",         !LOAD_NOW, true);
-//   =======================================================================
-    app.addTexture("res/textures/tile.png",           LOAD_NOW);
-    app.addTexture("res/textures/white.png",          LOAD_NOW);
-    app.addTexture("res/textures/oak.jpg",           !LOAD_NOW);
-    app.addTexture("res/textures/concrete.jpg",      !LOAD_NOW);
-    app.addTexture("res/textures/brick_wall.jpg",    !LOAD_NOW);
+                  app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
+    if(!fastLoad) app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    if(!fastLoad) app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+                  app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+                  app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+                  app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
+                  app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
+    if(!fastLoad) app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
+                  app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
+    if(!fastLoad) app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -109,7 +109,7 @@ int main()
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
         
-        app.scenes[app.currentSceneIndex]->onRender(app, renderer, camera);
+        renderthing(app, renderer, camera);
 
         lightCube.resetMatrix();
         lightCube.translate(light.position);

@@ -22,13 +22,6 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Separator();
 
 
-    // TODO: redo scenes logic properly
-    std::vector<const char *> sceneNames;
-    for(Scene *scene : app.scenes) sceneNames.push_back(scene->getName());
-    ImGui::ListBox("scenes", &app.currentSceneIndex, sceneNames.data(), sceneNames.size());
-    ImGui::Separator();
-
-
     std::vector<const char *> shaderNames;
     for(Shader &shader : app.shaders) shaderNames.push_back(shader.getFilePath().c_str());
     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
@@ -60,40 +53,34 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Separator();
 
 
-    if(app.currentModel) {
-        size_t triangles = 0;
-        for(size_t i = 0; i < app.currentModel->getMeshes().size(); ++i) {
-            triangles += app.currentModel->getMeshes()[i].indices.size() / 3;
-        }
-        ImGui::Text("%llu triangles", triangles);
+    size_t triangles = 0;
+    for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {
+        triangles += app.models[app.currentModelIndex].getMeshes()[i].indices.size() / 3;
     }
-    // FIXME
-    // ImGui::Checkbox("flip textures on load", &app.flipTextures);
-    if(app.modelNames.size() > 0) {
-        std::vector<const char *> modelCNames;
-        for(std::string &name : app.modelNames) modelCNames.push_back(name.c_str());
-        if(ImGui::ListBox("loaded models", &app.currentModelIndex, modelCNames.data(), modelCNames.size())) {
-            app.applyModel();
-        }
+    ImGui::Text("%llu triangles", triangles);
+    ImGui::Checkbox("flip textures on load", &app.flipTextures);
+    ImGui::Checkbox("flip wining order on load", &app.flipWinding);
+    if(app.models.size() > 0) {
+        std::vector<const char *> modelNames;
+        for(Model const &model : app.models) modelNames.push_back(model.getFilepath().c_str());
+        ImGui::ListBox("loaded models", &app.currentModelIndex, modelNames.data(), modelNames.size());
     }
     ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
     if(ImGui::Button("load model")) {
-        app.addModel(app.loadModelBuffer);
+        app.loadModel(app.loadModelBuffer, {app.flipTextures, app.flipWinding});
     }
     ImGui::Separator();
 
 
-    // if(app.textureNames.size() > 0) {
-    //     std::vector<const char *> textureCNames;
-    //     for(std::string const &name : app.textureNames) textureCNames.push_back(name.c_str());
-    //     if(ImGui::ListBox("loaded textures", &app.currentTextureIndex, textureCNames.data(), textureCNames.size())) {
-    //         app.applyTexture();
-    //     }
-    // }
-    // ImGui::InputText("texture path", app.loadTextureBuffer, sizeof(app.loadTextureBuffer));
-    // if(ImGui::Button("load texture")) {
-    //     app.addTexture(app.loadTextureBuffer);
-    // }
+    if(app.textures.size() > 0) {
+        std::vector<const char *> textureNames;
+        for(Texture const &texture : app.textures) textureNames.push_back(texture.getFilePath().c_str());
+        ImGui::ListBox("loaded textures", &app.currentTextureIndex, textureNames.data(), textureNames.size());
+    }
+    ImGui::InputText("texture path", app.loadTextureBuffer, sizeof(app.loadTextureBuffer));
+    if(ImGui::Button("load texture")) {
+        app.loadTexture(app.loadTextureBuffer, {app.flipTextures});
+    }
     ImGui::Separator();
 
 

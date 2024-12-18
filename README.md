@@ -6,7 +6,7 @@ uses cmake:
 ``` shell
 cmake -S . -B build
 cmake --build build
-build/main.exe
+build/main.exe --fast # fast option for faster loading. it wont load everythyng. useful when developing
 ```
 
 if you dont know what the shell is, then you could use launcher that i made. [get it here](github.com/NikitaWeW/launcher/releases/latest)

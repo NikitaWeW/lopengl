@@ -117,46 +117,6 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
 }
-void Application::loadModel(char const *filepath, std::optional<bool> flipTextures)
-{
-    std::string newFilepath{filepath};
-    std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
-    try {
-        if(flipTextures.has_value()) {
-            Model model{newFilepath, flipTextures.value()};
-            models.push_back(model);
-        } else if(flipTexturesMap.find(filepath) != flipTexturesMap.end()) {
-            Model model{newFilepath, flipTexturesMap.at(filepath)};
-            models.push_back(model);
-        } else {
-            Model model{newFilepath, this->flipTextures};
-            models.push_back(model);
-        }
-    } catch(std::runtime_error &e) {
-        LOG_ERROR("%s", e.what());
-    }
-    currentModel = &*models.rbegin();
-    currentModelIndex = models.size() - 1;
-}
-void Application::loadTexture(char const *filepath, std::optional<bool> flipTextures)
-{
-    try {
-        if(flipTextures.has_value()) {
-            Texture texture{filepath, flipTextures.value()};
-            textures.push_back(texture);
-        } else if(flipTexturesMap.find(filepath) != flipTexturesMap.end()) {
-            Texture texture{filepath, flipTexturesMap.at(filepath)};
-            textures.push_back(texture);
-        } else {
-            Texture texture{filepath, this->flipTextures};
-            textures.push_back(texture);
-        }
-    } catch(std::runtime_error &e) {
-        LOG_ERROR("%s", e.what());
-    }
-    currentTexture = &*textures.rbegin(); 
-    currentTextureIndex = textures.size() - 1;
-}
 Application::Application()
 {
     logger_initConsoleLogger(stdout);
@@ -212,44 +172,23 @@ Application::~Application()
     glfwTerminate();
 }
 
-void Application::addModel(char const *filepath, bool loadNow, std::optional<bool> flipTextures)
+void Application::loadModel(char const *filepath, LoadModelQuery query)
 {
-    if(loadNow) {
-        loadModel(filepath, flipTextures);
-    } else if(flipTextures.has_value()) {
-        flipTexturesMap[filepath] = flipTextures.value();
+    std::string newFilepath{filepath};
+    std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
+    try {
+        models.push_back(Model{newFilepath, query.flipTextures, query.flipWindingOrder});
+    } catch(std::runtime_error &e) {
+        LOG_ERROR("%s", e.what());
     }
-    modelNames.push_back({filepath});
+    currentModelIndex = models.size() - 1;
 }
-void Application::addTexture(char const * filepath, bool loadNow, std::optional<bool> flipTextures)
+void Application::loadTexture(char const *filepath, LoadTextureQuery query)
 {
     try {
-        if(loadNow) {
-            loadTexture(filepath, flipTextures);
-        } else if(flipTextures.has_value()) {
-            flipTexturesMap[filepath] = flipTextures.value();
-        }
-        textureNames.push_back({filepath});
+        textures.push_back(Texture{filepath, query.flipTexture});
     } catch(std::runtime_error &e) {
-        LOG_ERROR("failed to add texture: %s", e.what());
+        LOG_ERROR("%s", e.what());
     }
-}
-
-void Application::applyModel()
-{
-    auto model = std::find_if(models.begin(), models.end(), [this](Model const &model){ return model.getFilepath() == modelNames.at(currentModelIndex); });
-    if(model == models.end()) {
-        loadModel(modelNames.at(currentModelIndex).c_str(), {});
-    } else {
-        currentModel = &*model;
-    }
-}
-void Application::applyTexture()
-{
-    auto texture = std::find_if(textures.begin(), textures.end(), [this](Texture const &texture){ return texture.getFilePath() == textureNames.at(currentTextureIndex); });
-    if(texture == textures.end()) {
-        loadTexture(textureNames.at(currentTextureIndex).c_str(), {});
-    } else {
-        currentTexture = &*texture;
-    }
+    currentTextureIndex = textures.size() - 1;
 }
