@@ -9,7 +9,7 @@ Renderer::Renderer() = default;
 
 void Renderer::clear(glm::vec3 clearColor) const
 {
-    glClearColor(clearColor.r, clearColor.g, clearColor.b, 0);
+    glClearColor(clearColor.r, clearColor.g, clearColor.b, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -39,10 +39,8 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
 
         // process model textures
         std::vector<unsigned> texturesToUnbind; // wanna unbind textuers after render
-        if(mesh.textures.size() == 0) { 
+        if(mesh.textures.size() == 0) { // use texture at slot 0 as diffuse texture
             glUniform1i(shader.getUniform("u_material.diffuse"), 0);
-            Texture::unbindStatic(1);
-            glUniform1i(shader.getUniform("u_material.specular"), 1);
         }
         unsigned int textureCount = 1; // leave 0 for other purposes
         for(Texture const &texture : mesh.textures) {

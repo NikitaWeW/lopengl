@@ -73,20 +73,23 @@ int main(int argc, char **argv)
     app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
-// TODO: why tf is cube black?
 
 //   ==================================================================
 
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
-    if(!fastLoad) app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    if(!fastLoad) app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
     app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
-    if(!fastLoad) app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
     app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
-    if(!fastLoad) app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
+if(!fastLoad) {
+    app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
+    app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
+}
+
+    app.currentModelIndex = 0;
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -101,11 +104,7 @@ int main(int argc, char **argv)
 
     LOG_INFO("loaded!");
 
-    std::thread flash = std::thread{[&app](){
-        app.clearColor = glm::vec4{0.5, 0.5, 0.5, 1};
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        app.clearColor = glm::vec4{0, 0, 0, 1};
-    }};
+    std::thread flash = std::thread{[&app](){ app.clearColor = glm::vec4{0.1, 0.1, 0.1, 1}; std::this_thread::sleep_for(std::chrono::milliseconds(500)); app.clearColor = glm::vec4{0, 0, 0, 1}; }};
 
     while (!glfwWindowShouldClose(window))
     {

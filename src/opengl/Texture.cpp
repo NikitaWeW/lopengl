@@ -11,7 +11,7 @@ Texture::Texture(std::string const &filepath, bool flip) :
     stbi_set_flip_vertically_on_load(flip);
     m_Buffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
 
-    if(!m_Buffer) throw std::runtime_error("failed to load \"" + filepath + "\" texture!");
+    if(!m_Buffer) throw std::runtime_error("failed to load \"" + filepath + "\" texture!"); // TODO: move to m_log
 
     glGenTextures(1, &m_RenderID);
     glBindTexture(GL_TEXTURE_2D, m_RenderID);
@@ -54,7 +54,6 @@ void Texture::swap(Texture &&other) {
     std::swap(m_Width, other.m_Width);
     std::swap(m_Height, other.m_Height);
     std::swap(m_BPP, other.m_BPP);
-    std::swap(m_RenderID, other.m_RenderID);
     std::swap(type, other.type);
 }
 Texture::~Texture() {
