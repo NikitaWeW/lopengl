@@ -89,12 +89,16 @@ if(!fastLoad) {
     app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 }
 
-    app.currentModelIndex = 0;
+    app.currentTextureIndex = 1; // white
+    app.currentModelIndex = 0; // cube
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     glfwSwapInterval(1);
     glfwSetInputMode(window, GLFW_CURSOR, camera.mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);

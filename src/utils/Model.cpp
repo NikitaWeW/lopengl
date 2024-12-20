@@ -84,7 +84,7 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
 
 Model::Model(std::string const &filepath, bool flipTextures, bool flipWindingOrder) : m_filepath(filepath)
 {
-    if(!load(filepath, flipTextures)) throw std::runtime_error("failed to import model!");
+    if(!load(filepath, flipTextures, flipWindingOrder)) throw std::runtime_error("failed to import model!");
 }
 
 bool Model::load(std::string const &filepath, bool flipTextures, bool flipWindingOrder) {
@@ -98,7 +98,7 @@ bool Model::load(std::string const &filepath, bool flipTextures, bool flipWindin
         aiProcess_SortByPType            |
         aiProcess_OptimizeGraph          |
         aiProcess_OptimizeMeshes         |
-        (flipWindingOrder ? flipWindingOrder : 0)
+        (flipWindingOrder ? aiProcess_FlipWindingOrder : 0)
     );
 
     if (!m_scene) {
