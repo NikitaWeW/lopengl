@@ -1,6 +1,6 @@
 /*
 i use this
-cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall'
+cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall' -G Ninja
 */
 
 #include "glad/gl.h"
@@ -19,6 +19,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-co
 #include "Application.hpp"
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
+#include "opengl/Framebuffer.hpp"
 
 #include <chrono>
 #include <memory>
@@ -73,6 +74,11 @@ int main(int argc, char **argv)
     app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
+    app.cameraView = Texture{camera.windowHeightPx, camera.windowWidthPx};
+    Framebuffer framebuffer;
+    framebuffer.attachTexture(app.cameraView);
+    LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
+    framebuffer.unbind();
 
 //   ==================================================================
 

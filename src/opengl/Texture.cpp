@@ -5,8 +5,20 @@
 
 #include "Texture.hpp"
 
-Texture::Texture(std::string const &filepath, bool flip) :
-    m_FilePath(filepath) {
+Texture::Texture(GLsizei width, GLsizei height, GLenum wrap) : m_Width(width), m_Height(height)
+{
+    glGenTextures(1, &m_RenderID);
+    glBindTexture(GL_TEXTURE_2D, m_RenderID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    m_managing = true;
+}
+
+Texture::Texture(std::string const &filepath, bool flip, GLenum wrap) : m_FilePath(filepath)
+{
 
     stbi_set_flip_vertically_on_load(flip);
     m_Buffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
@@ -18,12 +30,13 @@ Texture::Texture(std::string const &filepath, bool flip) :
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_Buffer);
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(m_Buffer);
+    m_Buffer = 0;
     m_managing = true;
 }
 

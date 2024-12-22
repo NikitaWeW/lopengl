@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "glad/gl.h"
 
 class Texture
 {
@@ -11,7 +12,9 @@ private:
     mutable bool m_managing = false;
 public:
     std::string type; 
-    Texture(std::string const &filepath, bool flip = true);
+    Texture() = default;
+    Texture(GLsizei width, GLsizei height, GLenum wrap = GL_REPEAT);
+    Texture(std::string const &filepath, bool flip = true, GLenum wrap = GL_REPEAT);
     ~Texture();
     Texture(Texture const &other);
     Texture(Texture &&other);
@@ -23,16 +26,9 @@ public:
     void unbind(unsigned slot = 0) const;
     static void unbindStatic(unsigned slot = 0);
 
-    inline std::string const &getFilePath() const {
-        return m_FilePath;
-    }
-    inline int getWidth() const {
-        return m_Width;
-    }
-    inline int getHeight() const {
-        return m_Height;
-    }
-    inline int getBitsPerPixel() const {
-        return m_BPP;
-    }
+    inline std::string const &getFilePath() const { return m_FilePath; }
+    inline unsigned getRenderID() const {return m_RenderID; }
+    inline int getWidth() const { return m_Width; }
+    inline int getHeight() const { return m_Height; }
+    inline int getBitsPerPixel() const { return m_BPP; }
 };
