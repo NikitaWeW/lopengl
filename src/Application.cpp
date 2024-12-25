@@ -151,13 +151,10 @@ Application::Application()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-    if(getenv("WAYLAND_DISPLAY")) {
-        LOG_INFO("wayland detected! imgui multiple wiewports feature is not supported!");
-    } else {
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // there are issues with wayland
-    }
+    if(getenv("WAYLAND_DISPLAY")) LOG_INFO("wayland detected! imgui multiple viewports feature is not supported!");
+    else io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 430");
     ImGui::StyleColorsDark();
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(DebugCallback, nullptr);
