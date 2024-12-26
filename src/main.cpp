@@ -50,6 +50,7 @@ int main(int argc, char **argv)
     Application app;
     GLFWwindow *window = app.window;
     Model lightCube("res/models/cube.obj");
+    Model oneSideQuad{"res/models/one_side_quad.obj"};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
     PointLight light;
     SpotLight flashlight;
@@ -75,10 +76,12 @@ int main(int argc, char **argv)
     app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
-    app.cameraView = Texture{600, 600};
 
+    app.cameraView = Texture{600, 600};
     Framebuffer framebuffer;
+    Renderbuffer rb{GL_DEPTH24_STENCIL8, 600, 600};
     framebuffer.attachTexture(app.cameraView);
+    framebuffer.attachRenderbuffer(rb);
     LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
     // framebuffer.unbind();
 
@@ -129,6 +132,8 @@ if(!fastLoad) {
         
         renderthing(app, renderer, camera);
 
+        framebuffer.bind();
+
         lightCube.resetMatrix();
         lightCube.translate(light.position);
         lightCube.scale(glm::vec3{0.03125});
@@ -140,6 +145,10 @@ if(!fastLoad) {
         }
 
         imguistuff(app, camera, light, flashlight);
+
+        framebuffer.unbind();
+        app.cameraView.bind();
+        renderer.draw(oneSideQuad, app.shaders[2], camera);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
