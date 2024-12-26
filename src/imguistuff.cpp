@@ -46,9 +46,8 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Separator();
 
 
-    if(ImGui::Checkbox("wireframe", &app.wireframe)) {
-        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe ? GL_LINE : GL_FILL);
-    }
+    ImGui::Checkbox("wireframe 1", &app.wireframe1);
+    ImGui::Checkbox("wireframe 2", &app.wireframe2);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
 
@@ -57,7 +56,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {
         triangles += app.models[app.currentModelIndex].getMeshes()[i].indices.size() / 3;
     }
-    ImGui::Text("%llu triangles", triangles);
+    ImGui::Text("%lu triangles", triangles);
     ImGui::Checkbox("flip textures on load", &app.flipTextures);
     ImGui::Checkbox("flip wining order on load", &app.flipWinding);
     if(app.models.size() > 0) {

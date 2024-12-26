@@ -130,9 +130,10 @@ if(!fastLoad) {
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
         
-        renderthing(app, renderer, camera);
-
         framebuffer.bind();
+        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe1 ? GL_LINE : GL_FILL);
+
+        renderthing(app, renderer, camera);
 
         lightCube.resetMatrix();
         lightCube.translate(light.position);
@@ -144,11 +145,13 @@ if(!fastLoad) {
             renderer.draw(lightCube, app.plainColorShader, camera);
         }
 
-        imguistuff(app, camera, light, flashlight);
-
         framebuffer.unbind();
+        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe2 ? GL_LINE : GL_FILL);
+
+        renderer.clear(app.clearColor);
+        imguistuff(app, camera, light, flashlight);
         app.cameraView.bind();
-        renderer.draw(oneSideQuad, app.shaders[2], camera);
+        renderer.draw(oneSideQuad, app.shaders[1], glm::mat4{1.0}, glm::ortho(-1, 1, -1, 1));
 
         glfwSwapBuffers(window);
         glfwPollEvents();

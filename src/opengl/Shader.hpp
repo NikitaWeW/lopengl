@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <map>
-// TODO: remake that
+// TODO: refactor
 bool compileShader(unsigned &shader, const char *shaderSource, const int mode,  std::string &log);
 bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log);
 

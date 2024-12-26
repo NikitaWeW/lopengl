@@ -87,15 +87,15 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
     }
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
-        Application::openglError.severity = "high";
+        Application::openglError.severity = "high severity message";
         break;
 
         case GL_DEBUG_SEVERITY_MEDIUM:
-        Application::openglError.severity = "medium";
+        Application::openglError.severity = "medium severity message";
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
-        Application::openglError.severity = "low";
+        Application::openglError.severity = "low severity message";
         break;
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
@@ -103,11 +103,11 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         break;
 
         default:
-        Application::openglError.severity = "unknown";
+        Application::openglError.severity = "unknown severity message";
         break;
     }
 
-    LOG_WARN("%d: opengl %s message of %s severity, raised from %s:\n\t%s", 
+    LOG_WARN("%d: opengl %s %s, raised from %s:\n\t%s", 
             Application::openglError.id, 
             Application::openglError.type.c_str(), 
             Application::openglError.severity.c_str(), 

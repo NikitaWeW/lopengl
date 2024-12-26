@@ -60,7 +60,8 @@ public:
     char loadModelBuffer[1024];
     char loadTextureBuffer[1024];
 
-    bool wireframe = false;
+    bool wireframe1 = false;
+    bool wireframe2 = false;
     bool flashlight = true;
     bool objectOutline = false;
     bool sceneControlsInSeparateWindow = false;

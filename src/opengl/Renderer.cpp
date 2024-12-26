@@ -16,6 +16,7 @@ void Renderer::clear(glm::vec3 clearColor) const
 void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
 {
     shader.bind();
+    // TODO: refactor
 
     unsigned pointLightCount= 0;
     unsigned dirLightCount  = 0;
