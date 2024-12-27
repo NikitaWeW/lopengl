@@ -102,6 +102,7 @@ if(!fastLoad) {
 
     app.currentTextureIndex = 1; // white
     app.currentModelIndex = 0; // cube
+    app.currentShaderIndex = 1; // basic
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -129,7 +130,8 @@ if(!fastLoad) {
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
-        
+
+
         framebuffer.bind();
         glPolygonMode(GL_FRONT_AND_BACK, app.wireframe1 ? GL_LINE : GL_FILL);
 
@@ -144,14 +146,15 @@ if(!fastLoad) {
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
             renderer.draw(lightCube, app.plainColorShader, camera);
         }
-
         framebuffer.unbind();
-        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe2 ? GL_LINE : GL_FILL);
 
+        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe2 ? GL_LINE : GL_FILL);
         renderer.clear(app.clearColor);
-        imguistuff(app, camera, light, flashlight);
         app.cameraView.bind();
-        renderer.draw(oneSideQuad, app.shaders[1], glm::mat4{1.0}, glm::ortho(-1, 1, -1, 1));
+        oneSideQuad.resetMatrix();
+        renderer.draw(oneSideQuad, app.shaders[1]/* basic shader */, glm::mat4{1.0f}, glm::ortho(-1, 1, -1, 1)); 
+        imguistuff(app, camera, light, flashlight);
+        //TODO: fix streching and low resolution
 
         glfwSwapBuffers(window);
         glfwPollEvents();

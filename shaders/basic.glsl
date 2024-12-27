@@ -17,7 +17,7 @@ void main() {
 
 #shader fragment
 #version 430 core
-out vec4 o_color1;
+out vec4 o_color;
 
 struct Material {
     sampler2D diffuse;
@@ -27,6 +27,5 @@ in vec2 v_texCoord;
 uniform Material u_material;
 
 void main() {
-    // o_color = texture(u_material.diffuse, v_texCoord);
-    o_color1 = vec4(1);
+    o_color = texture(u_material.diffuse, v_texCoord);
 }
