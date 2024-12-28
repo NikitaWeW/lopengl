@@ -24,10 +24,10 @@ glm::mat4 Camera::getViewMatrix() const
 
 glm::mat4 Camera::getProjectionMatrix() const
 {
-    if(!windowWidthPx && !windowHeightPx) return glm::mat4{};
-    auto key = std::make_tuple(windowWidthPx, windowHeightPx, fov, near, far);
-    if(m_ProjectionMatrixCache.find(key) != m_ProjectionMatrixCache.end()) return m_ProjectionMatrixCache[key];
-    glm::mat4 matrix(glm::perspective(glm::radians(fov), (float) windowWidthPx / windowHeightPx, near, far));
-    m_ProjectionMatrixCache[key] = matrix;
-    return matrix;
+    auto params = std::make_tuple(windowWidth, windowHeight, fov, near, far);
+    if(params != lastparams) {
+        projectionMat = glm::mat4{glm::perspective(glm::radians(fov), (float) windowWidth / windowHeight, near, far)};
+        lastparams = params;
+    }
+    return projectionMat;
 }

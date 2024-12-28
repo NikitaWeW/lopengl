@@ -35,7 +35,6 @@ public:
     Shader plainColorShader;
     Model quad;
     Model cube;
-    Texture cameraView;
 
     glm::vec3 outlineColor = glm::vec3{0.4, 0.4, 0.0};
     glm::vec3 clearColor = glm::vec3{0.0f};
@@ -60,8 +59,7 @@ public:
     char loadModelBuffer[1024];
     char loadTextureBuffer[1024];
 
-    bool wireframe1 = false;
-    bool wireframe2 = false;
+    bool wireframe = false;
     bool flashlight = true;
     bool objectOutline = false;
     bool sceneControlsInSeparateWindow = false;

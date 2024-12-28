@@ -8,7 +8,7 @@
 #include "utils/Light.hpp"
 #include "logger.h"
 
-void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight)
+void imguistuff(Application &app, Camera &cam, PointLight &light, SpotLight &flashlight)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
@@ -46,8 +46,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Separator();
 
 
-    ImGui::Checkbox("wireframe 1", &app.wireframe1);
-    ImGui::Checkbox("wireframe 2", &app.wireframe2);
+    ImGui::Checkbox("wireframe", &app.wireframe);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
 
@@ -129,8 +128,8 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
     ImGui::DragFloat("camera near plane", &cam.near, 0.001f);
     ImGui::DragFloat("camera far plane", &cam.far, 25.0f);
-    ImGui::InputFloat("camera speed (unit/s)", &cam.speed);
-    ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
+    // ImGui::InputFloat("camera speed (unit/s)", &cam.speed);
+    // ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
     if (ImGui::Button("reset camera"))
     {
         cam.position = {0, 0, 5};
@@ -138,8 +137,8 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         cam.fov = 45;
         cam.near = 0.01f;
         cam.far = 1000.0f;
-        cam.speed = 7.0f;
-        cam.sensitivity = 1.0f;
+        // cam.speed = 7.0f;
+        // cam.sensitivity = 1.0f;
     }
     if(ImGui::BeginPopup("failed to reload shaders!")) {
         if(failedShaderTemp) {

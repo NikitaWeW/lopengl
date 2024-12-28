@@ -36,9 +36,10 @@ extern const bool debug = true;
 #define LOAD_NOW          true
 #define FLIP_TEXTURES     true
 #define FLIP_WINING_ORDER true
+#define resolution 600
 
 void renderthing(Application &app, Renderer &renderer, Camera &camera);
-void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
+void imguistuff(Application &app, Camera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
     Model lightCube("res/models/cube.obj");
     Model oneSideQuad{"res/models/one_side_quad.obj"};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
+    Camera virtualcam{{0, 0, 5}, {-90, 0, 0}};
     PointLight light;
     SpotLight flashlight;
     VertexBufferLayout layout;
@@ -77,13 +79,13 @@ int main(int argc, char **argv)
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
-    app.cameraView = Texture{600, 600};
+    virtualcam.windowWidth = virtualcam.windowHeight = resolution;
+    Texture virtualcamView{resolution, resolution};
     Framebuffer framebuffer;
-    Renderbuffer rb{GL_DEPTH24_STENCIL8, 600, 600};
-    framebuffer.attachTexture(app.cameraView);
+    Renderbuffer rb{GL_DEPTH24_STENCIL8, resolution, resolution};
+    framebuffer.attachTexture(virtualcamView);
     framebuffer.attachRenderbuffer(rb);
     LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
-    // framebuffer.unbind();
 
 //   ==================================================================
 
@@ -102,7 +104,6 @@ if(!fastLoad) {
 
     app.currentTextureIndex = 1; // white
     app.currentModelIndex = 0; // cube
-    app.currentShaderIndex = 1; // basic
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -120,48 +121,57 @@ if(!fastLoad) {
 
     LOG_INFO("loaded!");
 
-    app.clearColor = glm::vec4{0.1, 0.1, 0.1, 1}; 
-    std::thread flash = std::thread{[&app](){ std::this_thread::sleep_for(std::chrono::milliseconds(500)); app.clearColor = glm::vec4{0, 0, 0, 1}; }};
-
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
         camera.update(app.deltatime);
+        virtualcam.update(app.deltatime);
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
-        glfwGetWindowSize(window, &camera.windowWidthPx, &camera.windowHeightPx);
+        glfwGetWindowSize(window, &camera.windowWidth, &camera.windowHeight);
+        glfwGetWindowSize(window, &virtualcam.windowWidth, &virtualcam.windowHeight);
 
+// ========================================
 
         framebuffer.bind();
-        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe1 ? GL_LINE : GL_FILL);
+        renderer.clear({0.1, 0.1, 0.1});
 
-        renderthing(app, renderer, camera);
+        // draw the model        
+        app.models[app.currentModelIndex].resetMatrix();
+        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
+        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
+        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
+        app.textures[app.currentTextureIndex].bind();
+        renderer.draw(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], virtualcam); 
+        app.textures[app.currentTextureIndex].unbind();
+
+        // draw the light cube        
         lightCube.resetMatrix();
         lightCube.translate(light.position);
         lightCube.scale(glm::vec3{0.03125});
-
         if(light.enabled) {
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.draw(lightCube, app.plainColorShader, camera);
+            renderer.draw(lightCube, app.plainColorShader, virtualcam);
         }
         framebuffer.unbind();
 
-        glPolygonMode(GL_FRONT_AND_BACK, app.wireframe2 ? GL_LINE : GL_FILL);
+// ========================================
+
         renderer.clear(app.clearColor);
-        app.cameraView.bind();
+        virtualcamView.bind();
         oneSideQuad.resetMatrix();
-        renderer.draw(oneSideQuad, app.shaders[1]/* basic shader */, glm::mat4{1.0f}, glm::ortho(-1, 1, -1, 1)); 
-        imguistuff(app, camera, light, flashlight);
-        //TODO: fix streching and low resolution
+        renderer.draw(oneSideQuad, app.shaders[1]/* basic shader */, camera); 
+        imguistuff(app, virtualcam, light, flashlight);
+
+// ========================================
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         ++app.frameCounter;
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
-    flash.join();
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)

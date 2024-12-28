@@ -8,15 +8,16 @@ private:
     glm::vec3 right;
     glm::vec3 up;
     glm::vec3 front;
-    mutable std::map<std::tuple<int, int, float, float, float>, glm::mat4> m_ProjectionMatrixCache;
+    mutable glm::mat4 projectionMat;
+    mutable std::tuple<int, int, float, float, float> lastparams = {-1, -1, -1, -1, -1};
 public:
     glm::vec3 position;
     glm::vec3 rotation;
-    float far = 1000;
+    float far = 100;
     float near = 0.01f;
     float fov;
-    int windowWidthPx = -1; 
-    int windowHeightPx = -1;
+    int windowWidth = -1; 
+    int windowHeight = -1;
 public:
     Camera(glm::vec3 const &pos = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
     virtual ~Camera();
