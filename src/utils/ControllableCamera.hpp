@@ -11,7 +11,7 @@ public:
     bool firstCursorMove = true;
     float sensitivity = 1.0f;
     float speed = 7.0f;
-    bool mouseLocked = false;
+    bool locked = false;
     GLFWwindow *window;
 
     ControllableCamera(GLFWwindow *window, glm::vec3 const &position = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));

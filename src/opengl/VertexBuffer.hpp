@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <vector>
+#include "utils/Resource.hpp"
 
 struct VertexBufferlayoutElement {
     unsigned type;
@@ -23,19 +24,13 @@ public:
         return m_elements;
     }
 };
-class VertexBuffer {
+class VertexBuffer : public Resource {
 private:
     unsigned m_RenderID = 0;
-    mutable bool m_managing = false;
 public:
     VertexBuffer(const void *data, size_t size);
     VertexBuffer();
     ~VertexBuffer();
-    VertexBuffer(VertexBuffer const &other);
-    VertexBuffer(VertexBuffer &&other);
-    void operator=(VertexBuffer const &other);
-    void copy(VertexBuffer const &other);
-    void swap(VertexBuffer &&other);
     void bind() const;
     void unbind() const;
 };

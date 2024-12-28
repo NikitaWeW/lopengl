@@ -14,12 +14,10 @@ Texture::Texture(GLsizei width, GLsizei height, GLenum wrap) : m_Width(width), m
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    m_managing = true;
 }
 
 Texture::Texture(std::string const &filepath, bool flip, GLenum wrap) : m_FilePath(filepath)
 {
-
     stbi_set_flip_vertically_on_load(flip);
     m_Buffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
 
@@ -37,40 +35,10 @@ Texture::Texture(std::string const &filepath, bool flip, GLenum wrap) : m_FilePa
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(m_Buffer);
     m_Buffer = 0;
-    m_managing = true;
 }
 
-Texture::Texture(Texture const &other) {
-    copy(other);
-}
-Texture::Texture(Texture &&other) {
-    swap(std::forward<Texture>(other));
-}
-void Texture::operator=(Texture const &other) {
-    copy(other);
-}
-void Texture::copy(Texture const &other) {
-    std::swap(m_managing, other.m_managing);
-    m_FilePath = other.m_FilePath;
-    m_Buffer = other.m_Buffer;
-    m_Width = other.m_Width;
-    m_Height = other.m_Height;
-    m_BPP = other.m_BPP;
-    m_RenderID = other.m_RenderID;
-    type = other.type;
-}
-void Texture::swap(Texture &&other) {
-    std::swap(m_managing, other.m_managing);
-    std::swap(m_RenderID, other.m_RenderID);
-    std::swap(m_FilePath, other.m_FilePath);
-    std::swap(m_Buffer, other.m_Buffer);
-    std::swap(m_Width, other.m_Width);
-    std::swap(m_Height, other.m_Height);
-    std::swap(m_BPP, other.m_BPP);
-    std::swap(type, other.type);
-}
 Texture::~Texture() {
-    if(m_managing) {
+    if(canDeallocate()) {
         glDeleteTextures(1, &m_RenderID);
     }
     m_RenderID = 0;

@@ -30,13 +30,13 @@ void imguistuff(Application &app, Camera &cam, PointLight &light, SpotLight &fla
         for(Shader &shader : app.shaders) {
             Shader copy = shader;
             if(!shader.ParceShaderFile(shader.getFilePath())) {
-                shader.swap(std::forward<Shader>(copy));
+                std::swap(shader, copy);
                 failedShaderTemp = &shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
             };
             if(!shader.CompileShaders()) {
-                shader.swap(std::forward<Shader>(copy));
+                std::swap(shader, copy);
                 failedShaderTemp = &shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;

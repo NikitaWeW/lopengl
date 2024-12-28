@@ -14,32 +14,14 @@ VertexBuffer::VertexBuffer(const void *data, size_t size) {
     glGenBuffers(1, &m_RenderID);
     glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
-    m_managing = true;
 }
 VertexBuffer::VertexBuffer() = default;
 VertexBuffer::~VertexBuffer()
 {
-    if(m_managing) {
+    if(canDeallocate()) {
         glDeleteBuffers(1, &m_RenderID);
         m_RenderID = 0;
     }
-}
-VertexBuffer::VertexBuffer(VertexBuffer const &other) {
-    copy(other);
-}
-VertexBuffer::VertexBuffer(VertexBuffer &&other) {
-    swap(std::forward<VertexBuffer>(other));
-}
-void VertexBuffer::operator=(VertexBuffer const &other) {
-    copy(other);
-}
-void VertexBuffer::copy(VertexBuffer const &other) {
-    std::swap(m_managing, other.m_managing);
-    m_RenderID = other.m_RenderID;
-}
-void VertexBuffer::swap(VertexBuffer &&other) {
-    std::swap(m_managing, other.m_managing);
-    std::swap(m_RenderID, other.m_RenderID);
 }
 void VertexBuffer::bind() const
 {

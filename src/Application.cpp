@@ -58,44 +58,44 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         break;
 
         case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        Application::openglError.type = "deprecated behavior";
+        Application::openglError.type = "deprecated behavior warning";
         break;
 
         case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        Application::openglError.type = "udefined behavior";
+        Application::openglError.type = "udefined behavior warning";
         break;
 
         case GL_DEBUG_TYPE_PORTABILITY:
-        Application::openglError.type = "portability";
+        Application::openglError.type = "portability warning";
         break;
 
         case GL_DEBUG_TYPE_PERFORMANCE:
-        Application::openglError.type = "performance";
+        Application::openglError.type = "performance warning";
         break;
 
         case GL_DEBUG_TYPE_OTHER:
-        Application::openglError.type = "other";
+        Application::openglError.type = "other message";
         break;
 
         case GL_DEBUG_TYPE_MARKER:
-        Application::openglError.type = "marker";
+        Application::openglError.type = "marker message";
         break;
 
         default:
-        Application::openglError.type = "unknown";
+        Application::openglError.type = "unknown message";
         break;
     }
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
-        Application::openglError.severity = "high severity message";
+        Application::openglError.severity = "high severity";
         break;
 
         case GL_DEBUG_SEVERITY_MEDIUM:
-        Application::openglError.severity = "medium severity message";
+        Application::openglError.severity = "medium severity";
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
-        Application::openglError.severity = "low severity message";
+        Application::openglError.severity = "low severity";
         break;
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
@@ -109,8 +109,8 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 
     LOG_WARN("%d: opengl %s %s, raised from %s:\n\t%s", 
             Application::openglError.id, 
-            Application::openglError.type.c_str(), 
             Application::openglError.severity.c_str(), 
+            Application::openglError.type.c_str(), 
             Application::openglError.source.c_str(), 
             Application::openglError.msg.c_str());
 }

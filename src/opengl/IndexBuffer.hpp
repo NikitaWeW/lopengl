@@ -1,24 +1,17 @@
 #pragma once
 #include <cstddef>
 #include "glad/gl.h"
+#include "utils/Resource.hpp"
 
-class IndexBuffer {
+class IndexBuffer : public Resource {
 private:
     unsigned m_RenderID = 0;
     unsigned m_size = 0;
-    mutable bool m_managing = false;
 public:
     IndexBuffer(const GLuint *data, size_t size);
     IndexBuffer();
     ~IndexBuffer();
-    IndexBuffer(IndexBuffer const &other);
-    IndexBuffer(IndexBuffer &&other);
-    void operator=(IndexBuffer const &other);
-    void copy(IndexBuffer const &other);
-    void swap(IndexBuffer &&other);
     void bind() const;
     void unbind() const;
-    inline unsigned getSize() const {
-        return m_size;
-    }
+    inline unsigned getSize() const { return m_size; }
 };

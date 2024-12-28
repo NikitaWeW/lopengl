@@ -17,7 +17,7 @@ void ControllableCamera::update(double deltatime) {
 }
 
 void ControllableCamera::processPosition(double deltatime) {
-    if(mouseLocked) {
+    if(locked) {
         float cameraspeed = speed * (float) deltatime;
         if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
             position += getFront() * cameraspeed;
@@ -40,7 +40,7 @@ void ControllableCamera::processPosition(double deltatime) {
     }
 }
 void ControllableCamera::processRotation(double xpos, double ypos) {
-    if(!mouseLocked) return;
+    if(!locked) return;
 
     if (firstCursorMove) {
         prevx = xpos;

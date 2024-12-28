@@ -58,46 +58,15 @@ Shader::Shader(std::string const &filepath, bool showLog) : m_filepath(filepath)
         }
         throw std::logic_error("failed to compile shaders!");
     }
-    m_managing = true;
 }
 Shader::~Shader() {
-    if(m_managing) {
+    if(canDeallocate()) {
         glDeleteShader(VertexShaderID);
         glDeleteShader(FragmentShaderID);
         glDeleteProgram(ShaderProgramID);
     }
 }
-Shader::Shader(Shader const &other) {
-    copy(other);
-}
-Shader::Shader(Shader &&other) {
-    swap(std::forward<Shader>(other));
-}
-void Shader::operator=(Shader const &other) {
-    copy(other);
-}
-void Shader::copy(Shader const &other) {
-    std::swap(m_managing, other.m_managing);
-    VertexShaderID = other.VertexShaderID;
-    FragmentShaderID = other.FragmentShaderID;
-    ShaderProgramID = other.ShaderProgramID;
-    m_UniformLocationCache = other.m_UniformLocationCache;
-    m_filepath = other.m_filepath;
-    m_log = other.m_log;
-    VertexShaderSource = other.VertexShaderSource;
-    FragmentShaderSource = other.FragmentShaderSource;
-}
-void Shader::swap(Shader &&other) {
-    std::swap(m_managing, other.m_managing);
-    std::swap(VertexShaderID, other.VertexShaderID);
-    std::swap(FragmentShaderID, other.FragmentShaderID);
-    std::swap(ShaderProgramID, other.ShaderProgramID);
-    std::swap(m_UniformLocationCache, other.m_UniformLocationCache);
-    std::swap(m_filepath, other.m_filepath);
-    std::swap(m_log, other.m_log);
-    std::swap(VertexShaderSource, other.VertexShaderSource);
-    std::swap(FragmentShaderSource, other.FragmentShaderSource);
-}
+
 void Shader::bind() const {
     glUseProgram(ShaderProgramID);
 }
@@ -144,7 +113,7 @@ bool Shader::ParceShaderFile(std::string const &filepath)
     return true;
 }
 bool Shader::CompileShaders() {
-    if(m_managing) {
+    if(canDeallocate()) {
         glDeleteShader(VertexShaderID);
         glDeleteShader(FragmentShaderID);
         glDeleteProgram(ShaderProgramID);

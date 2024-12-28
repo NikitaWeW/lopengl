@@ -1,26 +1,21 @@
 #pragma once
 #include <string>
 #include "glad/gl.h"
+#include "utils/Resource.hpp"
 
-class Texture
+class Texture : public Resource
 {
 private:
     unsigned m_RenderID = 0;
     std::string m_FilePath;
     unsigned char *m_Buffer = nullptr;
     int m_Width = 0, m_Height = 0, m_BPP = 0;
-    mutable bool m_managing = false;
 public:
     std::string type; 
     Texture() = default;
     Texture(GLsizei width, GLsizei height, GLenum wrap = GL_REPEAT);
     Texture(std::string const &filepath, bool flip = true, GLenum wrap = GL_REPEAT);
     ~Texture();
-    Texture(Texture const &other);
-    Texture(Texture &&other);
-    void operator=(Texture const &other);
-    void copy(Texture const &other);
-    void swap(Texture &&other);
 
     void bind(unsigned slot = 0) const;
     void unbind(unsigned slot = 0) const;

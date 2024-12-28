@@ -7,28 +7,11 @@
 
 VertexArray::VertexArray() {
     glGenVertexArrays(1, &m_RenderID);
-    m_managing = true;
 }
-VertexArray::VertexArray(VertexArray const &other) {
-    copy(other);
-}
-VertexArray::VertexArray(VertexArray &&other) {
-    swap(std::forward<VertexArray>(other));
-}
-void VertexArray::operator=(VertexArray const &other) {
-    copy(other);
-}
-void VertexArray::copy(VertexArray const &other) {
-    std::swap(m_managing, other.m_managing);
-    m_RenderID = other.m_RenderID;
-}
-void VertexArray::swap(VertexArray &&other) {
-    std::swap(m_managing, other.m_managing);
-    std::swap(m_RenderID, other.m_RenderID);
-}
+
 VertexArray::~VertexArray()
 {
-    if(m_managing) {
+    if(canDeallocate()) {
         glDeleteVertexArrays(1, &m_RenderID);
     }
     m_RenderID = 0;

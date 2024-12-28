@@ -53,11 +53,14 @@ int main(int argc, char **argv)
     Model lightCube("res/models/cube.obj");
     Model oneSideQuad{"res/models/one_side_quad.obj"};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
-    Camera virtualcam{{0, 0, 5}, {-90, 0, 0}};
+    ControllableCamera virtualcam{window, {0, 0, 5}, {-90, 0, 0}};
     PointLight light;
     SpotLight flashlight;
     VertexBufferLayout layout;
     Renderer renderer;
+    Texture virtualcamView{resolution, resolution};
+    Framebuffer framebuffer;
+    Renderbuffer rb{GL_DEPTH24_STENCIL8, resolution, resolution};
 
 //  =========================================== 
 
@@ -66,8 +69,7 @@ int main(int argc, char **argv)
 
     app.shaders = {
         {"shaders/lighting.glsl", SHOW_LOGS},
-        {"shaders/basic.glsl",    SHOW_LOGS},
-        {"shaders/test.glsl",     SHOW_LOGS}
+        {"shaders/basic.glsl",    SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
 
     flashlight.position  = camera.position;
@@ -80,9 +82,6 @@ int main(int argc, char **argv)
     app.cube = Model{"res/models/cube.obj"};
 
     virtualcam.windowWidth = virtualcam.windowHeight = resolution;
-    Texture virtualcamView{resolution, resolution};
-    Framebuffer framebuffer;
-    Renderbuffer rb{GL_DEPTH24_STENCIL8, resolution, resolution};
     framebuffer.attachTexture(virtualcamView);
     framebuffer.attachRenderbuffer(rb);
     LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
@@ -114,7 +113,7 @@ if(!fastLoad) {
     glFrontFace(GL_CCW);
 
     glfwSwapInterval(1);
-    glfwSetInputMode(window, GLFW_CURSOR, camera.mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, &camera);
     glfwSetKeyCallback(window, key_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -136,7 +135,7 @@ if(!fastLoad) {
         framebuffer.bind();
         renderer.clear({0.1, 0.1, 0.1});
 
-        // draw the model        
+        // draw the model
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
@@ -177,19 +176,12 @@ if(!fastLoad) {
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        camera.mouseLocked = !camera.mouseLocked;
-        if (camera.mouseLocked)
-        {
-            camera.firstCursorMove = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        else
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-    }
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) camera.locked = !camera.locked;
+    if (camera.locked) {
+        camera.firstCursorMove = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    } else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
     if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
         // evaluate fov
         if (camera.fov < 1.0f)
@@ -203,7 +195,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
-    if(cam->mouseLocked) {
+    if(cam->locked) {
         cam->fov -= (float)yoffset * 4.5f;
         if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
             if (cam->fov < 0.01f)
