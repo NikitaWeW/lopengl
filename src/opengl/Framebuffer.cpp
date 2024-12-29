@@ -42,6 +42,7 @@ Renderbuffer::Renderbuffer()
 
 Renderbuffer::Renderbuffer(unsigned format, unsigned width, unsigned height) : m_format(format), m_width(width), m_height(height)
 {
+    glGenRenderbuffers(1, &m_renderID);
 }
 
 Renderbuffer::~Renderbuffer()

@@ -24,9 +24,9 @@ glm::mat4 Camera::getViewMatrix() const
 
 glm::mat4 Camera::getProjectionMatrix() const
 {
-    auto params = std::make_tuple(windowWidth, windowHeight, fov, near, far);
+    auto params = std::make_tuple(width, height, fov, near, far);
     if(params != lastparams) {
-        projectionMat = glm::mat4{glm::perspective(glm::radians(fov), (float) windowWidth / windowHeight, near, far)};
+        projectionMat = glm::mat4{glm::perspective(glm::radians(fov), (float) width / height, near, far)};
         lastparams = params;
     }
     return projectionMat;

@@ -36,10 +36,9 @@ extern const bool debug = true;
 #define LOAD_NOW          true
 #define FLIP_TEXTURES     true
 #define FLIP_WINING_ORDER true
-#define resolution 600
 
 void renderthing(Application &app, Renderer &renderer, Camera &camera);
-void imguistuff(Application &app, Camera &cam, PointLight &light, SpotLight &flashlight);
+void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -52,15 +51,16 @@ int main(int argc, char **argv)
     GLFWwindow *window = app.window;
     Model lightCube("res/models/cube.obj");
     Model oneSideQuad{"res/models/one_side_quad.obj"};
+    Shader postProcessShader{"shaders/post_process.glsl"};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
-    ControllableCamera virtualcam{window, {0, 0, 5}, {-90, 0, 0}};
     PointLight light;
     SpotLight flashlight;
     VertexBufferLayout layout;
     Renderer renderer;
-    Texture virtualcamView{resolution, resolution};
+    // TODO: more descriptive name for cameraTexture
+    Texture cameraTexture{4, 4}; // will be set to window size
     Framebuffer framebuffer;
-    Renderbuffer rb{GL_DEPTH24_STENCIL8, resolution, resolution};
+    Renderbuffer rb{GL_DEPTH24_STENCIL8, 4, 4}; 
 
 //  =========================================== 
 
@@ -81,8 +81,7 @@ int main(int argc, char **argv)
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
-    virtualcam.windowWidth = virtualcam.windowHeight = resolution;
-    framebuffer.attachTexture(virtualcamView);
+    framebuffer.attachTexture(cameraTexture);
     framebuffer.attachRenderbuffer(rb);
     LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
 
@@ -124,16 +123,17 @@ if(!fastLoad) {
     {
         auto start = std::chrono::high_resolution_clock::now();
         camera.update(app.deltatime);
-        virtualcam.update(app.deltatime);
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
-        glfwGetWindowSize(window, &camera.windowWidth, &camera.windowHeight);
-        glfwGetWindowSize(window, &virtualcam.windowWidth, &virtualcam.windowHeight);
+        int lastWidth = camera.width, lastHeight = camera.height;
+        glfwGetWindowSize(window, &camera.width, &camera.height);
 
-// ========================================
+// ===================================== //
+//      pass 1 -- render the scene       //
+// ===================================== //
 
         framebuffer.bind();
-        renderer.clear({0.1, 0.1, 0.1});
+        renderer.clear();
 
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
@@ -142,7 +142,7 @@ if(!fastLoad) {
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
         app.textures[app.currentTextureIndex].bind();
-        renderer.draw(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], virtualcam); 
+        renderer.drawLighting(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera); 
         app.textures[app.currentTextureIndex].unbind();
 
         // draw the light cube        
@@ -152,19 +152,32 @@ if(!fastLoad) {
         if(light.enabled) {
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.draw(lightCube, app.plainColorShader, virtualcam);
+            renderer.drawLighting(lightCube, app.plainColorShader, camera);
         }
         framebuffer.unbind();
 
-// ========================================
+// =============================================================== //
+//      pass 2 -- render the plane that covers entire screen       //
+// =============================================================== //
 
+        if(lastWidth != camera.width || lastHeight != camera.height) {
+            // resize texture and renderbuffer according to window size
+            cameraTexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            rb.bind();
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+        }
+        
         renderer.clear(app.clearColor);
-        virtualcamView.bind();
-        oneSideQuad.resetMatrix();
-        renderer.draw(oneSideQuad, app.shaders[1]/* basic shader */, camera); 
-        imguistuff(app, virtualcam, light, flashlight);
+        postProcessShader.bind();
+        glUniform1i(postProcessShader.getUniform("u_texture"), 0);
+        cameraTexture.bind();
+        renderer.draw(oneSideQuad, postProcessShader); 
+        imguistuff(app, camera, light, flashlight);
 
-// ========================================
+// ======================= //
+//      end frame          //
+// ======================= //
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -16,8 +16,8 @@ public:
     float far = 100;
     float near = 0.01f;
     float fov;
-    int windowWidth = -1; 
-    int windowHeight = -1;
+    int width = 0; 
+    int height = 0;
 public:
     Camera(glm::vec3 const &pos = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
     virtual ~Camera();

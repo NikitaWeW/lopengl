@@ -74,7 +74,7 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         break;
 
         case GL_DEBUG_TYPE_OTHER:
-        Application::openglError.type = "other message";
+        Application::openglError.type = "message";
         break;
 
         case GL_DEBUG_TYPE_MARKER:
@@ -103,7 +103,7 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         break;
 
         default:
-        Application::openglError.severity = "unknown severity message";
+        Application::openglError.severity = "unknown severity";
         break;
     }
 

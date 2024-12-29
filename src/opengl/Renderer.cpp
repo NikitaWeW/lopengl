@@ -13,7 +13,7 @@ void Renderer::clear(glm::vec3 clearColor) const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
+void Renderer::drawLighting(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
 {
     shader.bind();
     // TODO: refactor
@@ -74,9 +74,22 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
     glActiveTexture(GL_TEXTURE0);
 }
 
-void Renderer::draw(Model const & model, Shader const & shader, Camera const & camera) const
+void Renderer::drawLighting(Model const & model, Shader const & shader, Camera const & camera) const
 {
     shader.bind();
     glUniform3fv(shader.getUniform("u_viewPos"), 1, &camera.position.x);
-    draw(model, shader, camera.getViewMatrix(), camera.getProjectionMatrix());
+    drawLighting(model, shader, camera.getViewMatrix(), camera.getProjectionMatrix());
+}
+
+void Renderer::draw(Model const &model, Shader const &shader)
+{
+    shader.bind();
+    for(Mesh const &mesh : model.getMeshes()) {
+        mesh.va.bind();
+        mesh.ib.bind();
+        glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
+        mesh.va.unbind();
+        mesh.ib.unbind();
+    }
+    shader.unbind();
 }
