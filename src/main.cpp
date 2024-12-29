@@ -51,7 +51,6 @@ int main(int argc, char **argv)
     GLFWwindow *window = app.window;
     Model lightCube("res/models/cube.obj");
     Model oneSideQuad{"res/models/one_side_quad.obj"};
-    Shader postProcessShader{"shaders/post_process.glsl"};
     ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
     PointLight light;
     SpotLight flashlight;
@@ -68,9 +67,11 @@ int main(int argc, char **argv)
     renderer.getLights().push_back(&light);
 
     app.shaders = {
-        {"shaders/lighting.glsl", SHOW_LOGS},
-        {"shaders/basic.glsl",    SHOW_LOGS}
+        {"shaders/lighting.glsl",     SHOW_LOGS},
+        {"shaders/basic.glsl",        SHOW_LOGS},
+        {"shaders/post_process.glsl", SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
+    Shader &postProcessShader = app.shaders[2];
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -89,7 +90,8 @@ int main(int argc, char **argv)
 
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/sponza/sponza.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
     app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
     app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
@@ -132,7 +134,7 @@ if(!fastLoad) {
 //      pass 1 -- render the scene       //
 // ===================================== //
 
-        framebuffer.bind();
+        // framebuffer.bind();
         renderer.clear();
 
         // draw the model
@@ -156,28 +158,28 @@ if(!fastLoad) {
         }
         framebuffer.unbind();
 
-// =============================================================== //
-//      pass 2 -- render the plane that covers entire screen       //
-// =============================================================== //
+// ============================================================= //
+//      pass 2 -- render the plane that covers entire screen     //
+// ============================================================= //
 
-        if(lastWidth != camera.width || lastHeight != camera.height) {
-            // resize texture and renderbuffer according to window size
-            cameraTexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            rb.bind();
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-        }
+        // if(lastWidth != camera.width || lastHeight != camera.height) {
+        //     // resize texture and renderbuffer according to window size
+        //     cameraTexture.bind();
+        //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        //     rb.bind();
+        //     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+        // }
         
-        renderer.clear(app.clearColor);
-        postProcessShader.bind();
-        glUniform1i(postProcessShader.getUniform("u_texture"), 0);
-        cameraTexture.bind();
-        renderer.draw(oneSideQuad, postProcessShader); 
+        // renderer.clear(app.clearColor);
+        // postProcessShader.bind();
+        // glUniform1i(postProcessShader.getUniform("u_texture"), 0);
+        // cameraTexture.bind();
+        // renderer.draw(oneSideQuad, postProcessShader); 
         imguistuff(app, camera, light, flashlight);
 
-// ======================= //
-//      end frame          //
-// ======================= //
+// ================== //
+//      end frame     //
+// ================== //
 
         glfwSwapBuffers(window);
         glfwPollEvents();
