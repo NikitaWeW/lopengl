@@ -56,11 +56,10 @@ int main(int argc, char **argv)
     SpotLight flashlight;
     VertexBufferLayout layout;
     Renderer renderer;
-    // TODO: more descriptive name for cameraTexture
-    Texture cameraTexture{4, 4}; // will be set to window size
     Framebuffer framebuffer;
-    Renderbuffer rb{GL_DEPTH24_STENCIL8, 4, 4}; 
+    // TODO: more descriptive name for cameraTexture
 
+    glfwGetWindowSize(window, &camera.width, &camera.height);
 //  =========================================== 
 
     renderer.getLights().push_back(&flashlight);
@@ -82,6 +81,8 @@ int main(int argc, char **argv)
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
+    Texture cameraTexture{camera.width, camera.height}; // will be set to window size
+    Renderbuffer rb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
     framebuffer.attachTexture(cameraTexture);
     framebuffer.attachRenderbuffer(rb);
     LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
@@ -113,7 +114,7 @@ if(!fastLoad) {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, &camera);
     glfwSetKeyCallback(window, key_callback);
@@ -134,7 +135,7 @@ if(!fastLoad) {
 //      pass 1 -- render the scene       //
 // ===================================== //
 
-        // framebuffer.bind();
+        framebuffer.bind();
         renderer.clear();
 
         // draw the model
@@ -162,19 +163,19 @@ if(!fastLoad) {
 //      pass 2 -- render the plane that covers entire screen     //
 // ============================================================= //
 
-        // if(lastWidth != camera.width || lastHeight != camera.height) {
-        //     // resize texture and renderbuffer according to window size
-        //     cameraTexture.bind();
-        //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        //     rb.bind();
-        //     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-        // }
+        if(lastWidth != camera.width || lastHeight != camera.height) {
+            // resize texture and renderbuffer according to window size
+            cameraTexture = Texture{camera.width, camera.height};
+            rb = Renderbuffer{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
+            framebuffer.attachTexture(cameraTexture);
+            framebuffer.attachRenderbuffer(rb);
+        }
         
-        // renderer.clear(app.clearColor);
-        // postProcessShader.bind();
-        // glUniform1i(postProcessShader.getUniform("u_texture"), 0);
-        // cameraTexture.bind();
-        // renderer.draw(oneSideQuad, postProcessShader); 
+        renderer.clear(app.clearColor);
+        postProcessShader.bind();
+        glUniform1i(postProcessShader.getUniform("u_texture"), 0);
+        cameraTexture.bind();
+        renderer.draw(oneSideQuad, postProcessShader); 
         imguistuff(app, camera, light, flashlight);
 
 // ================== //

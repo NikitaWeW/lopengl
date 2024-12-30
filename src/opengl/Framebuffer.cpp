@@ -40,9 +40,11 @@ Renderbuffer::Renderbuffer()
     glGenRenderbuffers(1, &m_renderID);
 }
 
-Renderbuffer::Renderbuffer(unsigned format, unsigned width, unsigned height) : m_format(format), m_width(width), m_height(height)
+Renderbuffer::Renderbuffer(unsigned format, int width, int height)
 {
     glGenRenderbuffers(1, &m_renderID);
+    bind();
+    glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
 }
 
 Renderbuffer::~Renderbuffer()
