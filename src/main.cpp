@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
-    Texture cameraTexture{camera.width, camera.height}; // will be set to window size
+    Texture cameraTexture{camera.width, camera.height, GL_CLAMP_TO_EDGE}; // will be set to window size
     Renderbuffer rb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
     framebuffer.attachTexture(cameraTexture);
     framebuffer.attachRenderbuffer(rb);
@@ -92,13 +92,13 @@ int main(int argc, char **argv)
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/sponza/sponza.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
     app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
     app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
 if(!fastLoad) {
     app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/sponza/sponza.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
     app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 }
@@ -165,7 +165,7 @@ if(!fastLoad) {
 
         if(lastWidth != camera.width || lastHeight != camera.height) {
             // resize texture and renderbuffer according to window size
-            cameraTexture = Texture{camera.width, camera.height};
+            cameraTexture = Texture{camera.width, camera.height, GL_CLAMP_TO_EDGE};
             rb = Renderbuffer{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
             framebuffer.attachTexture(cameraTexture);
             framebuffer.attachRenderbuffer(rb);
