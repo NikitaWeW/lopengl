@@ -85,7 +85,6 @@ int main(int argc, char **argv)
     Renderbuffer rb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
     framebuffer.attachTexture(cameraTexture);
     framebuffer.attachRenderbuffer(rb);
-    LOG_DEBUG("framebuffer complete: %i", framebuffer.isComplete());
 
 //   ==================================================================
 
@@ -163,24 +162,24 @@ if(!fastLoad) {
 //      pass 2 -- render the plane that covers entire screen     //
 // ============================================================= //
 
-        if(lastWidth != camera.width || lastHeight != camera.height) {
-            // resize texture and renderbuffer according to window size
-            cameraTexture = Texture{camera.width, camera.height, GL_CLAMP_TO_EDGE};
-            rb = Renderbuffer{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
-            framebuffer.attachTexture(cameraTexture);
-            framebuffer.attachRenderbuffer(rb);
-        }
-        
         renderer.clear(app.clearColor);
         postProcessShader.bind();
         glUniform1i(postProcessShader.getUniform("u_texture"), 0);
         cameraTexture.bind();
         renderer.draw(oneSideQuad, postProcessShader); 
         imguistuff(app, camera, light, flashlight);
-
+        
 // ================== //
 //      end frame     //
 // ================== //
+
+        if(lastWidth != camera.width || lastHeight != camera.height) {
+            // resize texture and renderbuffer according to window size
+            cameraTexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            rb.bind();
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
