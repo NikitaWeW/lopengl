@@ -27,4 +27,5 @@ uniform Material u_material;
 
 void main() {
     o_color = texture(u_material.diffuse, v_texCoord);
+    o_color = vec4(vec3(gl_FragCoord.xyz), 1);
 }

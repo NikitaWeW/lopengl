@@ -10,6 +10,6 @@ public:
     Cubemap(std::string directory, std::vector<std::string> faceTextureNames);
     ~Cubemap();
 
-    void bind();
-    void unbind();
+    void bind(unsigned slot = 0);
+    void unbind(unsigned slot = 0);
 };

@@ -36,5 +36,5 @@ Cubemap::~Cubemap()
     }
 }
 
-void Cubemap::bind()   { glBindTexture(GL_TEXTURE_CUBE_MAP, m_renderID); }
-void Cubemap::unbind() { glBindTexture(GL_TEXTURE_CUBE_MAP, 0); }
+void Cubemap::bind(unsigned slot)   { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_CUBE_MAP, m_renderID); }
+void Cubemap::unbind(unsigned slot) { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_CUBE_MAP, 0); }

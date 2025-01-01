@@ -142,11 +142,6 @@ if(!fastLoad) {
         framebuffer.bind();
         renderer.clear();
 
-        // draw the skybox
-        glDepthMask(GL_FALSE);
-        renderer.draw(app.cube, skyboxShader, glm::mat4(glm::mat3(camera.getViewMatrix())), camera.getProjectionMatrix());
-        glDepthMask(GL_TRUE);
-
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
@@ -166,11 +161,21 @@ if(!fastLoad) {
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
             renderer.drawLighting(lightCube, app.plainColorShader, camera);
         }
-        framebuffer.unbind();
+// FIXME: nothing else shows
+        // draw the skybox as last
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        skybox.bind();
+        renderer.draw(app.cube, skyboxShader, camera);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+
 
 // =================================================== //
 //      render the plane that covers entire screen     //
 // =================================================== //
+
+        framebuffer.unbind();
 
         renderer.clear(app.clearColor);
         postProcessShader.bind();
