@@ -21,6 +21,7 @@ cmake --build build && build/main --fast
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
 #include "opengl/Framebuffer.hpp"
+#include "opengl/Cubemap.hpp"
 
 #include <chrono>
 #include <memory>
@@ -57,6 +58,9 @@ int main(int argc, char **argv)
     VertexBufferLayout layout;
     Renderer renderer;
     Framebuffer framebuffer;
+    Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
+    Shader skyboxShader{"shaders/skybox.glsl", SHOW_LOGS};
+    
     // TODO: more descriptive name for cameraTexture
 
     glfwGetWindowSize(window, &camera.width, &camera.height);
@@ -102,8 +106,9 @@ if(!fastLoad) {
     app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 }
 
-    app.currentTextureIndex = 1; // white
-    app.currentModelIndex = 0; // cube
+    app.currentTextureIndex = 2; // concrete
+    app.currentModelIndex = 0;   // cube
+    app.currentShaderIndex = 1;   // basic
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -130,12 +135,17 @@ if(!fastLoad) {
         int lastWidth = camera.width, lastHeight = camera.height;
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
-// ===================================== //
-//      pass 1 -- render the scene       //
-// ===================================== //
+// =========================== //
+//      render the scene       //
+// =========================== //
 
         framebuffer.bind();
         renderer.clear();
+
+        // draw the skybox
+        glDepthMask(GL_FALSE);
+        renderer.draw(app.cube, skyboxShader, glm::mat4(glm::mat3(camera.getViewMatrix())), camera.getProjectionMatrix());
+        glDepthMask(GL_TRUE);
 
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
@@ -147,7 +157,7 @@ if(!fastLoad) {
         renderer.drawLighting(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera); 
         app.textures[app.currentTextureIndex].unbind();
 
-        // draw the light cube        
+        // draw the light cube
         lightCube.resetMatrix();
         lightCube.translate(light.position);
         lightCube.scale(glm::vec3{0.03125});
@@ -158,9 +168,9 @@ if(!fastLoad) {
         }
         framebuffer.unbind();
 
-// ============================================================= //
-//      pass 2 -- render the plane that covers entire screen     //
-// ============================================================= //
+// =================================================== //
+//      render the plane that covers entire screen     //
+// =================================================== //
 
         renderer.clear(app.clearColor);
         postProcessShader.bind();
