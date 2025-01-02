@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     GLFWwindow *window = app.window;
     Model lightCube("res/models/cube.obj");
     Model oneSideQuad{"res/models/one_side_quad.obj"};
-    ControllableCamera camera(window, {0, 0, 5}, {-90, 0, 0});
+    ControllableCamera camera(window, {0, 0, 7}, {-90, 0, 0});
     PointLight light;
     SpotLight flashlight;
     VertexBufferLayout layout;
@@ -71,7 +71,8 @@ int main(int argc, char **argv)
         {"shaders/lighting.glsl",     SHOW_LOGS},
         {"shaders/basic.glsl",        SHOW_LOGS},
         {"shaders/post_process.glsl", SHOW_LOGS},
-        {"shaders/reflection.glsl",   SHOW_LOGS}
+        {"shaders/reflection.glsl",   SHOW_LOGS},
+        {"shaders/refraction.glsl",   SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
     Shader &postProcessShader = app.shaders[2];
 
