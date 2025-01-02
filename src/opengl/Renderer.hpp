@@ -25,6 +25,11 @@ public:
     void drawLighting(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
     void drawLighting(Model const &model, Shader const &shader, Camera const &camera) const;
 /*
+ *   set material and matrix uniforms before drawing.
+ */
+    void drawMaterial(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
+    void drawMaterial(Model const &model, Shader const &shader, Camera const &camera) const;
+/*
  *   very basic draw call. no uniforms set.
  */
     void draw(Model const &model, Shader const &shader);

@@ -61,8 +61,6 @@ int main(int argc, char **argv)
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
     Shader skyboxShader{"shaders/skybox.glsl", SHOW_LOGS};
     
-    // TODO: more descriptive name for cameraTexture
-
     glfwGetWindowSize(window, &camera.width, &camera.height);
 //  =========================================== 
 
@@ -72,7 +70,8 @@ int main(int argc, char **argv)
     app.shaders = {
         {"shaders/lighting.glsl",     SHOW_LOGS},
         {"shaders/basic.glsl",        SHOW_LOGS},
-        {"shaders/post_process.glsl", SHOW_LOGS}
+        {"shaders/post_process.glsl", SHOW_LOGS},
+        {"shaders/reflection.glsl",   SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
     Shader &postProcessShader = app.shaders[2];
 
@@ -94,8 +93,9 @@ int main(int argc, char **argv)
 //   ==================================================================
 
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/sphere.obj",                        {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
     app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
     app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
@@ -107,9 +107,9 @@ if(!fastLoad) {
     app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 }
 
-    app.currentTextureIndex = 2; // concrete
-    app.currentModelIndex = 0;   // cube
-    app.currentShaderIndex = 1;   // basic
+    app.currentTextureIndex = 2;  // concrete
+    app.currentModelIndex = 1;    // sphere
+    app.currentShaderIndex = 3;   // reflection
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -143,12 +143,14 @@ if(!fastLoad) {
         framebuffer.bind();
         renderer.clear();
 
+        skybox.bind(1);
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
+        glUniform1i(app.shaders[app.currentShaderIndex].getUniform("u_skybox"), 1);
         app.textures[app.currentTextureIndex].bind();
         renderer.drawLighting(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera); 
         app.textures[app.currentTextureIndex].unbind();
@@ -166,7 +168,7 @@ if(!fastLoad) {
         // draw the skybox as last
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        skybox.bind();
+        glUniform1i(skyboxShader.getUniform("u_skybox"), 1);
         renderer.draw(app.cube, skyboxShader, camera);
         glDepthFunc(GL_LESS);
         glDepthMask(GL_TRUE);
