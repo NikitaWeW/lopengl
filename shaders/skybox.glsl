@@ -10,7 +10,7 @@ uniform mat4 u_viewMat;
 
 void main() {
     v_texCoords = a_position;
-    gl_Position = (u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1)).xyzw;
+    gl_Position = (u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1)).xyww;
 }
 
 #shader fragment

@@ -80,6 +80,7 @@ int main(int argc, char **argv)
     flashlight.direction = camera.getFront();
 
     light.position= glm::vec3{2, 1, 3};
+    light.enabled = false;
 
     app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
@@ -100,8 +101,8 @@ int main(int argc, char **argv)
     app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
 if(!fastLoad) {
     app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/sponza/sponza.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    // app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    // app.loadModel  ("res/models/sponza/sponza.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
     app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 }
@@ -113,8 +114,8 @@ if(!fastLoad) {
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
@@ -159,9 +160,9 @@ if(!fastLoad) {
         if(light.enabled) {
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.drawLighting(lightCube, app.plainColorShader, camera);
+            renderer.draw(lightCube, app.plainColorShader, camera);
         }
-// FIXME: nothing else shows
+
         // draw the skybox as last
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
