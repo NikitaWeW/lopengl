@@ -1,7 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <vector>
-#include "utils/Resource.hpp"
+#include "Buffer.hpp"
 
 struct VertexBufferlayoutElement {
     unsigned type;
@@ -17,20 +17,21 @@ public:
     VertexBufferLayout();
     ~VertexBufferLayout();
     void push(unsigned const count, unsigned type, bool normalised = false);
-    inline unsigned getStride() const {
-        return m_stride;
-    }
-    inline std::vector<VertexBufferlayoutElement> const &getElements() const {
-        return m_elements;
-    }
+    inline unsigned getStride() const { return m_stride; }
+    inline std::vector<VertexBufferlayoutElement> const &getElements() const { return m_elements; }
 };
-class VertexBuffer : public Resource {
-private:
-    unsigned m_RenderID = 0;
+class VertexBuffer : public Buffer {
 public:
     VertexBuffer(const void *data, size_t size);
     VertexBuffer();
     ~VertexBuffer();
+
+    void bufferData(void const *data, size_t size) const;
+    void subdata(size_t offset, size_t size, void const *data) const;
+    void allocate(size_t size) const;
+    void deallocate() const;
+    void*map(unsigned access) const;
+    bool unmap() const;
     void bind() const;
     void unbind() const;
 };
