@@ -1,18 +1,13 @@
 #pragma once
 #include <cstddef>
 #include "glad/gl.h"
-#include "Buffer.hpp"
+#include "utils/Resource.hpp"
 
-class IndexBuffer : public Buffer {
+class IndexBuffer : public Resource {
 private:
     unsigned m_size = 0;
+    unsigned m_renderID = 0;
 public:
-    void bufferData(void const *data, size_t size) const;
-    void subdata(size_t offset, size_t size, void const *data) const;
-    void allocate(size_t size) const;
-    void deallocate() const;
-    void *map(GLenum access = GL_READ_WRITE) const;
-    bool unmap() const;
     void bind() const;
     void unbind() const;
 
