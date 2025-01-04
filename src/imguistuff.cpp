@@ -53,7 +53,10 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
     size_t triangles = 0;
     for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {
-        triangles += app.models[app.currentModelIndex].getMeshes()[i].indices.size() / 3;
+        int meshTris = 0;
+        app.models[app.currentModelIndex].getMeshes()[i].ib.bind();
+        glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &meshTris);
+        triangles += meshTris / 3;
     }
     ImGui::Text("%lu triangles", triangles);
     ImGui::Checkbox("flip textures on load", &app.flipTextures);

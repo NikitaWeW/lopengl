@@ -42,19 +42,34 @@ void Model::processNode(aiNode *node, bool flipTextures) {
 }
 Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     Mesh mesh;
+    std::vector<unsigned>  indices;
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> textureCoords;
+
     for(unsigned i = 0; i < aimesh->mNumVertices; ++i) {
-        Vertex vertex;
-        vertex.position = { aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z };
-        vertex.normals = { aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z };
+        positions.push_back({ aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z });
+        normals.push_back({ aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z });
         if(aimesh->mTextureCoords[0]) {
-            vertex.textureCoords = { aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y };
+            textureCoords.push_back({ aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y });
         }
-        mesh.vertices.push_back(vertex);
     }
+    mesh.vb = VertexBuffer{
+        positions.size()     * sizeof(positions[0]) + 
+        normals.size()       * sizeof(normals[0]) + 
+        textureCoords.size() * sizeof(textureCoords[0])
+    };
+
+    mesh.ib.bind();
+    glBufferSubData(GL_ARRAY_BUFFER, 0,                                     positions.size() * sizeof(positions[0]), positions.data());
+    glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), normals.size() * sizeof(normals[0]), normals.data());
+    if(aimesh->mTextureCoords[0]) 
+        glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), textureCoords.size() * sizeof(textureCoords[0]), positions.data());
+
     for(unsigned i = 0; i < aimesh->mNumFaces; ++i) {
         aiFace face = aimesh->mFaces[i];
         for(unsigned j = 0; j < face.mNumIndices; ++j)
-            mesh.indices.push_back(face.mIndices[j]);
+            indices.push_back(face.mIndices[j]);
     }
     if(aimesh->mMaterialIndex >= 0) {
         aiMaterial *material = m_scene->mMaterials[aimesh->mMaterialIndex];
@@ -76,11 +91,16 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
             mesh.material.shininess = color.r ? color.r : 32.0f;
         }
     }
+
+    VertexBufferLayout layout;
+    layout.push(3, GL_FLOAT);
+    layout.push(3, GL_FLOAT);
+    layout.push(2, GL_FLOAT);
+    layout.interleaved = false; // FIXME: VBO layout
     
     mesh.va.bind();
-    mesh.vb = VertexBuffer{mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex)};
-    mesh.ib = IndexBuffer {mesh.indices.data(),  mesh.indices.size()  * sizeof(unsigned)};
-    mesh.va.addBuffer(mesh.vb, getVertexLayout());
+    mesh.ib = IndexBuffer {indices.data(),  indices.size()  * sizeof(unsigned)};
+    mesh.va.addBuffer(mesh.vb, layout);
     return mesh;
 }
 

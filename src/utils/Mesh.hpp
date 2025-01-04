@@ -9,8 +9,6 @@
 struct Mesh {
     Material material;
 
-    std::vector<Vertex> vertices;
-    std::vector<unsigned> indices;
     std::vector<Texture> textures;
 
     VertexBuffer vb;

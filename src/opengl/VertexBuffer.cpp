@@ -15,6 +15,11 @@ VertexBuffer::VertexBuffer(const void *data, size_t size) {
     bind();
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
 }
+VertexBuffer::VertexBuffer(size_t size) {
+    glGenBuffers(1, &m_renderID);
+    bind();
+    glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+}
 VertexBuffer::VertexBuffer() = default;
 VertexBuffer::~VertexBuffer()
 {

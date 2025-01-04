@@ -6,6 +6,7 @@
 struct VertexBufferlayoutElement {
     unsigned type;
     unsigned count;
+    unsigned offset = 0;
     bool normalised;
 };
 
@@ -14,6 +15,7 @@ private:
     std::vector<VertexBufferlayoutElement> m_elements;
     unsigned m_stride;
 public:
+    bool interleaved = true; 
     VertexBufferLayout();
     ~VertexBufferLayout();
     void push(unsigned const count, unsigned type, bool normalised = false);
@@ -25,6 +27,7 @@ private:
     unsigned m_renderID = 0;
 public:
     VertexBuffer(const void *data, size_t size);
+    VertexBuffer(size_t size);
     VertexBuffer();
     ~VertexBuffer();
     void bind() const;

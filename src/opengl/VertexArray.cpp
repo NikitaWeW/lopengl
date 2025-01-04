@@ -28,11 +28,11 @@ void VertexArray::unbind() const {
 void VertexArray::addBuffer(VertexBuffer const &VB, VertexBufferLayout const &layout) {
     bind();
     VB.bind();
-    auto const& elements = layout.getElements(); 
+    auto const &elements = layout.getElements(); 
     unsigned offset = 0;
     for(unsigned i = 0; i < elements.size(); ++i) {
         auto const& element = elements.at(i);
-        glVertexAttribPointer(i, element.count, element.type, element.normalised, layout.getStride(), reinterpret_cast<void const *>(offset));
+        glVertexAttribPointer(i, element.count, element.type, element.normalised, layout.interleaved ? layout.getStride() : element.count * getSizeOfGLType(element.type), reinterpret_cast<void const *>(offset));
         glEnableVertexAttribArray(i);
         offset += element.count * getSizeOfGLType(element.type);
     }
