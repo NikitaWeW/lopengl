@@ -3,25 +3,44 @@
 #include <vector>
 #include "utils/Resource.hpp"
 
-struct VertexBufferlayoutElement {
-    unsigned type;
-    unsigned count;
-    unsigned offset = 0;
-    bool normalised;
-};
-
+/*
+non-interleaved layout
+*/
 class VertexBufferLayout {
 private:
-    std::vector<VertexBufferlayoutElement> m_elements;
-    unsigned m_stride;
+    struct Element {
+        unsigned type;
+        unsigned count;
+        size_t offset;
+    };
+
+    std::vector<Element> m_elements;
 public:
-    bool interleaved = true; 
-    VertexBufferLayout();
-    ~VertexBufferLayout();
-    void push(unsigned const count, unsigned type, bool normalised = false);
+    size_t m_stride;
+    VertexBufferLayout() = default;
+    ~VertexBufferLayout() = default;
+    void push(unsigned const count, unsigned type, size_t offset);
     inline unsigned getStride() const { return m_stride; }
-    inline std::vector<VertexBufferlayoutElement> const &getElements() const { return m_elements; }
+    inline std::vector<Element> const &getElements() const { return m_elements; }
 };
+
+class InterleavedVertexBufferLayout {
+private:
+    struct Element {
+        unsigned type;
+        unsigned count;
+    };
+
+    std::vector<Element> m_elements;
+    unsigned m_stride = 0;
+public:
+    InterleavedVertexBufferLayout() = default;
+    ~InterleavedVertexBufferLayout() = default;
+    void push(unsigned const count, unsigned type);
+    inline unsigned getStride() const { return m_stride; }
+    inline std::vector<Element> const &getElements() const { return m_elements; }
+};
+
 class VertexBuffer : public Resource {
 private:
     unsigned m_renderID = 0;

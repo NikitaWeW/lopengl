@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     ControllableCamera camera(window, {0, 0, 7}, {-90, 0, 0});
     PointLight light;
     SpotLight flashlight;
-    VertexBufferLayout layout;
+    InterleavedVertexBufferLayout layout;
     Renderer renderer;
     Framebuffer framebuffer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
@@ -156,11 +156,11 @@ if(!fastLoad) {
         renderer.drawLighting(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera); 
         app.textures[app.currentTextureIndex].unbind();
 
-        // draw the light cube
-        lightCube.resetMatrix();
-        lightCube.translate(light.position);
-        lightCube.scale(glm::vec3{0.03125});
         if(light.enabled) {
+            // draw the light cube
+            lightCube.resetMatrix();
+            lightCube.translate(light.position);
+            lightCube.scale(glm::vec3{0.03125});
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
             renderer.draw(lightCube, app.plainColorShader, camera);

@@ -3,11 +3,8 @@
 #include "VertexBuffer.hpp"
 #include "glType.hpp"
 
-VertexBufferLayout::VertexBufferLayout() : m_stride(0) {}
-VertexBufferLayout::~VertexBufferLayout() = default;
-void VertexBufferLayout::push(unsigned const count, unsigned type, bool normalised) {
-    m_elements.push_back({type, count, normalised});
-    m_stride += getSizeOfGLType(type) * count;
+void InterleavedVertexBufferLayout::push(unsigned const count, unsigned type) {
+    m_elements.push_back({type, count});
 }
 
 VertexBuffer::VertexBuffer(const void *data, size_t size) {
@@ -25,5 +22,10 @@ VertexBuffer::~VertexBuffer()
 {
     if(canDeallocate()) glDeleteBuffers(1, &m_renderID);
 }
-void VertexBuffer::bind() const                                                { glBindBuffer(GL_ARRAY_BUFFER, m_renderID); }
-void VertexBuffer::unbind() const                                              { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+void VertexBuffer::bind() const { glBindBuffer(GL_ARRAY_BUFFER, m_renderID); }
+void VertexBuffer::unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+
+void VertexBufferLayout::push(unsigned const count, unsigned type, size_t offset)
+{
+    m_elements.push_back({type, count, offset});
+}

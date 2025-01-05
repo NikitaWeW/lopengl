@@ -9,8 +9,8 @@ struct Vertex {
     glm::vec2 textureCoords = glm::vec2{0};
 };
 
-inline VertexBufferLayout getVertexLayout() {
-    VertexBufferLayout layout;
+inline InterleavedVertexBufferLayout getVertexLayout() {
+    InterleavedVertexBufferLayout layout;
     layout.push(3, GL_FLOAT);
     layout.push(3, GL_FLOAT);
     layout.push(2, GL_FLOAT);
