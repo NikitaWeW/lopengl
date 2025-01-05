@@ -14,7 +14,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
     for(unsigned int i = 0; i < material->GetTextureCount(type); i++) {
         material->GetTexture(type, i, &str);
         bool alreadyLoaded = false;
-        for(auto &loadedTexture : m_loadedTextures)  {
+        for(auto &loadedTexture : m_loadedTextures) {
             if(loadedTexture.getFilePath() == m_directory + '/' + str.C_Str()) {
                 textures.push_back(loadedTexture);
                 alreadyLoaded = true;
@@ -64,7 +64,7 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     glBufferSubData(GL_ARRAY_BUFFER, 0,                                     positions.size() * sizeof(positions[0]), positions.data());
     glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), normals.size() * sizeof(normals[0]), normals.data());
     if(aimesh->mTextureCoords[0]) 
-        glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), textureCoords.size() * sizeof(textureCoords[0]), positions.data());
+        glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), textureCoords.size() * sizeof(textureCoords[0]), textureCoords.data());
 
     for(unsigned i = 0; i < aimesh->mNumFaces; ++i) {
         aiFace face = aimesh->mFaces[i];
