@@ -28,6 +28,7 @@ public:
     void unbind() const;
 
     int getUniform(std::string const &name) const;
+    int getUniformBlock(std::string const &name) const;
     bool ParceShaderFile(std::string const &filepath);
     bool CompileShaders();
     

@@ -30,6 +30,8 @@ this is really bad code, that is only use to test features. fame frog.
 struct Application {
 public:
     static OpenGlError openglError;
+    std::string lastFailedShaderLog;
+    std::string lastFailedShaderName;
     GLFWwindow *window;
 
     Shader plainColorShader;
@@ -54,6 +56,7 @@ public:
 
     std::vector<Model> models;
     std::vector<Shader> shaders;
+    std::vector<unsigned> displayShaders;
     std::vector<Texture> textures;
 
     char loadModelBuffer[1024];
@@ -65,6 +68,7 @@ public:
     bool sceneControlsInSeparateWindow = false;
     bool flipTextures = false;
     bool flipWinding = false;
+    bool skybox = true;
 public:
     Application();
     ~Application();

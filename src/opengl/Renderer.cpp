@@ -132,7 +132,7 @@ void Renderer::drawMaterial(Model const &model, Shader const &shader, Camera con
     drawMaterial(model, shader, camera.getViewMatrix(), camera.getProjectionMatrix());
 }
 
-void Renderer::draw(Model const &model, Shader const &shader)
+void Renderer::draw(Model const &model, Shader const &shader) const
 {
     shader.bind();
     for(Mesh const &mesh : model.getMeshes()) {

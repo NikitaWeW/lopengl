@@ -81,6 +81,12 @@ int Shader::getUniform(std::string const &name) const
     m_UniformLocationCache[name] = location;
     return location;
 }
+int Shader::getUniformBlock(std::string const &name) const
+{
+    bind();
+    int location = glGetUniformBlockIndex(ShaderProgramID, name.c_str());
+    return location;
+}
 bool Shader::ParceShaderFile(std::string const &filepath)
 {
     std::ifstream fileStream(filepath, std::ios::in);

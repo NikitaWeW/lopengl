@@ -23,30 +23,35 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     std::vector<const char *> shaderNames;
-    for(Shader &shader : app.shaders) shaderNames.push_back(shader.getFilePath().c_str());
+    for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[app.displayShaders[index]].getFilePath().c_str());
     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
-    static Shader *failedShaderTemp = nullptr;
+    // static Shader *failedShaderTemp = nullptr;
     if(ImGui::Button("reload shaders")) {
         for(Shader &shader : app.shaders) {
+            LOG_DEBUG("reloading shader: \"%s\"", shader.getFilePath().c_str());
             Shader copy = shader;
             if(!shader.ParceShaderFile(shader.getFilePath())) {
+                app.lastFailedShaderLog = shader.getLog();
+                app.lastFailedShaderName = shader.getFilePath();
                 std::swap(shader, copy);
-                failedShaderTemp = &shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
             };
             if(!shader.CompileShaders()) {
+                app.lastFailedShaderLog = shader.getLog();
+                app.lastFailedShaderName = shader.getFilePath();
                 std::swap(shader, copy);
-                failedShaderTemp = &shader;
                 ImGui::OpenPopup("failed to reload shaders!");
                 break;
             }
         }
+        LOG_DEBUG("done reloading!");
     }
     ImGui::Separator();
 
 
     ImGui::Checkbox("wireframe", &app.wireframe);
+    ImGui::Checkbox("skybox", &app.skybox);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
 
@@ -56,7 +61,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         int meshTris = 0;
         app.models[app.currentModelIndex].getMeshes()[i].ib.bind();
         glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &meshTris);
-        triangles += meshTris / 3;
+        triangles += meshTris / sizeof(unsigned) / 3;
     }
     ImGui::Text("%lu triangles", triangles);
     ImGui::Checkbox("flip textures on load", &app.flipTextures);
@@ -144,21 +149,10 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         cam.sensitivity = 1.0f;
     }
     if(ImGui::BeginPopup("failed to reload shaders!")) {
-        if(failedShaderTemp) {
-            ImGui::Text("shader name: %s", failedShaderTemp->getFilePath().c_str());
-            ImGui::Separator();
-
-
-            ImGui::TextWrapped(failedShaderTemp->getLog().c_str());
-            ImGui::Separator();
-
-
-        } else {
-            ImGui::Text("no informaion :(");
-        }
+        ImGui::Text("shader name: %s", app.lastFailedShaderName.c_str());
+        ImGui::Separator();
+        ImGui::TextWrapped(app.lastFailedShaderLog.c_str());
         ImGui::EndPopup();
-    } else {
-        failedShaderTemp = nullptr;
     }
     ImGui::End();
 

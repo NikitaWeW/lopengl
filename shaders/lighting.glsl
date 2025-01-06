@@ -4,22 +4,27 @@ layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec4 a_normal;
 layout(location = 2) in vec2 a_texCoord;
 
-out vec2 v_texCoord;
-out vec3 v_fragPosition;
-out vec3 v_normal;
-out mat4 v_viewMat;
+out VS_OUT {
+    vec2 v_texCoord;
+    vec3 v_fragPosition;
+    vec3 v_normal;
+    mat4 v_viewMat;
+} vs_out;
+
+layout (std140) uniform Matricies {
+    uniform mat4 u_viewMat;
+    uniform mat4 u_projectionMat;
+    uniform mat4 u_normalMat;
+};
 
 uniform mat4 u_modelMat;
-uniform mat4 u_viewMat;
-uniform mat4 u_projectionMat;
-uniform mat4 u_normalMat;
 
 void main() {
     gl_Position = u_projectionMat * u_viewMat * u_modelMat * a_position;
-    v_texCoord = a_texCoord;
-    v_fragPosition = vec3(u_modelMat * a_position);
-    v_normal = vec3(u_normalMat * a_normal);
-    v_viewMat = u_viewMat;
+    vs_out.v_texCoord = a_texCoord;
+    vs_out.v_fragPosition = vec3(u_modelMat * a_position);
+    vs_out.v_normal = vec3(u_normalMat * a_normal);
+    vs_out.v_viewMat = u_viewMat;
 }
 
 #shader fragment
@@ -59,10 +64,12 @@ struct DirectionalLight {
     vec3 color;
 };
 
-in vec3 v_normal;
-in vec2 v_texCoord;
-in vec3 v_fragPosition;
-in mat4 v_viewMat;
+in VS_OUT {
+    vec2 v_texCoord;
+    vec3 v_fragPosition;
+    vec3 v_normal;
+    mat4 v_viewMat;
+} fs_in;
 
 #define LIGHTS_CAPASITY 10
 
@@ -85,8 +92,8 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir);
 void main() { // TODO: displacement
     vec4 lightColor = vec4(0, 0, 0, 1);
 
-    vec3 norm = normalize(v_normal);
-    vec3 viewDir = normalize(u_viewPos - v_fragPosition);
+    vec3 norm = normalize(fs_in.v_normal);
+    vec3 viewDir = normalize(u_viewPos - fs_in.v_fragPosition);
 
     for(int i = 0; i < u_pointLightCount; ++i) {
         lightColor += light(u_pointLights[i], u_material, norm, viewDir);
@@ -98,13 +105,13 @@ void main() { // TODO: displacement
         lightColor += light(u_spotLights[i], u_material, norm, viewDir);
     }
 
-    o_color = lightColor * texture(u_material.diffuse, v_texCoord);
+    o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoord);
 }
 
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
-    vec3 lightDir = normalize(light.position - v_fragPosition);
+    vec3 lightDir = normalize(light.position - fs_in.v_fragPosition);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float distanceLightFragment = length(light.position - v_fragPosition);
+    float distanceLightFragment = length(light.position - fs_in.v_fragPosition);
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
@@ -118,7 +125,7 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
         light.color * 
         attenuation *
         pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
-        (u_specularSet ? vec3(.25) : vec3(texture(material.specular, v_texCoord)));
+        (u_specularSet ? vec3(.25) : vec3(texture(material.specular, fs_in.v_texCoord)));
 
     return vec4(ambient + diffuse + specular, 1.0);
 }
@@ -133,15 +140,15 @@ vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 specular = 
         light.color * 
         pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
-        (u_specularSet ? vec3(.25) : vec3(texture(material.specular, v_texCoord)));
+        (u_specularSet ? vec3(.25) : vec3(texture(material.specular, fs_in.v_texCoord)));
 
     return vec4(ambient + diffuse + specular, 1.0);
 }
 vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
     
-    vec3 lightDir = normalize(light.position - v_fragPosition);
+    vec3 lightDir = normalize(light.position - fs_in.v_fragPosition);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float distanceLightFragment = length(light.position - v_fragPosition);
+    float distanceLightFragment = length(light.position - fs_in.v_fragPosition);
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
@@ -162,7 +169,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
             intensity * 
             attenuation *
             pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
-            (u_specularSet ? vec3(texture(material.specular, v_texCoord)) : vec3(.25));
+            (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
         return vec4(ambient + diffuse + specular, 1.0);
     } else {
         return vec4(ambient, 1.0);

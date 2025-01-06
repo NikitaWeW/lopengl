@@ -6,11 +6,14 @@
 #include "utils/Model.hpp"
 #include "utils/Light.hpp"
 #include <optional>
+#include "opengl/UniformBuffer.hpp"
 
 class Renderer
 {
 private:
     std::vector<Light *> m_lights;
+    UniformBuffer matriciesUBO{3 * sizeof(glm::mat4)};
+    
 public:
 
 public:
@@ -32,7 +35,7 @@ public:
 /*
  *   very basic draw call. no uniforms set.
  */
-    void draw(Model const &model, Shader const &shader);
+    void draw(Model const &model, Shader const &shader) const;
 /*
  *  basic draw call. sets matrix uniforms
  */

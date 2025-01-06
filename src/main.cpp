@@ -21,6 +21,7 @@ cmake --build build && build/main --fast
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
 #include "opengl/Framebuffer.hpp"
+#include "opengl/UniformBuffer.hpp"
 #include "opengl/Cubemap.hpp"
 
 #include <chrono>
@@ -59,7 +60,6 @@ int main(int argc, char **argv)
     Renderer renderer;
     Framebuffer framebuffer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
-    Shader skyboxShader{"shaders/skybox.glsl", SHOW_LOGS};
     
     glfwGetWindowSize(window, &camera.width, &camera.height);
 //  =========================================== 
@@ -70,11 +70,14 @@ int main(int argc, char **argv)
     app.shaders = {
         {"shaders/lighting.glsl",     SHOW_LOGS},
         {"shaders/basic.glsl",        SHOW_LOGS},
-        {"shaders/post_process.glsl", SHOW_LOGS},
         {"shaders/reflection.glsl",   SHOW_LOGS},
-        {"shaders/refraction.glsl",   SHOW_LOGS}
-    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. shows in shader list.
-    Shader &postProcessShader = app.shaders[2];
+        {"shaders/refraction.glsl",   SHOW_LOGS},
+        {"shaders/post_process.glsl", SHOW_LOGS},
+        {"shaders/skybox.glsl",       SHOW_LOGS}
+    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
+    app.displayShaders = {0, 1, 2, 3}; // shows in shader list.
+    Shader &postProcessShader = app.shaders[4];
+    Shader &skyboxShader = app.shaders[5];
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -128,6 +131,10 @@ if(!fastLoad) {
 
     LOG_INFO("loaded!");
 
+    for(Shader &shader : app.shaders) {
+        glUniformBlockBinding(shader.ShaderProgramID, shader.getUniformBlock("Matricies"), 0);
+    }
+
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -151,7 +158,7 @@ if(!fastLoad) {
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
-        glUniform1i(app.shaders[app.currentShaderIndex].getUniform("u_skybox"), 1);
+        glUniform1i(app.shaders[app.displayShaders[app.currentShaderIndex]].getUniform("u_skybox"), 1);
         app.textures[app.currentTextureIndex].bind();
         renderer.drawLighting(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera); 
         app.textures[app.currentTextureIndex].unbind();
@@ -166,18 +173,20 @@ if(!fastLoad) {
             renderer.draw(lightCube, app.plainColorShader, camera);
         }
 
-        // draw the skybox as last
-        glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LEQUAL);
-        glUniform1i(skyboxShader.getUniform("u_skybox"), 1);
-        renderer.draw(app.cube, skyboxShader, camera);
-        glDepthFunc(GL_LESS);
-        glDepthMask(GL_TRUE);
+        if(app.skybox) {
+            // draw the skybox as last
+            glDepthMask(GL_FALSE);
+            glDepthFunc(GL_LEQUAL);
+            glUniform1i(skyboxShader.getUniform("u_skybox"), 1);
+            renderer.draw(app.cube, skyboxShader, camera);
+            glDepthFunc(GL_LESS);
+            glDepthMask(GL_TRUE);
+        }
 
 
-// =================================================== //
-//      render the plane that covers entire screen     //
-// =================================================== //
+// ======================================================= //
+//      render the plane that covers the entire screen     //
+// ======================================================= //
 
         framebuffer.unbind();
 

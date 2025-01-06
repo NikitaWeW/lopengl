@@ -10,11 +10,13 @@ uniform mat4 u_viewMat;
 
 void main() {
     v_texCoords = a_position;
-    gl_Position = (u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1)).xyww;
+    // gl_Position = (u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1)).xyww;
+    gl_Position = u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1);
 }
 
 #shader fragment
 #version 430 core
+layout (depth_greater) out float gl_FragDepth;
 
 
 in vec3 v_texCoords;
@@ -25,4 +27,5 @@ uniform samplerCube skybox;
 
 void main() {
     o_color = texture(skybox, v_texCoords);
+    gl_FragDepth = 1.0;
 }
