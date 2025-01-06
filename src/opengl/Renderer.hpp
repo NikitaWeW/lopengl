@@ -14,7 +14,6 @@ private:
     std::vector<Light *> m_lights;
     
 public:
-    UniformBuffer matriciesUBO{3 * sizeof(glm::mat4)};
 
 public:
     Renderer();
