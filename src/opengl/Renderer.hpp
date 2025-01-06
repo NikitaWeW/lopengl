@@ -12,9 +12,9 @@ class Renderer
 {
 private:
     std::vector<Light *> m_lights;
-    UniformBuffer matriciesUBO{3 * sizeof(glm::mat4)};
     
 public:
+    UniformBuffer matriciesUBO{3 * sizeof(glm::mat4)};
 
 public:
     Renderer();

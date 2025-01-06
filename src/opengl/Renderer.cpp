@@ -5,7 +5,9 @@
 #include "logger.h"
 #include <cassert>
 
-Renderer::Renderer() = default;
+Renderer::Renderer() {
+    matriciesUBO.bindingPoint(0);
+};
 
 void Renderer::clear(glm::vec3 clearColor) const
 {
@@ -29,9 +31,14 @@ void Renderer::drawLighting(Model const &model, Shader const &shader, glm::mat4 
     glUniform1i(shader.getUniform("u_spotLightCount"),  spotLightCount);
     glm::mat4 normalMat = glm::transpose(glm::inverse(model.getModelMat()));
     glUniformMatrix4fv(shader.getUniform("u_modelMat"),     1, GL_FALSE, &model.getModelMat()[0][0]);
-    glUniformMatrix4fv(shader.getUniform("u_viewMat"),      1, GL_FALSE, &viewMat[0][0]);
-    glUniformMatrix4fv(shader.getUniform("u_projectionMat"),1, GL_FALSE, &projectionMat[0][0]);
-    glUniformMatrix4fv(shader.getUniform("u_normalMat"),    1, GL_FALSE, &normalMat[0][0]);
+    // glUniformMatrix4fv(shader.getUniform("u_viewMat"),      1, GL_FALSE, &viewMat[0][0]);
+    // glUniformMatrix4fv(shader.getUniform("u_projectionMat"),1, GL_FALSE, &projectionMat[0][0]);
+    // glUniformMatrix4fv(shader.getUniform("u_normalMat"),    1, GL_FALSE, &normalMat[0][0]);
+
+    matriciesUBO.bind(); // dont do this
+    glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::mat4), sizeof(glm::mat4), &viewMat);
+    glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), sizeof(glm::mat4), &projectionMat);
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(glm::mat4), &normalMat);
 
     bool specularSet = false;
     for(Mesh const &mesh : model.getMeshes()) {

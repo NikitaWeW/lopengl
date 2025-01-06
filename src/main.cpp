@@ -132,7 +132,9 @@ if(!fastLoad) {
     LOG_INFO("loaded!");
 
     for(Shader &shader : app.shaders) {
-        glUniformBlockBinding(shader.ShaderProgramID, shader.getUniformBlock("Matricies"), 0);
+        int location = shader.getUniformBlock("Matricies");
+        if(location >= 0)
+            glUniformBlockBinding(shader.ShaderProgramID, location, 0);
     }
 
     while (!glfwWindowShouldClose(window))

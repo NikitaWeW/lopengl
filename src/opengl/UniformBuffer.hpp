@@ -10,8 +10,8 @@ public:
     UniformBuffer(size_t size);
     ~UniformBuffer();
 
-    void bind();
-    void unbind();
+    void bind() const;
+    void unbind() const;
 
-    void bindingPoint(unsigned index);
+    void bindingPoint(unsigned index) const;
 };
