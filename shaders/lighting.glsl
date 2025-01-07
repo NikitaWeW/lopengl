@@ -11,13 +11,10 @@ out VS_OUT {
     mat4 v_viewMat;
 } vs_out;
 
-layout (std140) uniform Matricies {
-    uniform mat4 u_viewMat;
-    uniform mat4 u_projectionMat;
-    uniform mat4 u_normalMat;
-};
-
 uniform mat4 u_modelMat;
+uniform mat4 u_viewMat;
+uniform mat4 u_projectionMat;
+uniform mat4 u_normalMat;
 
 void main() {
     gl_Position = u_projectionMat * u_viewMat * u_modelMat * a_position;

@@ -73,11 +73,13 @@ int main(int argc, char **argv)
         {"shaders/reflection.glsl",   SHOW_LOGS},
         {"shaders/refraction.glsl",   SHOW_LOGS},
         {"shaders/post_process.glsl", SHOW_LOGS},
-        {"shaders/skybox.glsl",       SHOW_LOGS}
+        {"shaders/skybox.glsl",       SHOW_LOGS},
+        {"shaders/houses.glsl",       SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3}; // shows in shader list.
     ShaderProgram &postProcessShader = app.shaders[4];
     ShaderProgram &skyboxShader = app.shaders[5];
+    ShaderProgram &housesShader = app.shaders[6];
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
