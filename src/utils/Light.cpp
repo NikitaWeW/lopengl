@@ -7,7 +7,7 @@ PointLight::PointLight()
     type = LightType::POINT;
 }
 
-void PointLight::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
+void PointLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     shader.bind();
     std::string element = "u_pointLights[" + std::to_string(pointLightCount++) + ']';
@@ -23,7 +23,7 @@ DirectionalLight::DirectionalLight()
     type = LightType::DIRECTIONAL;
 }
 
-void DirectionalLight::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
+void DirectionalLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     shader.bind();
     std::string element = "u_dirLights[" + std::to_string(dirLightCount++) + ']';
@@ -39,7 +39,7 @@ SpotLight::SpotLight()
     type = LightType::SPOT;
 }
 
-void SpotLight::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
+void SpotLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     shader.bind();
     std::string element = "u_spotLights[" + std::to_string(spotLightCount++) + ']';
@@ -53,7 +53,7 @@ void SpotLight::setUniforms(Shader const &shader, unsigned &pointLightCount, uns
     glUniform1f (shader.getUniform(element + ".outerCutoff"),  outerCutoff);
 }
 
-void Light::setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
+void Light::setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const
 {
     LOG_WARN("calling setUniforms for a base class (not good)");
 }

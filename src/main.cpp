@@ -76,8 +76,8 @@ int main(int argc, char **argv)
         {"shaders/skybox.glsl",       SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3}; // shows in shader list.
-    Shader &postProcessShader = app.shaders[4];
-    Shader &skyboxShader = app.shaders[5];
+    ShaderProgram &postProcessShader = app.shaders[4];
+    ShaderProgram &skyboxShader = app.shaders[5];
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     light.position= glm::vec3{2, 1, 3};
     light.enabled = false;
 
-    app.plainColorShader = Shader{"shaders/plain_color.glsl", SHOW_LOGS};
+    app.plainColorShader = ShaderProgram{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 

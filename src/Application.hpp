@@ -34,7 +34,7 @@ public:
     std::string lastFailedShaderName;
     GLFWwindow *window;
 
-    Shader plainColorShader;
+    ShaderProgram plainColorShader;
     Model quad;
     Model cube;
 
@@ -55,7 +55,7 @@ public:
     int currentSceneIndex = 0;
 
     std::vector<Model> models;
-    std::vector<Shader> shaders;
+    std::vector<ShaderProgram> shaders;
     std::vector<unsigned> displayShaders;
     std::vector<Texture> textures;
 

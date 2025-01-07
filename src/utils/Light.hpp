@@ -21,19 +21,19 @@ struct Light {
     // Light &operator=(Light &other) = default;
     // Light &operator=(Light &&other) = default;
     virtual ~Light() = default;
-    virtual void setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
+    virtual void setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
 };
 
 struct PointLight : public Light {
     PointLight();
     glm::vec3 position = glm::vec3{0};
-    virtual void setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
+    virtual void setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
 };
 
 struct DirectionalLight : public Light {
     DirectionalLight();
     glm::vec3 direction = glm::vec3{1, 0, 0};
-    virtual void setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
+    virtual void setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
 };
 
 struct SpotLight : public Light {
@@ -42,5 +42,5 @@ struct SpotLight : public Light {
     glm::vec3 direction = glm::vec3{0, 0, -1};
     float innerCutoff = glm::cos(glm::radians(20.0f));
     float outerCutoff = glm::cos(glm::radians(40.0f));
-    virtual void setUniforms(Shader const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
+    virtual void setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
 };

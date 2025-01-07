@@ -7,27 +7,36 @@
 #include "Shader.hpp"
 #include "logger.h"
 
-bool compileShader(unsigned &shader, const char *shaderSource, const int mode, std::string &log) {
-    shader = glCreateShader(mode);
-    glShaderSource(shader, 1, &shaderSource, nullptr);
-    glCompileShader(shader);
+void ShaderProgram::deallocate() {
+    glDeleteProgram(m_renderID);
+    for(Shader const &shader : m_shaders) {
+        glDeleteShader(shader.renderID);
+    }   
+}
+
+bool compileShader(ShaderProgram::Shader &shader, std::string &log) {
+    shader.renderID = glCreateShader(shader.type);
+    glShaderSource(shader.renderID, 1, &shader.source.begin().base(), nullptr);
+    glCompileShader(shader.renderID);
     int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(shader.renderID, GL_COMPILE_STATUS, &success);
     if(!success) {
         GLint log_size;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_size);
+        glGetShaderiv(shader.renderID, GL_INFO_LOG_LENGTH, &log_size);
         if(log_size > 0) {
             log.resize(log_size);
-            glGetShaderInfoLog(shader, log_size, nullptr, &log[0]);
+            glGetShaderInfoLog(shader.renderID, log_size, nullptr, &log[0]);
         }
         return false;
     }
     return true;
 }
-bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentShaderID, std::string &log) { // thats stupid. wont fix it
+
+bool linkProgram(unsigned &program, std::vector<ShaderProgram::Shader> shaders, std::string &log) {
     program = glCreateProgram();
-    glAttachShader(program, vertexShaderID);
-    glAttachShader(program, fragmentShaderID);
+    for(auto const &shader : shaders) {
+        glAttachShader(program, shader.renderID);
+    }
     glLinkProgram(program);
 
     int success;
@@ -43,8 +52,19 @@ bool linkProgram(unsigned &program, unsigned vertexShaderID, unsigned fragmentSh
     }
     return true;
 }
-Shader::Shader() = default;
-Shader::Shader(std::string const &filepath, bool showLog) : m_filepath(filepath)
+
+std::string shaderTypeToString(unsigned type) {
+    switch (type)
+    {
+    case GL_VERTEX_SHADER:   return "vertex";
+    case GL_GEOMETRY_SHADER: return "geometry";
+    case GL_FRAGMENT_SHADER: return "fragment";
+    default:                 return "unknown type";
+    }
+}
+
+ShaderProgram::ShaderProgram() = default;
+ShaderProgram::ShaderProgram(std::string const &filepath, bool showLog) : m_filepath(filepath)
 {
     if(!ParceShaderFile(filepath)) {
         if(showLog) {
@@ -59,42 +79,38 @@ Shader::Shader(std::string const &filepath, bool showLog) : m_filepath(filepath)
         throw std::logic_error("failed to compile shaders!");
     }
 }
-Shader::~Shader() {
-    if(canDeallocate()) {
-        glDeleteShader(VertexShaderID);
-        glDeleteShader(FragmentShaderID);
-        glDeleteProgram(ShaderProgramID);
-    }
+ShaderProgram::~ShaderProgram() {
+    if(canDeallocate()) deallocate();
 }
 
-void Shader::bind() const {
-    glUseProgram(ShaderProgramID);
+void ShaderProgram::bind() const {
+    glUseProgram(m_renderID);
 }
-void Shader::unbind() const {
+void ShaderProgram::unbind() const {
     glUseProgram(0);
 }
-int Shader::getUniform(std::string const &name) const
+int ShaderProgram::getUniform(std::string const &name) const
 {
     bind(); // probably will set uniform so bind it
     if(m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) return m_UniformLocationCache[name];
-    int location = glGetUniformLocation(ShaderProgramID, name.c_str());
+    int location = glGetUniformLocation(m_renderID, name.c_str());
     m_UniformLocationCache[name] = location;
     return location;
 }
-int Shader::getUniformBlock(std::string const &name) const
+int ShaderProgram::getUniformBlock(std::string const &name) const
 {
     bind();
-    int location = glGetUniformBlockIndex(ShaderProgramID, name.c_str());
+    int location = glGetUniformBlockIndex(m_renderID, name.c_str());
     return location;
 }
-bool Shader::ParceShaderFile(std::string const &filepath)
+bool ShaderProgram::ParceShaderFile(std::string const &filepath)
 {
     std::ifstream fileStream(filepath, std::ios::in);
     if(!fileStream) {
         m_log = "failed to open " + filepath;
         return false;
     }
-    std::array<std::stringstream, 3> shaderSourceStreams;
+    std::array<std::stringstream, 4> shaderSourceStreams;
     unsigned currentIndex = 0;
     std::string line;
     while (getline(fileStream, line))
@@ -107,7 +123,10 @@ bool Shader::ParceShaderFile(std::string const &filepath)
             } else if (line.find("fragment") != std::string::npos)
             {
                 currentIndex = 2;
+            } else if(line.find("geometry") != std::string::npos) {
+                currentIndex = 3;
             } else {
+                LOG_WARN("unrecognised #shader statement:\n\t%s <-- here", line.substr(0, line.size() - 1).c_str());
                 currentIndex = 0;
             }
         } else
@@ -115,26 +134,26 @@ bool Shader::ParceShaderFile(std::string const &filepath)
             shaderSourceStreams[currentIndex] << line << '\n';
         }
     }
-    VertexShaderSource = shaderSourceStreams[1].str();
-    FragmentShaderSource = shaderSourceStreams[2].str();
+    m_shaders.erase(m_shaders.begin(), m_shaders.end());
+    m_shaders.push_back({0, GL_VERTEX_SHADER,   shaderSourceStreams[1].str()});
+    m_shaders.push_back({0, GL_FRAGMENT_SHADER, shaderSourceStreams[2].str()});
+    if(shaderSourceStreams[3].str().size() > 0) m_shaders.push_back({0, GL_GEOMETRY_SHADER, shaderSourceStreams[3].str()});
+
     return true;
 }
-bool Shader::CompileShaders() {
-    if(canDeallocate()) {
-        glDeleteShader(VertexShaderID);
-        glDeleteShader(FragmentShaderID);
-        glDeleteProgram(ShaderProgramID);
-    }
+bool ShaderProgram::CompileShaders() {
+    if(canDeallocate()) deallocate();
+
     m_UniformLocationCache.erase(m_UniformLocationCache.begin(), m_UniformLocationCache.end());
-    if(!compileShader(VertexShaderID, VertexShaderSource.c_str(), GL_VERTEX_SHADER, m_log)) {
-        m_log.insert(0, "failed to compile vertex shader\n");
-        return false;
+    
+    for(Shader &shader : m_shaders) {
+        if(!compileShader(shader, m_log)) {
+            m_log.insert(0, "failed to compile " + shaderTypeToString(shader.type) + " shader\n");
+            return false;
+        }
     }
-    if(!compileShader(FragmentShaderID, FragmentShaderSource.c_str(), GL_FRAGMENT_SHADER, m_log)) {
-        m_log.insert(0, "failed to compile fragment shader\n");
-        return false;
-    }
-    if(!linkProgram(ShaderProgramID, VertexShaderID, FragmentShaderID, m_log)) {
+
+    if(!linkProgram(m_renderID, m_shaders, m_log)) {
         m_log.insert(0, "failed to link shader program\n");
         return false;
     }

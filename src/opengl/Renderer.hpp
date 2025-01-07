@@ -24,22 +24,22 @@ public:
 /*
  *   set lighting and matrix uniforms before drawing.
  */
-    void drawLighting(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
-    void drawLighting(Model const &model, Shader const &shader, Camera const &camera) const;
+    void drawLighting(Model const &model, ShaderProgram const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
+    void drawLighting(Model const &model, ShaderProgram const &shader, Camera const &camera) const;
 /*
  *   set material and matrix uniforms before drawing.
  */
-    void drawMaterial(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
-    void drawMaterial(Model const &model, Shader const &shader, Camera const &camera) const;
+    void drawMaterial(Model const &model, ShaderProgram const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
+    void drawMaterial(Model const &model, ShaderProgram const &shader, Camera const &camera) const;
 /*
  *   very basic draw call. no uniforms set.
  */
-    void draw(Model const &model, Shader const &shader) const;
+    void draw(Model const &model, ShaderProgram const &shader) const;
 /*
  *  basic draw call. sets matrix uniforms
  */
-    void draw(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
-    void draw(Model const &model, Shader const &shader, Camera const &camera) const;
+    void draw(Model const &model, ShaderProgram const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const;
+    void draw(Model const &model, ShaderProgram const &shader, Camera const &camera) const;
 
     inline std::vector<Light *> &getLights() { return m_lights; }
     inline std::vector<Light *> const &getLights() const { return m_lights; }

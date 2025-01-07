@@ -14,7 +14,7 @@ void Renderer::clear(glm::vec3 clearColor) const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void Renderer::drawLighting(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
+void Renderer::drawLighting(Model const &model, ShaderProgram const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
 {
     shader.bind();
     // TODO: refactor
@@ -79,14 +79,14 @@ void Renderer::drawLighting(Model const &model, Shader const &shader, glm::mat4 
     shader.unbind();
     glActiveTexture(GL_TEXTURE0);
 }
-void Renderer::drawLighting(Model const & model, Shader const & shader, Camera const & camera) const
+void Renderer::drawLighting(Model const & model, ShaderProgram const & shader, Camera const & camera) const
 {
     shader.bind();
     glUniform3fv(shader.getUniform("u_viewPos"), 1, &camera.position.x);
     drawLighting(model, shader, camera.getViewMatrix(), camera.getProjectionMatrix());
 }
 
-void Renderer::drawMaterial(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
+void Renderer::drawMaterial(Model const &model, ShaderProgram const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
 {
     shader.bind();
 
@@ -131,14 +131,14 @@ void Renderer::drawMaterial(Model const &model, Shader const &shader, glm::mat4 
     glActiveTexture(GL_TEXTURE0);
 }
 
-void Renderer::drawMaterial(Model const &model, Shader const &shader, Camera const &camera) const
+void Renderer::drawMaterial(Model const &model, ShaderProgram const &shader, Camera const &camera) const
 {
     shader.bind();
     glUniform3fv(shader.getUniform("u_viewPos"), 1, &camera.position.x);
     drawMaterial(model, shader, camera.getViewMatrix(), camera.getProjectionMatrix());
 }
 
-void Renderer::draw(Model const &model, Shader const &shader) const
+void Renderer::draw(Model const &model, ShaderProgram const &shader) const
 {
     shader.bind();
     for(Mesh const &mesh : model.getMeshes()) {
@@ -151,7 +151,7 @@ void Renderer::draw(Model const &model, Shader const &shader) const
     shader.unbind();
 }
 
-void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
+void Renderer::draw(Model const &model, ShaderProgram const &shader, glm::mat4 const &viewMat, glm::mat4 const &projectionMat) const
 {
     shader.bind();
     glm::mat4 normalMat = glm::transpose(glm::inverse(model.getModelMat()));
@@ -169,7 +169,7 @@ void Renderer::draw(Model const &model, Shader const &shader, glm::mat4 const &v
     shader.unbind();
 }
 
-void Renderer::draw(Model const &model, Shader const &shader, Camera const &camera) const
+void Renderer::draw(Model const &model, ShaderProgram const &shader, Camera const &camera) const
 {
     shader.bind();
     glUniform3fv(shader.getUniform("u_viewPos"), 1, &camera.position.x);

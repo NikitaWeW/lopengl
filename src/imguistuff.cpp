@@ -27,9 +27,9 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
     // static Shader *failedShaderTemp = nullptr;
     if(ImGui::Button("reload shaders")) {
-        for(Shader &shader : app.shaders) {
+        for(ShaderProgram &shader : app.shaders) {
             LOG_DEBUG("reloading shader: \"%s\"", shader.getFilePath().c_str());
-            Shader copy = shader;
+            ShaderProgram copy = shader;
             if(!shader.ParceShaderFile(shader.getFilePath())) {
                 app.lastFailedShaderLog = shader.getLog();
                 app.lastFailedShaderName = shader.getFilePath();
