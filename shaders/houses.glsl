@@ -19,23 +19,19 @@ void main() {
 #shader geometry
 #version 430 core
 
+in VS_OUT {
+    vec3 color;
+} gs_in[];
+out vec3 fragColor;
+
 layout(points) in;
-// layout(lines, max_vertices = 2) out;
 layout (triangle_strip, max_vertices = 5) out;
 
 void main() {
     vec4 position = gl_in[0].gl_Position;
     float size = 0.5;
 
-    // gl_Position = pos + vec4(size, 0, 0, 1);
-    // EmitVertex();
-    // gl_Position = pos + vec4(-size, 0, 0, 1);
-    // EmitVertex();
-    // EndPrimitive();
-
-
-    
-    
+    fragColor = gs_in[0].color; // points
     gl_Position = position + vec4(-size, -size, 0, 1);
     EmitVertex();
     gl_Position = position + vec4(size, -size, 0, 1);
@@ -52,8 +48,9 @@ void main() {
 #shader fragment
 #version 430 core
 
+in vec3 fragColor;
 out vec4 o_color;
 
 void main() {
-    o_color = vec4(1, 1, 0, 1);
+    o_color = vec4(fragColor, 1);
 }

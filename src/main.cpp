@@ -133,10 +133,10 @@ if(!fastLoad) {
 
 // =========================== //
     float positions[] {
-        -0.5f,  0.5f, 0, 1, 0, 0,
-         0.5f,  0.5f, 0, 0, 1, 0,
-         0.5f, -0.5f, 0, 0, 0, 1,
-        -0.5f, -0.5f, 0, 1, 1, 0
+        -0.5f,  0.5f, 0,    1, 0, 0,
+         0.5f,  0.5f, 0,    0, 1, 0,
+         0.5f, -0.5f, 0,    1, 1, 0,
+        -0.5f, -0.5f, 0,    0, 0, 1
     };
     VertexBuffer vb{positions, sizeof(positions)};
     InterleavedVertexBufferLayout layout;

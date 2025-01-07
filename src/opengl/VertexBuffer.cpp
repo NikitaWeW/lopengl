@@ -5,6 +5,7 @@
 
 void InterleavedVertexBufferLayout::push(unsigned const count, unsigned type) {
     m_elements.push_back({type, count});
+    m_stride += count * getSizeOfGLType(type);
 }
 
 VertexBuffer::VertexBuffer(const void *data, size_t size) {
