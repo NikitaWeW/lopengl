@@ -39,7 +39,6 @@ extern const bool debug = true;
 #define FLIP_TEXTURES     true
 #define FLIP_WINING_ORDER true
 
-void renderthing(Application &app, Renderer &renderer, Camera &camera);
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
@@ -56,7 +55,6 @@ int main(int argc, char **argv)
     ControllableCamera camera(window, {0, 0, 7}, {-90, 0, 0});
     PointLight light;
     SpotLight flashlight;
-    InterleavedVertexBufferLayout layout;
     Renderer renderer;
     Framebuffer framebuffer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
@@ -133,6 +131,21 @@ if(!fastLoad) {
 
     LOG_INFO("loaded!");
 
+// =========================== //
+    float positions[] {
+        -0.5f,  0.5f, 0, 1, 0, 0,
+         0.5f,  0.5f, 0, 0, 1, 0,
+         0.5f, -0.5f, 0, 0, 0, 1,
+        -0.5f, -0.5f, 0, 1, 1, 0
+    };
+    VertexBuffer vb{positions, sizeof(positions)};
+    InterleavedVertexBufferLayout layout;
+    layout.push(3, GL_FLOAT);
+    layout.push(3, GL_FLOAT);
+    VertexArray va;
+    va.addBuffer(vb, layout);
+// =========================== //
+
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -149,6 +162,12 @@ if(!fastLoad) {
         framebuffer.bind();
         renderer.clear();
 
+        va.bind();
+        housesShader.bind();
+        glUniformMatrix4fv(housesShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(housesShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+        glDrawArrays(GL_POINTS, 0, 4);
+/*
         skybox.bind(1);
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
@@ -180,7 +199,7 @@ if(!fastLoad) {
             glDepthFunc(GL_LESS);
             glDepthMask(GL_TRUE);
         }
-
+*/
 
 // ======================================================= //
 //      render the plane that covers the entire screen     //
