@@ -38,6 +38,7 @@ extern const bool debug = true;
 #define LOAD_NOW          true
 #define FLIP_TEXTURES     true
 #define FLIP_WINING_ORDER true
+#define currentShader app.shaders[app.currentShaderIndex]
 
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -72,12 +73,11 @@ int main(int argc, char **argv)
         {"shaders/refraction.glsl",   SHOW_LOGS},
         {"shaders/post_process.glsl", SHOW_LOGS},
         {"shaders/skybox.glsl",       SHOW_LOGS},
-        {"shaders/houses.glsl",       SHOW_LOGS}
+        {"shaders/geometry.glsl",     SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
-    app.displayShaders = {0, 1, 2, 3}; // shows in shader list.
+    app.displayShaders = {0, 1, 2, 3, 6}; // shows in shader list.
     ShaderProgram &postProcessShader = app.shaders[4];
     ShaderProgram &skyboxShader = app.shaders[5];
-    ShaderProgram &housesShader = app.shaders[6];
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -131,21 +131,6 @@ if(!fastLoad) {
 
     LOG_INFO("loaded!");
 
-// =========================== //
-    float positions[] {
-        -0.5f,  0.5f, 0,    1, 0, 0,
-         0.5f,  0.5f, 0,    0, 1, 0,
-         0.5f, -0.5f, 0,    1, 1, 0,
-        -0.5f, -0.5f, 0,    0, 0, 1
-    };
-    VertexBuffer vb{positions, sizeof(positions)};
-    InterleavedVertexBufferLayout layout;
-    layout.push(3, GL_FLOAT);
-    layout.push(3, GL_FLOAT);
-    VertexArray va;
-    va.addBuffer(vb, layout);
-// =========================== //
-
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -162,12 +147,6 @@ if(!fastLoad) {
         framebuffer.bind();
         renderer.clear();
 
-        va.bind();
-        housesShader.bind();
-        glUniformMatrix4fv(housesShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(housesShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-        glDrawArrays(GL_POINTS, 0, 4);
-/*
         skybox.bind(1);
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
@@ -175,9 +154,10 @@ if(!fastLoad) {
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
-        glUniform1i(app.shaders[app.displayShaders[app.currentShaderIndex]].getUniform("u_skybox"), 1);
+        glUniform1f(currentShader.getUniform("u_timepoint"), start.time_since_epoch().count());
+        glUniform1i(currentShader.getUniform("u_skybox"), 1);
         app.textures[app.currentTextureIndex].bind();
-        renderer.drawLighting(app.models[app.currentModelIndex], app.shaders[app.currentShaderIndex], camera); 
+        renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 
         app.textures[app.currentTextureIndex].unbind();
 
         if(light.enabled) {
@@ -189,7 +169,7 @@ if(!fastLoad) {
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
             renderer.draw(lightCube, app.plainColorShader, camera);
         }
-
+// FIXME: something is wrong with rendering
         if(app.skybox) {
             // draw the skybox as last
             glDepthMask(GL_FALSE);
@@ -199,7 +179,6 @@ if(!fastLoad) {
             glDepthFunc(GL_LESS);
             glDepthMask(GL_TRUE);
         }
-*/
 
 // ======================================================= //
 //      render the plane that covers the entire screen     //

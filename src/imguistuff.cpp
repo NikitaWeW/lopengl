@@ -23,9 +23,8 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     std::vector<const char *> shaderNames;
-    for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[app.displayShaders[index]].getFilePath().c_str());
+    for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
-    // static Shader *failedShaderTemp = nullptr;
     if(ImGui::Button("reload shaders")) {
         for(ShaderProgram &shader : app.shaders) {
             LOG_DEBUG("reloading shader: \"%s\"", shader.getFilePath().c_str());
