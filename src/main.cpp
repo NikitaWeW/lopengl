@@ -123,6 +123,9 @@ if(!fastLoad) {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    glDisable(GL_CULL_FACE);
+
+
     glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, &camera);
@@ -154,7 +157,7 @@ if(!fastLoad) {
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
-        glUniform1f(currentShader.getUniform("u_timepoint"), start.time_since_epoch().count());
+        glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
         glUniform1i(currentShader.getUniform("u_skybox"), 1);
         app.textures[app.currentTextureIndex].bind();
         renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 

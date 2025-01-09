@@ -93,9 +93,9 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     }
 
     VertexBufferLayout layout;
-    layout.push(3, GL_FLOAT, 0);
-    layout.push(3, GL_FLOAT, positions.size() * sizeof(positions[0]));
-    layout.push(2, GL_FLOAT, positions.size() * sizeof(positions[0]) + normals.size()   * sizeof(normals[0]));
+    /*  positions */ layout.push(3, GL_FLOAT, 0);
+    /*   normals  */ layout.push(3, GL_FLOAT, positions.size() * sizeof(positions[0]));
+    /* tex coords */ layout.push(2, GL_FLOAT, positions.size() * sizeof(positions[0]) + normals.size()   * sizeof(normals[0]));
     
     mesh.va.bind();
     mesh.ib = IndexBuffer {indices.data(),  indices.size()  * sizeof(unsigned)};
