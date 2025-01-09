@@ -38,7 +38,7 @@ extern const bool debug = true;
 #define LOAD_NOW          true
 #define FLIP_TEXTURES     true
 #define FLIP_WINING_ORDER true
-#define currentShader app.shaders[app.currentShaderIndex]
+#define currentShader app.shaders[app.displayShaders[app.currentShaderIndex]]
 
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -67,8 +67,8 @@ int main(int argc, char **argv)
     renderer.getLights().push_back(&light);
 
     app.shaders = {
-        {"shaders/lighting.glsl",     SHOW_LOGS},
         {"shaders/basic.glsl",        SHOW_LOGS},
+        {"shaders/lighting.glsl",     SHOW_LOGS},
         {"shaders/reflection.glsl",   SHOW_LOGS},
         {"shaders/refraction.glsl",   SHOW_LOGS},
         {"shaders/post_process.glsl", SHOW_LOGS},
@@ -113,7 +113,7 @@ if(!fastLoad) {
 
     app.currentTextureIndex = 2;  // concrete
     app.currentModelIndex = 1;    // sphere
-    app.currentShaderIndex = 3;   // reflection
+    app.currentShaderIndex = 4;   // geometry
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
@@ -169,7 +169,7 @@ if(!fastLoad) {
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
             renderer.draw(lightCube, app.plainColorShader, camera);
         }
-// FIXME: something is wrong with rendering
+
         if(app.skybox) {
             // draw the skybox as last
             glDepthMask(GL_FALSE);
