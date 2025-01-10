@@ -73,11 +73,13 @@ int main(int argc, char **argv)
         {"shaders/refraction.glsl",   SHOW_LOGS},
         {"shaders/post_process.glsl", SHOW_LOGS},
         {"shaders/skybox.glsl",       SHOW_LOGS},
-        {"shaders/geometry.glsl",     SHOW_LOGS}
+        {"shaders/explode.glsl",      SHOW_LOGS},
+        {"shaders/normals.glsl",      SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 6}; // shows in shader list.
     ShaderProgram &postProcessShader = app.shaders[4];
     ShaderProgram &skyboxShader = app.shaders[5];
+    ShaderProgram &normalShader = app.shaders[7];
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -163,14 +165,18 @@ if(!fastLoad) {
         renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 
         app.textures[app.currentTextureIndex].unbind();
 
+        if(app.showNormals) {
+            renderer.drawLighting(app.models[app.currentModelIndex], normalShader, camera); 
+        }
+
         if(light.enabled) {
             // draw the light cube
-            lightCube.resetMatrix();
-            lightCube.translate(light.position);
-            lightCube.scale(glm::vec3{0.03125});
+            app.cube.resetMatrix();
+            app.cube.translate(light.position);
+            app.cube.scale(glm::vec3{0.03125});
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.draw(lightCube, app.plainColorShader, camera);
+            renderer.draw(app.cube, app.plainColorShader, camera);
         }
 
         if(app.skybox) {

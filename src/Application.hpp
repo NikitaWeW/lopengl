@@ -69,6 +69,7 @@ public:
     bool flipTextures = false;
     bool flipWinding = false;
     bool skybox = true;
+    bool showNormals = false;
 public:
     Application();
     ~Application();

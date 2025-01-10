@@ -51,6 +51,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
     ImGui::Checkbox("wireframe", &app.wireframe);
     ImGui::Checkbox("skybox", &app.skybox);
+    ImGui::Checkbox("show normals", &app.showNormals);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
 
