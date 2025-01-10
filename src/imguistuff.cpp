@@ -63,30 +63,43 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         triangles += meshTris / sizeof(unsigned) / 3;
     }
     ImGui::Text("%lu triangles", triangles);
-    ImGui::Checkbox("flip textures on load", &app.flipTextures);
-    ImGui::Checkbox("flip wining order on load", &app.flipWinding);
+    // ImGui::Checkbox("flip textures on load", &app.flipTextures);
+    // ImGui::Checkbox("flip wining order on load", &app.flipWinding);
     if(app.models.size() > 0) {
         std::vector<const char *> modelNames;
         for(Model const &model : app.models) modelNames.push_back(model.getFilepath().c_str());
         ImGui::ListBox("loaded models", &app.currentModelIndex, modelNames.data(), modelNames.size());
     }
-    ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
-    if(ImGui::Button("load model")) {
-        app.loadModel(app.loadModelBuffer, {app.flipTextures, app.flipWinding});
+    // ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
+    // if(ImGui::Button("load model")) {
+    //     app.loadModel(app.loadModelBuffer, {app.flipTextures, app.flipWinding});
+    // }
+    // ImGui::Separator();
+
+
+
+    ImGui::Text("model");
+    ImGui::DragFloat3("model position", &app.models[app.currentModelIndex].m_position.x, 0.01f);
+    ImGui::DragFloat3("rotation", &app.models[app.currentModelIndex].m_rotation.x, 0.5f);
+    ImGui::DragFloat3("scale", &app.models[app.currentModelIndex].m_scale.x, 0.01f);
+    if (ImGui::Button("reset model"))
+    {
+        app.models[app.currentModelIndex].m_position = glm::vec3(0);
+        app.models[app.currentModelIndex].m_rotation = glm::vec3(0);
+        app.models[app.currentModelIndex].m_scale = glm::vec3(1);
     }
     ImGui::Separator();
-
 
     if(app.textures.size() > 0) {
         std::vector<const char *> textureNames;
         for(Texture const &texture : app.textures) textureNames.push_back(texture.getFilePath().c_str());
         ImGui::ListBox("loaded textures", &app.currentTextureIndex, textureNames.data(), textureNames.size());
     }
-    ImGui::InputText("texture path", app.loadTextureBuffer, sizeof(app.loadTextureBuffer));
-    if(ImGui::Button("load texture")) {
-        app.loadTexture(app.loadTextureBuffer, {app.flipTextures});
-    }
-    ImGui::Separator();
+    // ImGui::InputText("texture path", app.loadTextureBuffer, sizeof(app.loadTextureBuffer));
+    // if(ImGui::Button("load texture")) {
+    //     app.loadTexture(app.loadTextureBuffer, {app.flipTextures});
+    // }
+    // ImGui::Separator();
 
 
 //  ====================================

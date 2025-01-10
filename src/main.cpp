@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 //   ==================================================================
 
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/sphere.obj",                        {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
+    app.loadModel  ("res/models/sphere/scene.gltf",                        {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
