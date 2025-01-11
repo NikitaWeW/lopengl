@@ -47,6 +47,27 @@ public:
     inline std::vector<Element> const &getElements() const { return m_elements; }
 };
 
+class InstancedArrayLayout {
+public:
+    struct Element {
+        unsigned count;
+        unsigned type;
+        unsigned divisor;
+    };
+
+private:
+    std::vector<Element> m_elements;
+    unsigned m_stride = 0;
+public:
+    InstancedArrayLayout() = default;
+    InstancedArrayLayout(std::vector<Element> const &elements);
+    InstancedArrayLayout(std::initializer_list<Element> const &elements);
+    ~InstancedArrayLayout() = default;
+    void push(unsigned const count, unsigned type, unsigned divisor);
+    inline unsigned getStride() const { return m_stride; }
+    inline std::vector<Element> const &getElements() const { return m_elements; }
+};
+
 class VertexBuffer : public Resource {
 private:
     unsigned m_renderID = 0;

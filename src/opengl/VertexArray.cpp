@@ -30,11 +30,11 @@ void VertexArray::addBuffer(VertexBuffer const &VB, InterleavedVertexBufferLayou
     VB.bind();
     auto const &elements = layout.getElements(); 
     unsigned offset = 0;
-    for(unsigned i = 0; i < elements.size(); ++i) {
-        auto const& element = elements.at(i);
-        glVertexAttribPointer(i, element.count, element.type, false, layout.getStride(), reinterpret_cast<void const *>(offset));
-        glEnableVertexAttribArray(i);
+    for(InterleavedVertexBufferLayout::Element const &element : elements) {
+        glVertexAttribPointer(m_vertexAttribIndex, element.count, element.type, false, layout.getStride(), reinterpret_cast<void const *>(offset));
+        glEnableVertexAttribArray(m_vertexAttribIndex);
         offset += element.count * getSizeOfGLType(element.type);
+        ++m_vertexAttribIndex;
     }
 }
 
@@ -42,9 +42,23 @@ void VertexArray::addBuffer(VertexBuffer const &VB, VertexBufferLayout const &la
     bind();
     VB.bind();
     auto const &elements = layout.getElements(); 
-    for(unsigned i = 0; i < elements.size(); ++i) {
-        auto const& element = elements.at(i);
-        glVertexAttribPointer(i, element.count, element.type, false, layout.getStride(), reinterpret_cast<void const *>(element.offset));
-        glEnableVertexAttribArray(i);
+    for(VertexBufferLayout::Element const &element : elements) {
+        glVertexAttribPointer(m_vertexAttribIndex, element.count, element.type, false, layout.getStride(), reinterpret_cast<void const *>(element.offset));
+        glEnableVertexAttribArray(m_vertexAttribIndex);
+        ++m_vertexAttribIndex;
+    }
+}
+
+void VertexArray::addBuffer(VertexBuffer const &VB, InstancedArrayLayout const &layout) {
+    bind();
+    VB.bind();
+    auto const &elements = layout.getElements(); 
+    unsigned offset = 0;
+    for(InstancedArrayLayout::Element const &element : elements) {
+        glVertexAttribPointer(m_vertexAttribIndex, element.count, element.type, false, layout.getStride(), reinterpret_cast<void const *>(offset));
+        glVertexAttribDivisor(m_vertexAttribIndex, element.divisor);
+        glEnableVertexAttribArray(m_vertexAttribIndex);
+        offset += element.count * getSizeOfGLType(element.type);
+        ++m_vertexAttribIndex;
     }
 }

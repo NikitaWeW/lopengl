@@ -146,28 +146,39 @@ if(!fastLoad) {
          size, -size, 0, 1, 0,
          size,  size, 1, 1, 0
     };
+    glm::vec2 translations[100];
+    {
+        int index = 0;
+        float offset = 0.1f;
+        for(int y = -10; y < 10; y += 2)
+        {
+            for(int x = -10; x < 10; x += 2)
+            {
+                glm::vec2 translation;
+                translation.x = (float)x / 10.0f + offset;
+                translation.y = (float)y / 10.0f + offset;
+                translations[index++] = translation;
+            }
+        }
+    }
+
+// =========================== //
+
 
     VertexBuffer VB{data, sizeof(data)};
     InterleavedVertexBufferLayout layout{
         {2, GL_FLOAT},
         {3, GL_FLOAT}
     };
-    
+
+    VertexBuffer offsetsVB{translations, sizeof(translations)};
+    InstancedArrayLayout offsetsVBLayout{
+        {2, GL_FLOAT, 1}
+    };
+
     VertexArray VA;
     VA.addBuffer(VB, layout);
-    glm::vec2 translations[100];
-    int index = 0;
-    float offset = 0.1f;
-    for(int y = -10; y < 10; y += 2)
-    {
-        for(int x = -10; x < 10; x += 2)
-        {
-            glm::vec2 translation;
-            translation.x = (float)x / 10.0f + offset;
-            translation.y = (float)y / 10.0f + offset;
-            translations[index++] = translation;
-        }
-    }
+    VA.addBuffer(offsetsVB, offsetsVBLayout);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -187,10 +198,7 @@ if(!fastLoad) {
         renderer.clear(app.clearColor);
 
         VA.bind();
-        app.shaders[8].bind(); // color
-        for(unsigned i = 0; i <= 100; ++i) {
-            glUniform2fv(app.shaders[8].getUniform("u_offsets[" + std::to_string(i) + "]"), 1, &translations[i].x);
-        }
+        app.shaders[8].bind();
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
 
 /*

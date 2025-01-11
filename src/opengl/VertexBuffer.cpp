@@ -48,3 +48,20 @@ void VertexBufferLayout::push(unsigned const count, unsigned type, size_t offset
 {
     m_elements.push_back({count, type, offset});
 }
+
+InstancedArrayLayout::InstancedArrayLayout(std::vector<Element> const &elements)
+{
+    for(Element const &element : elements) {
+        push(element.count, element.type, element.divisor);
+    }
+}
+
+InstancedArrayLayout::InstancedArrayLayout(std::initializer_list<Element> const &elements) : InstancedArrayLayout(std::vector(elements))
+{
+}
+
+void InstancedArrayLayout::push(unsigned const count, unsigned type, unsigned divisor)
+{
+    m_elements.push_back({count, type, divisor});
+    m_stride += count * getSizeOfGLType(type);
+}
