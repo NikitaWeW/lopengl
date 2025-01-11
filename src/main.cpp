@@ -67,14 +67,15 @@ int main(int argc, char **argv)
     renderer.getLights().push_back(&light);
 
     app.shaders = {
-        {"shaders/basic.glsl",        SHOW_LOGS},
-        {"shaders/lighting.glsl",     SHOW_LOGS},
-        {"shaders/reflection.glsl",   SHOW_LOGS},
-        {"shaders/refraction.glsl",   SHOW_LOGS},
-        {"shaders/post_process.glsl", SHOW_LOGS},
-        {"shaders/skybox.glsl",       SHOW_LOGS},
-        {"shaders/explode.glsl",      SHOW_LOGS},
-        {"shaders/normals.glsl",      SHOW_LOGS}
+        {"shaders/basic.glsl",          SHOW_LOGS},
+        {"shaders/lighting.glsl",       SHOW_LOGS},
+        {"shaders/reflection.glsl",     SHOW_LOGS},
+        {"shaders/refraction.glsl",     SHOW_LOGS},
+        {"shaders/post_process.glsl",   SHOW_LOGS},
+        {"shaders/skybox.glsl",         SHOW_LOGS},
+        {"shaders/explode.glsl",        SHOW_LOGS},
+        {"shaders/normals.glsl",        SHOW_LOGS},
+        {"shaders/colorInstancing.glsl",SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 6}; // shows in shader list.
     ShaderProgram &postProcessShader = app.shaders[4];
@@ -125,8 +126,6 @@ if(!fastLoad) {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    glDisable(GL_CULL_FACE);
-
 
     glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
@@ -135,6 +134,40 @@ if(!fastLoad) {
     glfwSetScrollCallback(window, scroll_callback);
 
     LOG_INFO("loaded!");
+// =========================== //
+
+    constexpr float size = 0.05f;
+    constexpr float data[] = { // GL_TRIANGLES
+        // positions  colors
+        -size,  size, 1, 0, 0,
+         size, -size, 0, 1, 0,
+        -size, -size, 0, 0, 1,
+        -size,  size, 1, 0, 0,
+         size, -size, 0, 1, 0,
+         size,  size, 1, 1, 0
+    };
+
+    VertexBuffer VB{data, sizeof(data)};
+    InterleavedVertexBufferLayout layout{
+        {2, GL_FLOAT},
+        {3, GL_FLOAT}
+    };
+    
+    VertexArray VA;
+    VA.addBuffer(VB, layout);
+    glm::vec2 translations[100];
+    int index = 0;
+    float offset = 0.1f;
+    for(int y = -10; y < 10; y += 2)
+    {
+        for(int x = -10; x < 10; x += 2)
+        {
+            glm::vec2 translation;
+            translation.x = (float)x / 10.0f + offset;
+            translation.y = (float)y / 10.0f + offset;
+            translations[index++] = translation;
+        }
+    }
 
     while (!glfwWindowShouldClose(window))
     {
@@ -145,13 +178,22 @@ if(!fastLoad) {
         int lastWidth = camera.width, lastHeight = camera.height;
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
+        if(app.currentShaderIndex == 6) glDisable(GL_CULL_FACE);
 // =========================== //
 //      render the scene       //
 // =========================== //
 
         framebuffer.bind();
-        renderer.clear();
+        renderer.clear(app.clearColor);
 
+        VA.bind();
+        app.shaders[8].bind(); // color
+        for(unsigned i = 0; i <= 100; ++i) {
+            glUniform2fv(app.shaders[8].getUniform("u_offsets[" + std::to_string(i) + "]"), 1, &translations[i].x);
+        }
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+
+/*
         skybox.bind(1);
         // draw the model
         app.models[app.currentModelIndex].resetMatrix();
@@ -188,11 +230,12 @@ if(!fastLoad) {
             glDepthFunc(GL_LESS);
             glDepthMask(GL_TRUE);
         }
-
+*/
 // ======================================================= //
-//      render the plane that covers the entire screen     //
+//      render the plane that covers the entire window     //
 // ======================================================= //
 
+        if(app.currentShaderIndex = 6) glDisable(GL_CULL_FACE);
         framebuffer.unbind();
 
         renderer.clear(app.clearColor);

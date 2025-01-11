@@ -4,7 +4,7 @@
 #include "glType.hpp"
 
 void InterleavedVertexBufferLayout::push(unsigned const count, unsigned type) {
-    m_elements.push_back({type, count});
+    m_elements.push_back({count, type});
     m_stride += count * getSizeOfGLType(type);
 }
 
@@ -26,7 +26,25 @@ VertexBuffer::~VertexBuffer()
 void VertexBuffer::bind() const { glBindBuffer(GL_ARRAY_BUFFER, m_renderID); }
 void VertexBuffer::unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
+VertexBufferLayout::VertexBufferLayout(std::vector<Element> const &elements) {
+    for(Element const &element : elements) {
+        push(element.count, element.type, element.offset);
+    }
+}
+InterleavedVertexBufferLayout::InterleavedVertexBufferLayout(std::vector<Element> const &elements) {
+    for(Element const &element : elements) {
+        push(element.count, element.type);
+    }
+}
+
+InterleavedVertexBufferLayout::InterleavedVertexBufferLayout(std::initializer_list<Element> const &elements) : InterleavedVertexBufferLayout(std::vector(elements))
+{
+}
+VertexBufferLayout::VertexBufferLayout(std::initializer_list<Element> const &elements) : VertexBufferLayout(std::vector(elements))
+{
+}
+
 void VertexBufferLayout::push(unsigned const count, unsigned type, size_t offset)
 {
-    m_elements.push_back({type, count, offset});
+    m_elements.push_back({count, type, offset});
 }

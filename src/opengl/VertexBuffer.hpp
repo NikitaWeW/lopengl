@@ -7,17 +7,20 @@
 non-interleaved layout
 */
 class VertexBufferLayout {
-private:
+public:
     struct Element {
-        unsigned type;
         unsigned count;
+        unsigned type;
         size_t offset;
     };
 
+private:
     std::vector<Element> m_elements;
 public:
     size_t m_stride;
     VertexBufferLayout() = default;
+    VertexBufferLayout(std::vector<Element> const &elements);
+    VertexBufferLayout(std::initializer_list<Element> const &elements);
     ~VertexBufferLayout() = default;
     void push(unsigned const count, unsigned type, size_t offset);
     inline unsigned getStride() const { return m_stride; }
@@ -25,16 +28,19 @@ public:
 };
 
 class InterleavedVertexBufferLayout {
-private:
+public:
     struct Element {
-        unsigned type;
         unsigned count;
+        unsigned type;
     };
 
+private:
     std::vector<Element> m_elements;
     unsigned m_stride = 0;
 public:
     InterleavedVertexBufferLayout() = default;
+    InterleavedVertexBufferLayout(std::vector<Element> const &elements);
+    InterleavedVertexBufferLayout(std::initializer_list<Element> const &elements);
     ~InterleavedVertexBufferLayout() = default;
     void push(unsigned const count, unsigned type);
     inline unsigned getStride() const { return m_stride; }
