@@ -57,11 +57,11 @@ int main(int argc, char **argv)
     PointLight light;
     SpotLight flashlight;
     Renderer renderer;
-    Framebuffer framebuffer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
     
-    glfwGetWindowSize(window, &camera.width, &camera.height);
 //  =========================================== 
+
+    glfwGetWindowSize(window, &camera.width, &camera.height);
 
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
@@ -89,10 +89,19 @@ int main(int argc, char **argv)
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
+    Framebuffer framebuffer;
     Texture cameraTexture{camera.width, camera.height, GL_CLAMP_TO_EDGE}; // will be set to window size
     Renderbuffer rb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
     framebuffer.attachTexture(cameraTexture);
     framebuffer.attachRenderbuffer(rb);
+    assert(framebuffer.isComplete());
+
+    Framebuffer MSframebuffer;
+    MultisampleTexture MScameraTexture{camera.width, camera.height, GL_CLAMP_TO_EDGE}; // will be set to window size
+    MultisampleRenderbuffer MSrb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
+    MSframebuffer.attachTexture(MScameraTexture);
+    MSframebuffer.attachRenderbuffer(MSrb);
+    assert(MSframebuffer.isComplete());
 
 //   ==================================================================
 
@@ -157,7 +166,7 @@ if(!fastLoad) {
 //      render the scene       //
 // =========================== //
 
-        // framebuffer.bind();
+        MSframebuffer.bind();
         renderer.clear(app.clearColor);
 
         // draw the model
@@ -176,12 +185,16 @@ if(!fastLoad) {
 
         framebuffer.unbind();
 
-        // renderer.clear(app.clearColor);
+        renderer.clear(app.clearColor);
         postProcessShader.bind();
         glUniform1i(postProcessShader.getUniform("u_texture"), 0);
-        cameraTexture.bind();
-        // renderer.draw(oneSideQuad, postProcessShader); 
+        cameraTexture.bind(0);
+        renderer.draw(oneSideQuad, postProcessShader); 
         imguistuff(app, camera, light, flashlight);
+        
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, MSframebuffer.getRenderID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER,   framebuffer.getRenderID());
+        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         
 // ================== //
 //      end frame     //
@@ -193,6 +206,11 @@ if(!fastLoad) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             rb.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+
+            MScameraTexture.bind();
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, camera.width, camera.height, GL_TRUE);
+            MSrb.bind();
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
         glfwSwapBuffers(window);
