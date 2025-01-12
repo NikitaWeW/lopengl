@@ -130,6 +130,7 @@ Application::Application()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     window = glfwCreateWindow(mode->width * 0.7, mode->height * 0.9, "opengl", nullptr, nullptr);

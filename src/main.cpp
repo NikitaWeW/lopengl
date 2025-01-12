@@ -75,7 +75,7 @@ int main(int argc, char **argv)
         {"shaders/skybox.glsl",         SHOW_LOGS},
         {"shaders/explode.glsl",        SHOW_LOGS},
         {"shaders/normals.glsl",        SHOW_LOGS},
-        {"shaders/instancing.glsl",SHOW_LOGS}
+        {"shaders/instancing.glsl",     SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 6}; // shows in shader list.
 
@@ -88,10 +88,6 @@ int main(int argc, char **argv)
     app.plainColorShader = ShaderProgram{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
-    camera.far = 1000;
-    camera.near = 0.1;
-    camera.position = {100, 100, 100};
-    camera.rotation = {-140, -40, 0};
 
     Texture cameraTexture{camera.width, camera.height, GL_CLAMP_TO_EDGE}; // will be set to window size
     Renderbuffer rb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
@@ -101,8 +97,6 @@ int main(int argc, char **argv)
 //   ==================================================================
 
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/asteroid/rock.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    app.loadModel  ("res/models/planet/planet.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/sphere/scene.gltf",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
@@ -122,15 +116,13 @@ if(!fastLoad) {
     ShaderProgram &postProcessShader = app.shaders[4];
     ShaderProgram &skyboxShader      = app.shaders[5];
     ShaderProgram &normalShader      = app.shaders[7];
-    ShaderProgram &instancingShader  = app.shaders[8];
-    Model         &asteroid          = app.models [1];
-    Model         &planet            = app.models [2];
 
     app.currentTextureIndex = 2;  // concrete
-    app.currentModelIndex = 1;    // sphere
-    app.currentShaderIndex = 4;   // geometry
+    app.currentModelIndex = 0;    // cube
+    app.currentShaderIndex = 0;   // basic
 
     glEnable(GL_STENCIL_TEST);
+    glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -146,53 +138,8 @@ if(!fastLoad) {
     glfwSetScrollCallback(window, scroll_callback);
 
     LOG_INFO("loaded!");
-// =========================== //
-
-    unsigned int numAsteroids = 50000;
-    glm::mat4* modelMatrices;
-    modelMatrices = new glm::mat4[numAsteroids];
-    srand(static_cast<unsigned int>(glfwGetTime())); // initialize random seed
-    float radius = 150.0;
-    float offset = 20;
-    for (unsigned int i = 0; i < numAsteroids; i++)
-    {
-        glm::mat4 model = glm::mat4(1.0f);
-        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
-        float angle = (float)i / (float)numAsteroids * 360.0f;
-        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float x = sin(angle) * radius + displacement;
-        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
-        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float z = cos(angle) * radius + displacement;
-        model = glm::translate(model, glm::vec3(x, y, z));
-
-        // 2. scale: Scale between 0.05 and 0.25f
-        float scale = static_cast<float>((rand() % 20) / 100.0 + 0.05);
-        model = glm::scale(model, glm::vec3(scale));
-
-        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        float rotAngle = static_cast<float>((rand() % 360));
-        model = glm::rotate(model, rotAngle, glm::vec3(0.6f, 0.4f, 0.8f));
-
-        // 4. now add to list of matrices
-        modelMatrices[i] = model;
-    }
 
 // =========================== //
-
-
-    VertexBuffer matricesVB{modelMatrices, numAsteroids * sizeof(glm::mat4)};
-    InstancedArrayLayout matricesLayout{
-        {4, GL_FLOAT, 1},
-        {4, GL_FLOAT, 1},
-        {4, GL_FLOAT, 1},
-        {4, GL_FLOAT, 1}
-    };
-
-    for(Mesh &mesh : asteroid.getMeshes()) {
-        mesh.va.addBuffer(matricesVB, matricesLayout);
-    }
 
     while (!glfwWindowShouldClose(window))
     {
@@ -203,57 +150,37 @@ if(!fastLoad) {
         int lastWidth = camera.width, lastHeight = camera.height;
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
+        if(app.faceCulling) glEnable(GL_CULL_FACE);
+        else glDisable(GL_CULL_FACE);
+
 // =========================== //
 //      render the scene       //
 // =========================== //
 
-        framebuffer.bind();
+        // framebuffer.bind();
         renderer.clear(app.clearColor);
 
-        app.shaders[0].bind();
-        planet.resetMatrix();
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"),     1, GL_FALSE, &planet.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-
-        // for(Mesh const &mesh : planet.getMeshes()) {
-        //     mesh.va.bind();
-        //     mesh.ib.bind();
-        //     mesh.textures[0].bind(0);
-        //     glUniform1i(instancingShader.getUniform("u_material.diffuse"), 0);
-        //     glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        // }
-        
         // draw the model
-        planet.resetMatrix();
-        planet.translate({0, 0, 0});
-        planet.rotate({0, 0, 0});
-        planet.scale({10, 10, 10});
+        app.models[app.currentModelIndex].resetMatrix();
+        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
+        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
+        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
-        renderer.drawLighting(planet, app.shaders[0], camera); 
+        glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
+        app.textures[app.currentTextureIndex].bind();
+        renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 
 
-        instancingShader.bind();
-        glUniformMatrix4fv(instancingShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(instancingShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-
-        for(Mesh const &mesh : asteroid.getMeshes()) {
-            mesh.va.bind();
-            mesh.ib.bind();
-            mesh.textures[0].bind(0);
-            glUniform1i(instancingShader.getUniform("u_material.diffuse"), 0);
-            glDrawElementsInstanced(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr, numAsteroids);
-        }
 // ======================================================= //
 //      render the plane that covers the entire window     //
 // ======================================================= //
 
         framebuffer.unbind();
 
-        renderer.clear(app.clearColor);
+        // renderer.clear(app.clearColor);
         postProcessShader.bind();
         glUniform1i(postProcessShader.getUniform("u_texture"), 0);
         cameraTexture.bind();
-        renderer.draw(oneSideQuad, postProcessShader); 
+        // renderer.draw(oneSideQuad, postProcessShader); 
         imguistuff(app, camera, light, flashlight);
         
 // ================== //

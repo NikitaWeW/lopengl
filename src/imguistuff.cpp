@@ -87,9 +87,10 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Separator();
 
 
-    ImGui::Checkbox("wireframe", &app.wireframe);
-    ImGui::Checkbox("skybox", &app.skybox);
-    ImGui::Checkbox("show normals", &app.showNormals);
+    // ImGui::Checkbox("wireframe", &app.wireframe);
+    // ImGui::Checkbox("skybox", &app.skybox);
+    // ImGui::Checkbox("show normals", &app.showNormals);
+    ImGui::Checkbox("face culling", &app.faceCulling);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
 
@@ -102,6 +103,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         triangles += meshTris / sizeof(unsigned) / 3;
     }
     ImGui::Text("%lu triangles", triangles);
+    ImGui::Text("%lu vertices", triangles * 3);
     // ImGui::Checkbox("flip textures on load", &app.flipTextures);
     // ImGui::Checkbox("flip wining order on load", &app.flipWinding);
     if(app.models.size() > 0) {
@@ -116,8 +118,6 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     // ImGui::Separator();
 
 
-
-    ImGui::Text("model");
     ImGui::DragFloat3("model position", &app.models[app.currentModelIndex].m_position.x, 0.01f);
     ImGui::DragFloat3("rotation", &app.models[app.currentModelIndex].m_rotation.x, 0.5f);
     ImGui::DragFloat3("scale", &app.models[app.currentModelIndex].m_scale.x, 0.01f);
@@ -150,39 +150,39 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     ImGui::Separator();
 
 
-    ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
-    if(flashlight.enabled) {
-        ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
-        ImGui::DragFloat("flashlight constant attenuation", &flashlight.constant, 0.01, 0, 50);
-        ImGui::DragFloat("flashlight linear attenuation", &flashlight.linear, 0.01, 0, 50);
-        ImGui::DragFloat("flashlight quadratic attenuation", &flashlight.quadratic, 0.01, 0, 50);
-        if (ImGui::Button("reset flashlight"))
-        {
-            flashlight.color = glm::vec3(1.0);
-            flashlight.constant = 1.0f;
-            flashlight.linear = 0.14f;
-            flashlight.quadratic = 0.07f;
-        }
-        ImGui::Separator();
+    // ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
+    // if(flashlight.enabled) {
+    //     ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
+    //     ImGui::DragFloat("flashlight constant attenuation", &flashlight.constant, 0.01, 0, 50);
+    //     ImGui::DragFloat("flashlight linear attenuation", &flashlight.linear, 0.01, 0, 50);
+    //     ImGui::DragFloat("flashlight quadratic attenuation", &flashlight.quadratic, 0.01, 0, 50);
+    //     if (ImGui::Button("reset flashlight"))
+    //     {
+    //         flashlight.color = glm::vec3(1.0);
+    //         flashlight.constant = 1.0f;
+    //         flashlight.linear = 0.14f;
+    //         flashlight.quadratic = 0.07f;
+    //     }
+    //     ImGui::Separator();
 
 
-    }
-    ImGui::Checkbox("light enabled", &light.enabled);
-    if(light.enabled) {
-        ImGui::DragFloat3("light position / direction", &light.position.x, 0.01f);
-        ImGui::ColorEdit3("light color", &light.color.r);
-        ImGui::DragFloat("light constant attenuation", &light.constant, 0.01, 0, 50);
-        ImGui::DragFloat("light linear attenuation", &light.linear, 0.01, 0, 50);
-        ImGui::DragFloat("light quadratic attenuation", &light.quadratic, 0.01, 0, 50);
-        if (ImGui::Button("reset light"))
-        {
-            light.position = glm::vec3(2, 1, 3);
-            light.color = glm::vec3(1.0);
-            light.constant = 1.0f;
-            light.linear = 0.14f;
-            light.quadratic = 0.07f;
-        }
-    }
+    // }
+    // ImGui::Checkbox("light enabled", &light.enabled);
+    // if(light.enabled) {
+    //     ImGui::DragFloat3("light position / direction", &light.position.x, 0.01f);
+    //     ImGui::ColorEdit3("light color", &light.color.r);
+    //     ImGui::DragFloat("light constant attenuation", &light.constant, 0.01, 0, 50);
+    //     ImGui::DragFloat("light linear attenuation", &light.linear, 0.01, 0, 50);
+    //     ImGui::DragFloat("light quadratic attenuation", &light.quadratic, 0.01, 0, 50);
+    //     if (ImGui::Button("reset light"))
+    //     {
+    //         light.position = glm::vec3(2, 1, 3);
+    //         light.color = glm::vec3(1.0);
+    //         light.constant = 1.0f;
+    //         light.linear = 0.14f;
+    //         light.quadratic = 0.07f;
+    //     }
+    // }
     ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
     ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
     ImGui::DragFloat("camera near plane", &cam.near, 0.001f);

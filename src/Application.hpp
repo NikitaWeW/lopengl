@@ -70,6 +70,7 @@ public:
     bool flipWinding = false;
     bool skybox = true;
     bool showNormals = false;
+    bool faceCulling = true;
 public:
     Application();
     ~Application();
