@@ -7,6 +7,44 @@
 #include "opengl/Shader.hpp"
 #include "utils/Light.hpp"
 #include "logger.h"
+/*
+        skybox.bind(1);
+        // draw the model
+        app.models[app.currentModelIndex].resetMatrix();
+        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
+        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
+        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
+
+        glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
+        glUniform1i(currentShader.getUniform("u_skybox"), 1);
+        app.textures[app.currentTextureIndex].bind();
+        renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 
+        app.textures[app.currentTextureIndex].unbind();
+
+        if(app.showNormals) {
+            renderer.drawLighting(app.models[app.currentModelIndex], normalShader, camera); 
+        }
+
+        if(light.enabled) {
+            // draw the light cube
+            app.cube.resetMatrix();
+            app.cube.translate(light.position);
+            app.cube.scale(glm::vec3{0.03125});
+            app.plainColorShader.bind();
+            glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
+            renderer.draw(app.cube, app.plainColorShader, camera);
+        }
+
+        if(app.skybox) {
+            // draw the skybox as last
+            glDepthMask(GL_FALSE);
+            glDepthFunc(GL_LEQUAL);
+            glUniform1i(skyboxShader.getUniform("u_skybox"), 1);
+            renderer.draw(app.cube, skyboxShader, camera);
+            glDepthFunc(GL_LESS);
+            glDepthMask(GL_TRUE);
+        }
+*/
 
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight)
 {

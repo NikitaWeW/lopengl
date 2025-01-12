@@ -43,7 +43,7 @@ void VertexArray::addBuffer(VertexBuffer const &VB, VertexBufferLayout const &la
     VB.bind();
     auto const &elements = layout.getElements(); 
     for(VertexBufferLayout::Element const &element : elements) {
-        glVertexAttribPointer(m_vertexAttribIndex, element.count, element.type, false, layout.getStride(), reinterpret_cast<void const *>(element.offset));
+        glVertexAttribPointer(m_vertexAttribIndex, element.count, element.type, false, element.count * getSizeOfGLType(element.type), reinterpret_cast<void const *>(element.offset));
         glEnableVertexAttribArray(m_vertexAttribIndex);
         ++m_vertexAttribIndex;
     }
