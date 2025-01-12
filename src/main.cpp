@@ -216,13 +216,21 @@ if(!fastLoad) {
         glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
 
-        for(Mesh const &mesh : planet.getMeshes()) {
-            mesh.va.bind();
-            mesh.ib.bind();
-            mesh.textures[0].bind(0);
-            glUniform1i(instancingShader.getUniform("u_material.diffuse"), 0);
-            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        }
+        // for(Mesh const &mesh : planet.getMeshes()) {
+        //     mesh.va.bind();
+        //     mesh.ib.bind();
+        //     mesh.textures[0].bind(0);
+        //     glUniform1i(instancingShader.getUniform("u_material.diffuse"), 0);
+        //     glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
+        // }
+        
+        // draw the model
+        planet.resetMatrix();
+        planet.translate({0, 0, 0});
+        planet.rotate({0, 0, 0});
+        planet.scale({10, 10, 10});
+
+        renderer.drawLighting(planet, app.shaders[0], camera); 
 
         instancingShader.bind();
         glUniformMatrix4fv(instancingShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);

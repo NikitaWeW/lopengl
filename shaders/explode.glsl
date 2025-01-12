@@ -43,8 +43,8 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 vec4 explode(vec4 position, vec3 normal)
 {
-    float magnitude = -5.0;
-    vec3 direction = normal * ((sin(u_timepoint / 2) + 1.0) / 2) * magnitude; 
+    float magnitude = 5.0;
+    vec3 direction = normal * ((sin(u_timepoint / 2) + 0.5)) * magnitude; 
     return position + vec4(direction, 0.0);
 }
 
