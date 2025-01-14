@@ -1,7 +1,7 @@
 /*
 i use this (gcc + ninja)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall' -G Ninja
-cmake --build build && build/main --fast
+cmake --build build && build/main
 */
 
 #include "glad/gl.h"
@@ -46,8 +46,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 int main(int argc, char **argv)
 {
-    bool fastLoad = false;
-    for(int i = 0; i < argc; ++i) if(strcmp(argv[i], "--fast") == 0) fastLoad = true;
     printf("loading...\n"); // TODO: cool progress bar
     Application app;
     GLFWwindow *window = app.window;
@@ -89,20 +87,6 @@ int main(int argc, char **argv)
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
-    Framebuffer framebuffer;
-    Texture cameraTexture{camera.width, camera.height, GL_CLAMP_TO_EDGE}; // will be set to window size
-    Renderbuffer rb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
-    framebuffer.attachTexture(cameraTexture);
-    framebuffer.attachRenderbuffer(rb);
-    assert(framebuffer.isComplete());
-
-    Framebuffer MSframebuffer;
-    MultisampleTexture MScameraTexture{camera.width, camera.height, GL_CLAMP_TO_EDGE}; // will be set to window size
-    MultisampleRenderbuffer MSrb{GL_DEPTH24_STENCIL8, camera.width, camera.height}; 
-    MSframebuffer.attachTexture(MScameraTexture);
-    MSframebuffer.attachRenderbuffer(MSrb);
-    assert(MSframebuffer.isComplete());
-
 //   ==================================================================
 
     app.loadModel  ("res/models/cube.obj",                          {  FLIP_TEXTURES,  FLIP_WINING_ORDER });
@@ -110,15 +94,11 @@ int main(int argc, char **argv)
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
-    app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
+    // app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
     app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
-if(!fastLoad) {
-    app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    // app.loadModel  ("res/models/rock/namaqualand_cliff_02_4k.gltf", {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    // app.loadModel  ("res/models/sponza/sponza.obj",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
-    app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
-}
+    // app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
+    app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
 
 // =========================== //
 
@@ -139,7 +119,6 @@ if(!fastLoad) {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-
     glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, &camera);
@@ -147,6 +126,27 @@ if(!fastLoad) {
     glfwSetScrollCallback(window, scroll_callback);
 
     LOG_INFO("loaded!");
+
+// =========================== //
+
+    float planeVertices[] = {
+        // positions            // normals         // texcoords
+         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+        -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+
+         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+         10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+    };
+    VertexBuffer planeVBO{planeVertices, sizeof(planeVertices)};
+    InterleavedVertexBufferLayout planeVBLayout{
+        {3, GL_FLOAT},
+        {3, GL_FLOAT},
+        {2, GL_FLOAT}
+    };
+    VertexArray planeVAO{};
+    planeVAO.addBuffer(planeVBO, planeVBLayout);
 
 // =========================== //
 
@@ -162,11 +162,8 @@ if(!fastLoad) {
         if(app.faceCulling) glEnable(GL_CULL_FACE);
         else glDisable(GL_CULL_FACE);
 
-// =========================== //
-//      render the scene       //
-// =========================== //
+// ================== //
 
-        MSframebuffer.bind();
         renderer.clear(app.clearColor);
 
         // draw the model
@@ -177,85 +174,25 @@ if(!fastLoad) {
 
         glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
         app.textures[app.currentTextureIndex].bind();
-        renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 
+        renderer.draw(app.models[app.currentModelIndex], currentShader, camera); 
 
-// ======================================================= //
-//      render the plane that covers the entire window     //
-// ======================================================= //
+        if(light.enabled) {
+            // draw the light cube
+            app.cube.resetMatrix();
+            app.cube.translate(light.position);
+            app.cube.scale(glm::vec3{0.03125});
+            app.plainColorShader.bind();
+            glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
+            renderer.drawb(app.cube, app.plainColorShader, camera);
+        } 
 
-        framebuffer.unbind();
-
-        renderer.clear(app.clearColor);
-        postProcessShader.bind();
-        glUniform1i(postProcessShader.getUniform("u_texture"), 0);
-        cameraTexture.bind(0);
-        renderer.draw(oneSideQuad, postProcessShader); 
         imguistuff(app, camera, light, flashlight);
-        
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, MSframebuffer.getRenderID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER,   framebuffer.getRenderID());
-        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        
-// ================== //
-//      end frame     //
-// ================== //
 
-        if(lastWidth != camera.width || lastHeight != camera.height) {
-            // resize texture and renderbuffer according to window size
-            cameraTexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            rb.bind();
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-
-            MScameraTexture.bind();
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, camera.width, camera.height, GL_TRUE);
-            MSrb.bind();
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-        }
+// ================== //
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         ++app.frameCounter;
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
-    }
-}
-
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) camera.locked = !camera.locked;
-    if (camera.locked) {
-        camera.firstCursorMove = true;
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    } else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
-        // evaluate fov
-        if (camera.fov < 1.0f)
-            camera.fov = 1.0f;
-        if (camera.fov > 45.0f)
-            camera.fov = 45.0f;
-    } else {
-        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    }
-}
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
-{
-    ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
-    if(cam->locked) {
-        cam->fov -= (float)yoffset * 4.5f;
-        if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-            if (cam->fov < 0.01f)
-                cam->fov = 0.01f;
-            if (cam->fov > 60.0f)
-                cam->fov = 60.0f;
-        } else {
-            if (cam->fov < 1.0f)
-                cam->fov = 1.0f;
-            if (cam->fov > 45.0f)
-                cam->fov = 45.0f;
-        }
-    } else {
-        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
     }
 }

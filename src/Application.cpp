@@ -11,6 +11,7 @@ this is really bad code, that is only use to test features. fame frog.
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_glfw.h"
 #include "imgui.h"
+#include "utils/ControllableCamera.hpp"
 
 #include <algorithm>
 #include "Application.hpp"
@@ -189,4 +190,45 @@ void Application::loadTexture(char const *filepath, LoadTextureQuery query)
         LOG_ERROR("%s", e.what());
     }
     currentTextureIndex = textures.size() - 1;
+}
+
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) camera.locked = !camera.locked;
+    if (camera.locked) {
+        camera.firstCursorMove = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    } else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
+        // evaluate fov
+        if (camera.fov < 1.0f)
+            camera.fov = 1.0f;
+        if (camera.fov > 45.0f)
+            camera.fov = 45.0f;
+    } else {
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    }
+}
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
+    if(cam->locked) {
+        cam->fov -= (float)yoffset * 4.5f;
+        if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            if (cam->fov < 0.01f)
+                cam->fov = 0.01f;
+            if (cam->fov > 60.0f)
+                cam->fov = 60.0f;
+        } else {
+            if (cam->fov < 1.0f)
+                cam->fov = 1.0f;
+            if (cam->fov > 45.0f)
+                cam->fov = 45.0f;
+        }
+    } else {
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+    }
 }

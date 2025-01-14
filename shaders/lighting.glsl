@@ -122,7 +122,7 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
         light.color * 
         attenuation *
         pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
-        (u_specularSet ? vec3(.25) : vec3(texture(material.specular, fs_in.v_texCoord)));
+        (u_specularSet ? vec3(.925) : vec3(texture(material.specular, fs_in.v_texCoord)));
 
     return vec4(ambient + diffuse + specular, 1.0);
 }
