@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
-    renderer.getLights().push_back(&sun);2
+    renderer.getLights().push_back(&sun);
 
     app.shaders = {
         {"shaders/basic.glsl",          SHOW_LOGS},

@@ -171,8 +171,8 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
             light.quadratic = 0.07f;
         }
     }
-    ImGui::Checkbox("sun enabled", &light.enabled);
-    if(light.enabled) {
+    ImGui::Checkbox("sun enabled", &sun.enabled);
+    if(sun.enabled) {
         ImGui::DragFloat3("sun direction", &sun.direction.x, 0.01f);
         ImGui::ColorEdit3("sun color", &sun.color.r);
         ImGui::DragFloat("sun constant attenuation", &sun.constant, 0.01, 0, 50);
@@ -180,11 +180,11 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         ImGui::DragFloat("sun quadratic attenuation", &sun.quadratic, 0.01, 0, 50);
         if (ImGui::Button("reset sun"))
         {
-            light.position = glm::vec3(2, 1, 3);
-            light.color = glm::vec3(1.0);
-            light.constant = 1.0f;
-            light.linear = 0.14f;
-            light.quadratic = 0.07f;
+            sun.direction = glm::vec3(1, 0, 0);
+            sun.color = glm::vec3(1.0);
+            sun.constant = 1.0f;
+            sun.linear = 0.14f;
+            sun.quadratic = 0.07f;
         }
     }
     ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
