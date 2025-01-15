@@ -4,6 +4,16 @@
 
 #include "Texture.hpp"
 
+Texture::Texture(GLenum wrap)
+{
+    glGenTextures(1, &m_RenderID);
+    bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+}
+
 Texture::Texture(GLsizei width, GLsizei height, GLenum wrap) : m_Width(width), m_Height(height)
 {
     glGenTextures(1, &m_RenderID);

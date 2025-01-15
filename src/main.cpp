@@ -41,7 +41,7 @@ extern const bool debug = true;
 #define SRGB              true
 #define currentShader app.shaders[app.displayShaders[app.currentShaderIndex]]
 
-void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
+void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight, DirectionalLight &sun);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     Model oneSideQuad{"res/models/one_side_quad.obj"};
     ControllableCamera camera(window, {0, 0, 7}, {-90, 0, 0});
     PointLight light;
+    DirectionalLight sun;
     SpotLight flashlight;
     Renderer renderer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
 
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
+    renderer.getLights().push_back(&sun);2
 
     app.shaders = {
         {"shaders/basic.glsl",          SHOW_LOGS},
@@ -146,6 +148,21 @@ int main(int argc, char **argv)
     VertexArray planeVAO{};
     planeVAO.addBuffer(planeVBO, planeVBLayout);
 
+// ============================ //
+//     generate a depth map     //
+// ============================ //
+
+    const unsigned SHADOW_RESOLUTION = 1024;
+    Texture depthMap;
+    depthMap.bind();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    Framebuffer depthMapFBO;
+    depthMapFBO.bind();
+    depthMapFBO.attach(depthMap, GL_DEPTH_ATTACHMENT);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    depthMapFBO.unbind();
+
 // =========================== //
 
     while (!glfwWindowShouldClose(window))
@@ -195,7 +212,7 @@ int main(int argc, char **argv)
             renderer.drawb(app.cube, app.plainColorShader, camera);
         } 
 
-        imguistuff(app, camera, light, flashlight);
+        imguistuff(app, camera, light, flashlight, sun);
 
 // ================== //
 

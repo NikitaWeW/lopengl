@@ -23,26 +23,28 @@ bool Framebuffer::isComplete()
     return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
-void Framebuffer::attachTexture(Texture const &texture)
+void Framebuffer::attach(Texture const &texture, GLenum attachment) 
 {
     bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.getRenderID(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.getRenderID(), 0);
 }
-void Framebuffer::attachTexture(MultisampleTexture const &texture)
+void Framebuffer::attach(MultisampleTexture const &texture, GLenum attachment)
 {
     bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texture.getRenderID(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, texture.getRenderID(), 0);
 }
 
-void Framebuffer::attachRenderbuffer(Renderbuffer const &renderbuffer)
+void Framebuffer::attach(Renderbuffer const &renderbuffer, GLenum attachment)
 {
     // i hate it
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbuffer.getRenderID());
+    bind();
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer.getRenderID());
 }
 
-void Framebuffer::attachRenderbuffer(MultisampleRenderbuffer const &renderbuffer)
+void Framebuffer::attach(MultisampleRenderbuffer const &renderbuffer, GLenum attachment)
 {
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbuffer.getRenderID());
+    bind();
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer.getRenderID());
 }
 
 Renderbuffer::Renderbuffer()

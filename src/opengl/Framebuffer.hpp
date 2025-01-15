@@ -42,10 +42,10 @@ public:
 
     bool isComplete();
 
-    void attachTexture(Texture const &texture);
-    void attachTexture(MultisampleTexture const &texture);
-    void attachRenderbuffer(Renderbuffer const &renderbuffer);
-    void attachRenderbuffer(MultisampleRenderbuffer const &renderbuffer);
+    void attach(Texture const &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
+    void attach(MultisampleTexture const &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
+    void attach(Renderbuffer const &renderbuffer, GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT);
+    void attach(MultisampleRenderbuffer const &renderbuffer, GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT);
 
     inline unsigned getRenderID() const { return m_renderID; }
 };

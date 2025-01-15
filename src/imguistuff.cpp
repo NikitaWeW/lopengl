@@ -46,7 +46,7 @@
         }
 */
 
-void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight)
+void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight, DirectionalLight &sun)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
@@ -157,12 +157,28 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     }
     ImGui::Checkbox("light enabled", &light.enabled);
     if(light.enabled) {
-        ImGui::DragFloat3("light position / direction", &light.position.x, 0.01f);
+        ImGui::DragFloat3("light position", &light.position.x, 0.01f);
         ImGui::ColorEdit3("light color", &light.color.r);
         ImGui::DragFloat("light constant attenuation", &light.constant, 0.01, 0, 50);
         ImGui::DragFloat("light linear attenuation", &light.linear, 0.01, 0, 50);
         ImGui::DragFloat("light quadratic attenuation", &light.quadratic, 0.01, 0, 50);
         if (ImGui::Button("reset light"))
+        {
+            light.position = glm::vec3(2, 1, 3);
+            light.color = glm::vec3(1.0);
+            light.constant = 1.0f;
+            light.linear = 0.14f;
+            light.quadratic = 0.07f;
+        }
+    }
+    ImGui::Checkbox("sun enabled", &light.enabled);
+    if(light.enabled) {
+        ImGui::DragFloat3("sun direction", &sun.direction.x, 0.01f);
+        ImGui::ColorEdit3("sun color", &sun.color.r);
+        ImGui::DragFloat("sun constant attenuation", &sun.constant, 0.01, 0, 50);
+        ImGui::DragFloat("sun linear attenuation", &sun.linear, 0.01, 0, 50);
+        ImGui::DragFloat("sun quadratic attenuation", &sun.quadratic, 0.01, 0, 50);
+        if (ImGui::Button("reset sun"))
         {
             light.position = glm::vec3(2, 1, 3);
             light.color = glm::vec3(1.0);
