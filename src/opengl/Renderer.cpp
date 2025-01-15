@@ -98,7 +98,7 @@ void Renderer::draw(Model const &model, ShaderProgram const &shader, Camera cons
     }
 }
 
-void Renderer::drawb(Model const &model, ShaderProgram const &shader, Camera const &camera) const
+void Renderer::drawb(Model const &model, ShaderProgram const &shader) const
 {
     shader.bind();
     for(Mesh const &mesh : model.getMeshes()) {

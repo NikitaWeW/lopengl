@@ -72,20 +72,22 @@ int main(int argc, char **argv)
         {"shaders/lighting.glsl",       SHOW_LOGS},
         {"shaders/reflection.glsl",     SHOW_LOGS},
         {"shaders/refraction.glsl",     SHOW_LOGS},
-        {"shaders/post_process.glsl",   SHOW_LOGS},
-        // {"shaders/skybox.glsl",         SHOW_LOGS},
         {"shaders/explode.glsl",        SHOW_LOGS},
-        // {"shaders/normals.glsl",        SHOW_LOGS},
-        // {"shaders/instancing.glsl",     SHOW_LOGS}
+//       =========================================
+        {"shaders/post_process.glsl",   SHOW_LOGS},
+        {"shaders/depth.glsl",          SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
-    app.displayShaders = {0, 1, 2, 3, 5}; // shows in shader list.
+    app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
     flashlight.enabled = false;
 
     light.position= glm::vec3{2, 1, 0};
-    light.enabled = true;
+    light.enabled = false;
+
+    sun.direction = glm::vec3{1, -0.5f, 0.5f};
+    sun.enabled = true;
 
     app.plainColorShader = ShaderProgram{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
@@ -162,6 +164,7 @@ int main(int argc, char **argv)
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     depthMapFBO.unbind();
+    assert(depthMapFBO.isComplete());
 
 // =========================== //
 
@@ -177,8 +180,37 @@ int main(int argc, char **argv)
         if(app.faceCulling) glEnable(GL_CULL_FACE);
         else glDisable(GL_CULL_FACE);
 
-// ================== //
+// ============================ //
+//     draw to the depth map    //
+// ============================ //
 
+        depthMapFBO.bind();
+        glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+        renderer.clear();
+        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
+        glm::mat4 lightView = glm::lookAt(-sun.direction, {0, 0, 0}, {0, 1, 0});
+
+        app.shaders[6].bind();
+        app.models[app.currentModelIndex].resetMatrix();
+        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
+        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
+        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
+
+        renderer.setMatrixUniforms(app.shaders[6], app.models[app.currentModelIndex].getModelMat(), lightView, lightProjection);
+        renderer.drawb(app.models[app.currentModelIndex], app.shaders[6]); 
+
+        glDisable(GL_CULL_FACE);
+        renderer.setMatrixUniforms(app.shaders[6], glm::mat4{1}, lightView, lightProjection);
+        planeVAO.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glEnable(GL_CULL_FACE);
+
+
+// ===================== //
+//     draw the scene    //
+// ===================== //
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         renderer.clear(app.clearColor);
 
         // draw the model
@@ -209,12 +241,24 @@ int main(int argc, char **argv)
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
             renderer.setMatrixUniforms(app.plainColorShader, app.cube.getModelMat(), camera);
-            renderer.drawb(app.cube, app.plainColorShader, camera);
+            renderer.drawb(app.cube, app.plainColorShader);
         } 
 
-        imguistuff(app, camera, light, flashlight, sun);
+// ================================= //
+//     debug: visualise depth map    //
+// ================================= //
+        
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // renderer.clear(app.clearColor);
+        // renderer.clear(app.clearColor);
+        // app.shaders[5].bind();
+        // glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
+        // depthMap.bind(0);
+        // renderer.drawb(oneSideQuad, app.shaders[5]); 
 
 // ================== //
+
+        imguistuff(app, camera, light, flashlight, sun);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
