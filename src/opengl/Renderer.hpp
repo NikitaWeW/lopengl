@@ -21,8 +21,10 @@ public:
     // clears all buffers with clearColor color
     void clear(glm::vec3 clearColor = {0, 0, 0}) const;
 
-    void setLightingUniforms(ShaderProgram const &shader, Mesh const &mesh) const;
+
+    void setLightingUniforms(ShaderProgram const &shader) const;
     void setMaterialUniforms(ShaderProgram const &shader, Mesh const &mesh) const;
+    void setMaterialUniforms(ShaderProgram const &shader, int const diffuse, int const specular = -1) const;
     void setMatrixUniforms(ShaderProgram const &shader, glm::mat4 const &modelMatrix, Camera const &camera) const;
     void setMatrixUniforms(ShaderProgram const &shader, glm::mat4 const &modelMatrix, glm::mat4 const &viewMatrix, glm::mat4 const &projectionMatrix) const;
 

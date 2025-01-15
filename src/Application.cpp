@@ -23,7 +23,18 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 {
     Application::openglError.id = id;
     Application::openglError.msg = msg;
+    std::string errorName;
 
+    switch (id) {
+        case GL_INVALID_ENUM:                  errorName = "INVALID_ENUM"; break;
+        case GL_INVALID_VALUE:                 errorName = "INVALID_VALUE"; break;
+        case GL_INVALID_OPERATION:             errorName = "INVALID_OPERATION"; break;
+        case GL_STACK_OVERFLOW:                errorName = "STACK_OVERFLOW"; break;
+        case GL_STACK_UNDERFLOW:               errorName = "STACK_UNDERFLOW"; break;
+        case GL_OUT_OF_MEMORY:                 errorName = "OUT_OF_MEMORY"; break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: errorName = "INVALID_FRAMEBUFFER_OPERATION"; break;
+    }
+    LOG_DEBUG("%s", errorName.c_str());
     switch (source) {
         case GL_DEBUG_SOURCE_API:
         Application::openglError.source = "api";

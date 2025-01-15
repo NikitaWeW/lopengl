@@ -79,9 +79,10 @@ int main(int argc, char **argv)
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
+    flashlight.enabled = false;
 
-    light.position= glm::vec3{2, 1, 3};
-    light.enabled = false;
+    light.position= glm::vec3{2, 1, 0};
+    light.enabled = true;
 
     app.plainColorShader = ShaderProgram{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
@@ -108,7 +109,7 @@ int main(int argc, char **argv)
 
     app.currentTextureIndex = 2;  // concrete
     app.currentModelIndex = 0;    // cube
-    app.currentShaderIndex = 0;   // basic
+    app.currentShaderIndex = 1;   // lighting
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_MULTISAMPLE);
@@ -176,6 +177,15 @@ int main(int argc, char **argv)
         app.textures[app.currentTextureIndex].bind();
         renderer.draw(app.models[app.currentModelIndex], currentShader, camera); 
 
+        glDisable(GL_CULL_FACE);
+        currentShader.bind();
+        renderer.setLightingUniforms(currentShader);
+        app.textures[2].bind(0);
+        renderer.setMaterialUniforms(currentShader, 0);
+        planeVAO.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glEnable(GL_CULL_FACE);
+
         if(light.enabled) {
             // draw the light cube
             app.cube.resetMatrix();
@@ -183,6 +193,7 @@ int main(int argc, char **argv)
             app.cube.scale(glm::vec3{0.03125});
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
+            renderer.setMatrixUniforms(app.plainColorShader, app.cube.getModelMat(), camera);
             renderer.drawb(app.cube, app.plainColorShader, camera);
         } 
 

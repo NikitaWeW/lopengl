@@ -14,7 +14,7 @@ void Renderer::clear(glm::vec3 clearColor) const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void Renderer::setLightingUniforms(ShaderProgram const &shader, Mesh const &mesh) const
+void Renderer::setLightingUniforms(ShaderProgram const &shader) const
 {
     unsigned pointLightCount= 0;
     unsigned dirLightCount  = 0;
@@ -54,6 +54,14 @@ void Renderer::setMaterialUniforms(ShaderProgram const &shader, Mesh const &mesh
     glUniform1i(shader.getUniform("u_specularSet"), specularSet);
 }
 
+void Renderer::setMaterialUniforms(ShaderProgram const &shader, int const diffuse, int const specular) const
+{
+    glUniform1i(shader.getUniform("u_material.diffuse"), diffuse);
+    if(specular >= 0) glUniform1i(shader.getUniform("u_material.specular"), specular);
+    glUniform1f(shader.getUniform("u_material.shininess"), 32);
+    glUniform1i(shader.getUniform("u_specularSet"), specular >= 0);
+}
+
 void Renderer::setMatrixUniforms(ShaderProgram const &shader, glm::mat4 const &modelMatrix, Camera const &camera) const
 {
     setMatrixUniforms(shader, modelMatrix, camera.getViewMatrix(),camera.getProjectionMatrix());
@@ -82,7 +90,7 @@ void Renderer::draw(Model const &model, ShaderProgram const &shader, Camera cons
 {
     shader.bind();
     for(Mesh const &mesh : model.getMeshes()) {
-        setLightingUniforms(shader, mesh);
+        setLightingUniforms(shader);
         setMaterialUniforms(shader, mesh);
         setMatrixUniforms(shader, model.getModelMat(), camera);
         glUniform3fv(shader.getUniform("u_viewPos"), 1, &camera.position.x);
