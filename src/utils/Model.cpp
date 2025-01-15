@@ -24,7 +24,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *material, aiTexture
         if(!alreadyLoaded) {
             std::string filepath{m_directory + '/' + str.C_Str()};
             std::replace_if(filepath.begin(), filepath.end(), [](char c){ return c == '\\'; }, '/');
-            Texture texture{filepath, flipTextures};
+            Texture texture{filepath, flipTextures, type == aiTextureType_DIFFUSE};
             texture.type = typeName;
             textures.push_back(texture);
             m_loadedTextures.push_back(texture);

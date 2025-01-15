@@ -25,16 +25,6 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
     Application::openglError.msg = msg;
     std::string errorName;
 
-    switch (id) {
-        case GL_INVALID_ENUM:                  errorName = "INVALID_ENUM"; break;
-        case GL_INVALID_VALUE:                 errorName = "INVALID_VALUE"; break;
-        case GL_INVALID_OPERATION:             errorName = "INVALID_OPERATION"; break;
-        case GL_STACK_OVERFLOW:                errorName = "STACK_OVERFLOW"; break;
-        case GL_STACK_UNDERFLOW:               errorName = "STACK_UNDERFLOW"; break;
-        case GL_OUT_OF_MEMORY:                 errorName = "OUT_OF_MEMORY"; break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION: errorName = "INVALID_FRAMEBUFFER_OPERATION"; break;
-    }
-    LOG_DEBUG("%s", errorName.c_str());
     switch (source) {
         case GL_DEBUG_SOURCE_API:
         Application::openglError.source = "api";
@@ -143,6 +133,7 @@ Application::Application()
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
     glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
     GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     window = glfwCreateWindow(mode->width * 0.7, mode->height * 0.9, "opengl", nullptr, nullptr);
@@ -192,15 +183,6 @@ void Application::loadModel(char const *filepath, LoadModelQuery query)
         LOG_ERROR("%s", e.what());
     }
     currentModelIndex = models.size() - 1;
-}
-void Application::loadTexture(char const *filepath, LoadTextureQuery query)
-{
-    try {
-        textures.push_back(Texture{filepath, query.flipTexture});
-    } catch(std::runtime_error &e) {
-        LOG_ERROR("%s", e.what());
-    }
-    currentTextureIndex = textures.size() - 1;
 }
 
 

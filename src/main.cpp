@@ -38,6 +38,7 @@ extern const bool debug = true;
 #define LOAD_NOW          true
 #define FLIP_TEXTURES     true
 #define FLIP_WINING_ORDER true
+#define SRGB              true
 #define currentShader app.shaders[app.displayShaders[app.currentShaderIndex]]
 
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight);
@@ -70,12 +71,12 @@ int main(int argc, char **argv)
         {"shaders/reflection.glsl",     SHOW_LOGS},
         {"shaders/refraction.glsl",     SHOW_LOGS},
         {"shaders/post_process.glsl",   SHOW_LOGS},
-        {"shaders/skybox.glsl",         SHOW_LOGS},
+        // {"shaders/skybox.glsl",         SHOW_LOGS},
         {"shaders/explode.glsl",        SHOW_LOGS},
-        {"shaders/normals.glsl",        SHOW_LOGS},
-        {"shaders/instancing.glsl",     SHOW_LOGS}
+        // {"shaders/normals.glsl",        SHOW_LOGS},
+        // {"shaders/instancing.glsl",     SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
-    app.displayShaders = {0, 1, 2, 3, 6}; // shows in shader list.
+    app.displayShaders = {0, 1, 2, 3, 5}; // shows in shader list.
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
@@ -94,20 +95,16 @@ int main(int argc, char **argv)
     app.loadModel  ("res/models/sphere/scene.gltf",                 {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/lemon/lemon_4k.gltf",               {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
     app.loadModel  ("res/models/apple/food_apple_01_4k.gltf",       {  FLIP_TEXTURES, !FLIP_WINING_ORDER });
-    app.loadTexture("res/textures/tile.png",                        {  FLIP_TEXTURES });
-    // app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
-    app.loadTexture("res/textures/concrete.jpg",                    {  FLIP_TEXTURES });
-    app.loadTexture("res/textures/oak.jpg",                         {  FLIP_TEXTURES });
-    // app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
     app.loadModel  ("res/models/backpack/backpack.obj",             { !FLIP_TEXTURES, !FLIP_WINING_ORDER });
+
+    Texture tileTexture("res/textures/tile.png",           FLIP_TEXTURES, SRGB, GL_REPEAT);
+    Texture concreteTexture("res/textures/concrete.jpg",   FLIP_TEXTURES, SRGB, GL_REPEAT);
+    Texture oakTexture("res/textures/oak.jpg",             FLIP_TEXTURES, SRGB, GL_REPEAT);
+    // app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
+    // app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 
 // =========================== //
 
-    ShaderProgram &postProcessShader = app.shaders[4];
-    ShaderProgram &skyboxShader      = app.shaders[5];
-    ShaderProgram &normalShader      = app.shaders[7];
-
-    app.currentTextureIndex = 2;  // concrete
     app.currentModelIndex = 0;    // cube
     app.currentShaderIndex = 1;   // lighting
 
@@ -174,14 +171,15 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
         glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
-        app.textures[app.currentTextureIndex].bind();
+        oakTexture.bind();
         renderer.draw(app.models[app.currentModelIndex], currentShader, camera); 
 
         glDisable(GL_CULL_FACE);
         currentShader.bind();
         renderer.setLightingUniforms(currentShader);
-        app.textures[2].bind(0);
         renderer.setMaterialUniforms(currentShader, 0);
+        renderer.setMatrixUniforms  (currentShader, glm::mat4{1}, camera);
+        oakTexture.bind(0);
         planeVAO.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_CULL_FACE);

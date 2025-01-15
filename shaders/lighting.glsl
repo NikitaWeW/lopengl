@@ -101,8 +101,8 @@ void main() { // TODO: displacement
     for(int i = 0; i < u_spotLightCount; ++i) {
         lightColor += light(u_spotLights[i], u_material, norm, viewDir);
     }
-
     o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoord);
+    o_color.rgb = pow(o_color.rgb, vec3(1/2.2));
 }
 
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
@@ -121,8 +121,8 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 specular = 
         light.color * 
         attenuation *
-        pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
-        (u_specularSet ? vec3(.925) : vec3(texture(material.specular, fs_in.v_texCoord)));
+        pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
+        (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
 
     return vec4(ambient + diffuse + specular, 1.0);
 }
@@ -136,8 +136,8 @@ vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
         vec3(max(dot(norm, lightDir), 0.0));
     vec3 specular = 
         light.color * 
-        pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
-        (u_specularSet ? vec3(.25) : vec3(texture(material.specular, fs_in.v_texCoord)));
+        pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
+        (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
 
     return vec4(ambient + diffuse + specular, 1.0);
 }
@@ -165,7 +165,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
             light.color *
             intensity * 
             attenuation *
-            pow(max(dot(viewDir, reflectDir), 0.0), material.shininess) * 
+            pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
             (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
         return vec4(ambient + diffuse + specular, 1.0);
     } else {

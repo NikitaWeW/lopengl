@@ -51,13 +51,11 @@ public:
 
     int currentModelIndex = 0; 
     int currentShaderIndex = 0;
-    int currentTextureIndex = 0;
     int currentSceneIndex = 0;
 
     std::vector<Model> models;
     std::vector<ShaderProgram> shaders;
     std::vector<unsigned> displayShaders;
-    std::vector<Texture> textures;
 
     char loadModelBuffer[1024];
     char loadTextureBuffer[1024];
@@ -76,5 +74,4 @@ public:
     ~Application();
 
     void loadModel(char const *filepath, LoadModelQuery query);
-    void loadTexture(char const *filepath, LoadTextureQuery query);
 };

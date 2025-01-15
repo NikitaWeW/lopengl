@@ -129,18 +129,6 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     }
     ImGui::Separator();
 
-    if(app.textures.size() > 0) {
-        std::vector<const char *> textureNames;
-        for(Texture const &texture : app.textures) textureNames.push_back(texture.getFilePath().c_str());
-        ImGui::ListBox("loaded textures", &app.currentTextureIndex, textureNames.data(), textureNames.size());
-    }
-    // ImGui::InputText("texture path", app.loadTextureBuffer, sizeof(app.loadTextureBuffer));
-    // if(ImGui::Button("load texture")) {
-    //     app.loadTexture(app.loadTextureBuffer, {app.flipTextures});
-    // }
-    // ImGui::Separator();
-
-
 //  ====================================
 //  scene controls stuff here
 //  ====================================

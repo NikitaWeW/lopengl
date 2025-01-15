@@ -78,5 +78,5 @@ uniform Material u_material;
 
 void main() {
     o_color = texture(u_material.diffuse, v_texCoord);
-    // o_color = vec4(1);
+    o_color.rgb = pow(o_color.rgb, vec3(1/2.2));
 }
