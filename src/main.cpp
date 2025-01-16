@@ -211,6 +211,7 @@ int main(int argc, char **argv)
 // ===================== //
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
 
         // draw the model

@@ -21,6 +21,8 @@ extern const bool debug;
 
 void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
 {
+    if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_OTHER)) return; // handled by ShaderProgram class 
+
     Application::openglError.id = id;
     Application::openglError.msg = msg;
     std::string errorName;
@@ -117,7 +119,6 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
             Application::openglError.msg.c_str());
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
-    glViewport(0, 0, width, height);
 }
 Application::Application()
 {
