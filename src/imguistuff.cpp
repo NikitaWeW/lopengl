@@ -90,7 +90,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     // ImGui::Checkbox("wireframe", &app.wireframe);
     // ImGui::Checkbox("skybox", &app.skybox);
     // ImGui::Checkbox("show normals", &app.showNormals);
-    ImGui::Checkbox("face culling", &app.faceCulling);
+    // ImGui::Checkbox("face culling", &app.faceCulling);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
     ImGui::Separator();
 
@@ -118,6 +118,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     // ImGui::Separator();
 
 
+    ImGui::Separator();
     ImGui::DragFloat3("model position", &app.models[app.currentModelIndex].m_position.x, 0.01f);
     ImGui::DragFloat3("rotation", &app.models[app.currentModelIndex].m_rotation.x, 0.5f);
     ImGui::DragFloat3("scale", &app.models[app.currentModelIndex].m_scale.x, 0.01f);
@@ -127,18 +128,11 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         app.models[app.currentModelIndex].m_rotation = glm::vec3(0);
         app.models[app.currentModelIndex].m_scale = glm::vec3(1);
     }
-    ImGui::Separator();
-
-//  ====================================
-//  scene controls stuff here
-//  ====================================
-//  TODO: add menus to organise controls
-
 
     ImGui::Separator();
 
 
-    ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
+    // ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
     if(flashlight.enabled) {
         ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
         ImGui::DragFloat("flashlight constant attenuation", &flashlight.constant, 0.01, 0, 50);
@@ -155,7 +149,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     }
-    ImGui::Checkbox("light enabled", &light.enabled);
+    // ImGui::Checkbox("light enabled", &light.enabled);
     if(light.enabled) {
         ImGui::DragFloat3("light position", &light.position.x, 0.01f);
         ImGui::ColorEdit3("light color", &light.color.r);
@@ -171,7 +165,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
             light.quadratic = 0.07f;
         }
     }
-    ImGui::Checkbox("sun enabled", &sun.enabled);
+    // ImGui::Checkbox("sun enabled", &sun.enabled);
     if(sun.enabled) {
         ImGui::DragFloat3("sun direction", &sun.direction.x, 0.01f);
         ImGui::ColorEdit3("sun color", &sun.color.r);
@@ -186,6 +180,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
             sun.linear = 0.14f;
             sun.quadratic = 0.07f;
         }
+        ImGui::Separator();
     }
     ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
     ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);

@@ -20,4 +20,6 @@ out vec4 o_color;
 void main()
 {
     o_color = texture(u_texture, v_texCoords);
+    // o_color = vec4(vec3(0.2126 * o_color.r + 0.7152 * o_color.g + 0.0722 * o_color.b), 1.0); // grayscale
+    o_color = vec4(vec3(o_color.r), 1);
 }

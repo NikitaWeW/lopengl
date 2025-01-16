@@ -183,12 +183,11 @@ int main(int argc, char **argv)
 // ============================ //
 //     draw to the depth map    //
 // ============================ //
+// TODO: draw the depth map automaticly in renderer
 
         depthMapFBO.bind();
         glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
         renderer.clear();
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
-        glm::mat4 lightView = glm::lookAt(-sun.direction, {0, 0, 0}, {0, 1, 0});
 
         app.shaders[6].bind();
         app.models[app.currentModelIndex].resetMatrix();
@@ -196,11 +195,11 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
-        renderer.setMatrixUniforms(app.shaders[6], app.models[app.currentModelIndex].getModelMat(), lightView, lightProjection);
+        renderer.setMatrixUniforms(app.shaders[6], app.models[app.currentModelIndex].getModelMat(), sun.getViewMatrix(), sun.getProjectionMatrix());
         renderer.drawb(app.models[app.currentModelIndex], app.shaders[6]); 
 
         glDisable(GL_CULL_FACE);
-        renderer.setMatrixUniforms(app.shaders[6], glm::mat4{1}, lightView, lightProjection);
+        renderer.setMatrixUniforms(app.shaders[6], glm::mat4{1}, sun.getViewMatrix(), sun.getProjectionMatrix());
         planeVAO.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_CULL_FACE);
@@ -220,12 +219,16 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
+        currentShader.bind();
+        depthMap.bind(1);
+        glUniform1i(currentShader.getUniform("u_depthMap"), 1);
+        // glm::mat4 lightSpace = sun.getProjectionMatrix() * sun.getViewMatrix();
+        // glUniformMatrix4fv(currentShader.getUniform("lightSpaceMat"), 1, GL_FALSE, &lightSpace[0][0]);
         glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
         oakTexture.bind();
         renderer.draw(app.models[app.currentModelIndex], currentShader, camera); 
 
         glDisable(GL_CULL_FACE);
-        currentShader.bind();
         renderer.setLightingUniforms(currentShader);
         renderer.setMaterialUniforms(currentShader, 0);
         renderer.setMatrixUniforms  (currentShader, glm::mat4{1}, camera);
