@@ -30,9 +30,9 @@ void Renderer::setLightingUniforms(ShaderProgram const &shader) const
 void Renderer::setMaterialUniforms(ShaderProgram const &shader, Mesh const &mesh) const
 {
     bool specularSet = false;
-    if(mesh.textures.size() == 0) { // use texture at slot 0 as diffuse texture
-        glUniform1i(shader.getUniform("u_material.diffuse"), 0);
-    }
+    // if(mesh.textures.size() == 0) { // use texture at slot 0 as diffuse texture
+    //     glUniform1i(shader.getUniform("u_material.diffuse"), 0);
+    // }
     unsigned int textureCount = 1; // leave 0 for other purposes
     for(Texture const &texture : mesh.textures) {
         int location = shader.getUniform("u_material." + texture.type);
@@ -44,10 +44,6 @@ void Renderer::setMaterialUniforms(ShaderProgram const &shader, Mesh const &mesh
         if(texture.type == "specular") {
             specularSet = true;
         }
-    }
-    if(!specularSet) {
-        Texture::unbindStatic(textureCount);
-        glUniform1i(shader.getUniform("u_material.specular"), textureCount);
     }
 
     glUniform1f(shader.getUniform("u_material.shininess"), mesh.material.shininess);
@@ -89,10 +85,10 @@ void Renderer::draw(Mesh const &mesh, ShaderProgram const &shader) const
 void Renderer::draw(Model const &model, ShaderProgram const &shader, Camera const &camera) const
 {
     shader.bind();
+    setLightingUniforms(shader);
+    setMatrixUniforms(shader, model.getModelMat(), camera);
     for(Mesh const &mesh : model.getMeshes()) {
-        setLightingUniforms(shader);
         setMaterialUniforms(shader, mesh);
-        setMatrixUniforms(shader, model.getModelMat(), camera);
         glUniform3fv(shader.getUniform("u_viewPos"), 1, &camera.position.x);
         draw(mesh, shader);
     }

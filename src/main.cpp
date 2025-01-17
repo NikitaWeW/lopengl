@@ -183,8 +183,9 @@ int main(int argc, char **argv)
 // ============================ //
 //     draw to the depth map    //
 // ============================ //
-// TODO: draw the depth map automaticly in renderer
+// TODO: draw the depth map in renderer
 
+        glCullFace(GL_FRONT);
         depthMapFBO.bind();
         glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
         renderer.clear();
@@ -203,6 +204,7 @@ int main(int argc, char **argv)
         planeVAO.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
 
 // ===================== //
@@ -219,20 +221,20 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
 
+        depthMap.bind(0);
+        oakTexture.bind(1);
         currentShader.bind();
-        depthMap.bind(1);
-        glUniform1i(currentShader.getUniform("u_depthMap"), 1);
-        // glm::mat4 lightSpace = sun.getProjectionMatrix() * sun.getViewMatrix();
-        // glUniformMatrix4fv(currentShader.getUniform("lightSpaceMat"), 1, GL_FALSE, &lightSpace[0][0]);
+        glUniform1i(currentShader.getUniform("u_depthMap"), 0);
         glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
-        oakTexture.bind();
+        renderer.setMaterialUniforms(currentShader, 1);
+        renderer.setLightingUniforms(currentShader);
+
         renderer.draw(app.models[app.currentModelIndex], currentShader, camera); 
 
         glDisable(GL_CULL_FACE);
-        renderer.setLightingUniforms(currentShader);
-        renderer.setMaterialUniforms(currentShader, 0);
+        oakTexture.bind(1);
+        renderer.setMaterialUniforms(currentShader, 1);
         renderer.setMatrixUniforms  (currentShader, glm::mat4{1}, camera);
-        oakTexture.bind(0);
         planeVAO.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_CULL_FACE);
@@ -249,17 +251,15 @@ int main(int argc, char **argv)
         } 
 
 // ================================= //
-//     debug: visualise depth map    //
-// ================================= //
-        
-        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // renderer.clear(app.clearColor);
-        // renderer.clear(app.clearColor);
-        // app.shaders[5].bind();
-        // glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
-        // depthMap.bind(0);
-        // renderer.drawb(oneSideQuad, app.shaders[5]); 
-
+        if(app.debugView == 1) { // debug: visualise depth map.
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            renderer.clear(app.clearColor);
+            renderer.clear(app.clearColor);
+            app.shaders[5].bind();
+            glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
+            depthMap.bind(0);
+            renderer.drawb(oneSideQuad, app.shaders[5]); 
+        }
 // ================== //
 
         imguistuff(app, camera, light, flashlight, sun);
