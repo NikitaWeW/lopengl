@@ -197,5 +197,6 @@ float shadow(vec4 fragPosLightSpace, sampler2D depthMap) {
     float closestDepth = texture(depthMap, projectedCoords.xy).r;
     float currentDepth = projectedCoords.z;
 
-    return currentDepth > closestDepth ? 1.0 : 0.0;
+    float bias = 0.0005;
+    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
