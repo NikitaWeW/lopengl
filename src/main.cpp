@@ -155,9 +155,11 @@ int main(int argc, char **argv)
 // ============================ //
 
     const unsigned SHADOW_RESOLUTION = 1024;
-    Texture depthMap;
+    Texture depthMap{GL_CLAMP_TO_BORDER};
     depthMap.bind();
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     Framebuffer depthMapFBO;
     depthMapFBO.bind();
     depthMapFBO.attach(depthMap, GL_DEPTH_ATTACHMENT);

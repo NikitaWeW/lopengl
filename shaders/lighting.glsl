@@ -193,10 +193,11 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
 float shadow(vec4 fragPosLightSpace, sampler2D depthMap) {
     vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projectedCoords = projectedCoords * 0.5 + 0.5;
+    if(projectedCoords.z > 0.99) return 0;
 
     float closestDepth = texture(depthMap, projectedCoords.xy).r;
     float currentDepth = projectedCoords.z;
 
-    float bias = 0.0005;
+    float bias = 0.0001;
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
