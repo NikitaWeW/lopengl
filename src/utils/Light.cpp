@@ -6,12 +6,12 @@
 PointLight::PointLight()
 {
     type = LightType::POINT;
-    m_projMat = glm::mat4{1}; // TODO
+    m_projMat = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 }
 
 glm::mat4 PointLight::getViewMatrix() const
 {
-    return glm::translate(glm::mat4{1}, position); // TODO
+    return glm::translate(glm::mat4{1}, position);
 }
 
 void PointLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const

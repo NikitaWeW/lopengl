@@ -25,7 +25,6 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 
     Application::openglError.id = id;
     Application::openglError.msg = msg;
-    std::string errorName;
 
     switch (source) {
         case GL_DEBUG_SOURCE_API:
@@ -173,19 +172,6 @@ Application::~Application()
     glfwDestroyWindow(window);
     glfwTerminate();
 }
-
-void Application::loadModel(char const *filepath, LoadModelQuery query)
-{
-    std::string newFilepath{filepath};
-    std::replace_if(newFilepath.begin(), newFilepath.end(), [](char c){ return c == '\\'; }, '/');
-    try {
-        models.push_back(Model{newFilepath, query.flipTextures, query.flipWindingOrder});
-    } catch(std::runtime_error &e) {
-        LOG_ERROR("%s", e.what());
-    }
-    currentModelIndex = models.size() - 1;
-}
-
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {

@@ -29,6 +29,17 @@ Cubemap::Cubemap(std::string directory, std::vector<std::string> faceTextureName
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
+Cubemap::Cubemap(GLenum wrap, GLenum filter)
+{
+    glGenTextures(1, &m_renderID);
+    bind();
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, wrap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, wrap);
+}
+
 Cubemap::~Cubemap()
 {
     if(canDeallocate()) {

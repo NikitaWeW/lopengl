@@ -73,6 +73,4 @@ public:
 public:
     Application();
     ~Application();
-
-    void loadModel(char const *filepath, LoadModelQuery query);
 };

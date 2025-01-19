@@ -55,8 +55,16 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     ImGui::Begin("properties");
-    ImGui::Text("delta time: %f", app.deltatime);
-    ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
+    if(app.deltatime >= 1/100) {
+        ImGui::Text("!  delta time: %f", app.deltatime);
+        ImGui::Text("!  FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
+    } else if(app.deltatime >= 1/30) {
+        ImGui::Text("!! delta time: %f", app.deltatime);
+        ImGui::Text("!! FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
+    } else {
+        ImGui::Text("   delta time: %f", app.deltatime);
+        ImGui::Text("   FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
+    }
     ImGui::Separator();
 
 
