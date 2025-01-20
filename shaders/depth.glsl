@@ -18,11 +18,14 @@ out vec4 fragPos;
 void main() {
     for(int face = 0; face < 6; ++face) {
         gl_Layer = face;
-        fragPos = gl_in[face].gl_Position;
-        gl_Position = u_shadowMatrices[face] * fragPos;
-        EmitVertex();
+        for(int i = 0; i < 3; ++i) // for each triangle's vertices
+        {
+            fragPos = gl_in[i].gl_Position;
+            gl_Position = u_shadowMatrices[face] * fragPos;
+            EmitVertex();
+        }  
+        EndPrimitive(); 
     }
-    EndPrimitive();
 }
 
 #shader fragment

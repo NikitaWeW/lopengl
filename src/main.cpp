@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     GLFWwindow *window = app.window;
     Model lightCube("res/models/cube.obj");
     Model oneSideQuad{"res/models/one_side_quad.obj"};
-    ControllableCamera camera(window, {0, 0, 7}, {-90, 0, 0});
+    ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
     PointLight light;
     DirectionalLight sun;
     SpotLight flashlight;
@@ -180,9 +180,6 @@ int main(int argc, char **argv)
         int lastWidth = camera.width, lastHeight = camera.height;
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
-        if(app.faceCulling) glEnable(GL_CULL_FACE);
-        else glDisable(GL_CULL_FACE);
-
 // ============================ //
 //     draw to the depth map    //
 // ============================ //
@@ -199,32 +196,31 @@ int main(int argc, char **argv)
         depthMapFBO.bind();
         app.shaders[6].bind();
         glUniform3fv(app.shaders[6].getUniform("u_light.position"), 1, &light.position.x);
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_shadowMatrices"), 6, GL_FALSE, &shadowTransformations[0][0][0]);
+        for(int i = 0; i < 6; ++i)
+            glUniformMatrix4fv(app.shaders[6].getUniform("u_shadowMatrices[" + std::to_string(i) + "]"), 1, GL_FALSE, &shadowTransformations[i][0][0]);
 
         glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
         renderer.clear();
-
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_projectionMat"),1, GL_FALSE, &light.getProjectionMatrix()[0][0]);
 
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        renderer.drawb(app.models[app.currentModelIndex], app.shaders[6]); 
+        renderer.draw(app.models[app.currentModelIndex], app.shaders[6]); 
 
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.drawb(app.cube, app.shaders[6]); 
+        renderer.draw(app.cube, app.shaders[6]); 
         
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 2.0f, -3.0});
         app.cube.rotate({60.0f, 0.0f, 60.0f});
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.drawb(app.cube, app.shaders[6]); 
+        renderer.draw(app.cube, app.shaders[6]); 
 
         glDisable(GL_CULL_FACE);
         oakTexture.bind(1);
@@ -232,7 +228,7 @@ int main(int argc, char **argv)
         app.cube.translate({0, 0, 0});
         app.cube.scale({10, 10, 10});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.drawb(app.cube, app.shaders[6]); 
+        renderer.draw(app.cube, app.shaders[6]); 
         planeVAO.bind();
         glEnable(GL_CULL_FACE);
 
@@ -247,37 +243,45 @@ int main(int argc, char **argv)
         oakTexture.bind(1);
         currentShader.bind();
         glUniform1i(currentShader.getUniform("u_depthMap"), 0);
-        glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
-        renderer.setMaterialUniforms(currentShader, 1);
+        glUniformMatrix4fv(currentShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+        glUniform1i(currentShader.getUniform("u_material.diffuse"), 1);
+        glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
+        glUniform1i(currentShader.getUniform("u_specularSet"), false);
         renderer.setLightingUniforms(currentShader);
 
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
         app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
         app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
-        renderer.draw(app.models[app.currentModelIndex], currentShader, camera); 
-        renderer.setMaterialUniforms(currentShader, 1);
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
+        renderer.draw(app.models[app.currentModelIndex], currentShader); 
 
+        glUniform1i(currentShader.getUniform("u_material.diffuse"), 1);
+        glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
+        glUniform1i(currentShader.getUniform("u_specularSet"), false);
         oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
-        renderer.draw(app.cube, currentShader, camera); 
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        renderer.draw(app.cube, currentShader); 
         
         concreteTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 2.0f, -3.0});
         app.cube.rotate({60.0f, 0.0f, 60.0f});
         app.cube.scale(glm::vec3{0.75f});
-        renderer.draw(app.cube, currentShader, camera); 
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        renderer.draw(app.cube, currentShader); 
 
         glDisable(GL_CULL_FACE);
         oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({0, 0, 0});
         app.cube.scale({10, 10, 10});
-        renderer.draw(app.cube, currentShader, camera); 
-        planeVAO.bind();
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        renderer.draw(app.cube, currentShader); 
         glEnable(GL_CULL_FACE);
 
         if(light.enabled) {
@@ -287,8 +291,10 @@ int main(int argc, char **argv)
             app.cube.scale(glm::vec3{0.03125});
             app.plainColorShader.bind();
             glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.setMatrixUniforms(app.plainColorShader, app.cube.getModelMat(), camera);
-            renderer.drawb(app.cube, app.plainColorShader);
+            glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+            glUniformMatrix4fv(currentShader.getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+            glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+            renderer.draw(app.cube, app.plainColorShader);
         } 
 // ================== //
 

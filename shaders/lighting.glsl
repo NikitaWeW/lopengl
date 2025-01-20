@@ -92,7 +92,8 @@ uniform int u_spotLightCount;
 uniform vec3 u_viewPos;
 uniform bool u_specularSet;
 
-uniform samplerCube u_depthMap; // TODO: move in the light struct, manage by renderer
+// TODO: move in the light struct, manage by renderer
+uniform samplerCube u_depthMap;
 
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir);
 vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir);
@@ -199,6 +200,7 @@ float shadow(PointLight light, samplerCube depthMap) {
     float currentDepth = length(fragToLight);
 
     float bias = max(0.05 * (1.0 - dot(fs_in.v_normal, normalize(fragToLight))), 0.005);
+    return 0;
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
 float shadow(DirectionalLight light, sampler2D depthMap) {

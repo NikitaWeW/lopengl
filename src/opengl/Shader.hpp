@@ -32,6 +32,7 @@ public:
     int getUniformBlock(std::string const &name) const;
     bool ParceShaderFile(std::string const &filepath);
     bool CompileShaders();
+    bool checkUniforms(bool showLogs = true);
     
     inline std::string const &getFilePath() const { return m_filepath; }
     inline std::string const &getLog()      const { return m_log; }

@@ -95,6 +95,9 @@ int ShaderProgram::getUniform(std::string const &name) const
     if(m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) return m_UniformLocationCache[name];
     int location = glGetUniformLocation(m_renderID, name.c_str());
     m_UniformLocationCache[name] = location;
+    if(location == -1) {
+        LOG_WARN("uniform \"%s\" in shader \"%s\" does not exist!", name.c_str(), getFilePath().c_str());
+    }
     return location;
 }
 int ShaderProgram::getUniformBlock(std::string const &name) const
@@ -158,4 +161,9 @@ bool ShaderProgram::CompileShaders() {
         return false;
     }
     return true;
+}
+
+bool ShaderProgram::checkUniforms(bool showLogs)
+{
+    return true; // TODO
 }
