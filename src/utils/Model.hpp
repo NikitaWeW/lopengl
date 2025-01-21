@@ -20,10 +20,6 @@ private:
     Mesh processMesh(aiMesh *aimesh, bool flipTextures);
 
 public:
-    glm::vec3 m_position = glm::vec3{0}; // does not do anythyng.
-    glm::vec3 m_rotation = glm::vec3{0};
-    glm::vec3 m_scale = glm::vec3{1};
-public:
     Model() = default;
     Model(const std::string &filepath, bool flipTextures = false, bool flipWindingOrder = false);
     bool load(std::string const &filepath, bool flipTextures = false, bool flipWindingOrder = false);
@@ -33,10 +29,6 @@ public:
     void rotate(glm::vec3 const &rotation);
     void scale(glm::vec3 const &scale);
     
-    inline void translate() { translate(m_position); }
-    inline void rotate() { rotate(m_rotation); }
-    inline void scale() { scale(m_scale); }
-
     bool operator==(Model const &other);
     inline aiScene const *getScene() const { return m_scene; }
     inline std::string const &getFilepath() const { return m_filepath; }

@@ -140,7 +140,8 @@ bool ShaderProgram::ParceShaderFile(std::string const &filepath)
     m_shaders.erase(m_shaders.begin(), m_shaders.end());
     m_shaders.push_back({0, GL_VERTEX_SHADER,   shaderSourceStreams[1].str()});
     m_shaders.push_back({0, GL_FRAGMENT_SHADER, shaderSourceStreams[2].str()});
-    if(shaderSourceStreams[3].str().size() > 0) m_shaders.push_back({0, GL_GEOMETRY_SHADER, shaderSourceStreams[3].str()});
+    if(shaderSourceStreams[3].str().size() > 0) 
+        m_shaders.push_back({0, GL_GEOMETRY_SHADER, shaderSourceStreams[3].str()});
 
     return true;
 }
@@ -161,9 +162,4 @@ bool ShaderProgram::CompileShaders() {
         return false;
     }
     return true;
-}
-
-bool ShaderProgram::checkUniforms(bool showLogs)
-{
-    return true; // TODO
 }

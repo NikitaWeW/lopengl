@@ -128,14 +128,14 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     ImGui::Separator();
-    ImGui::DragFloat3("model position", &app.models[app.currentModelIndex].m_position.x, 0.01f);
-    ImGui::DragFloat3("rotation", &app.models[app.currentModelIndex].m_rotation.x, 0.5f);
-    ImGui::DragFloat3("scale", &app.models[app.currentModelIndex].m_scale.x, 0.01f);
+    ImGui::DragFloat3("model position", &app.currentModelPosition.x, 0.01f);
+    ImGui::DragFloat3("rotation", &app.currentModelRotation.x, 0.5f);
+    ImGui::DragFloat3("scale", &app.currentModelScale.x, 0.01f);
     if (ImGui::Button("reset model"))
     {
-        app.models[app.currentModelIndex].m_position = glm::vec3(0);
-        app.models[app.currentModelIndex].m_rotation = glm::vec3(0);
-        app.models[app.currentModelIndex].m_scale = glm::vec3(1);
+        app.currentModelPosition = glm::vec3(0);
+        app.currentModelRotation = glm::vec3(0);
+        app.currentModelScale = glm::vec3(1);
     }
 
     ImGui::Separator();

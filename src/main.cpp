@@ -75,7 +75,8 @@ int main(int argc, char **argv)
         {"shaders/explode.glsl",        SHOW_LOGS},
 //       =========================================
         {"shaders/post_process.glsl",   SHOW_LOGS},
-        {"shaders/depth.glsl",          SHOW_LOGS}
+        {"shaders/depth.glsl",          SHOW_LOGS},
+        {"shaders/plain_color.glsl",    SHOW_LOGS}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
@@ -88,7 +89,6 @@ int main(int argc, char **argv)
     light.enabled =       true;
     sun.enabled =        !true;
 
-    app.plainColorShader = ShaderProgram{"shaders/plain_color.glsl", SHOW_LOGS};
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
 
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
         {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
-        {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER } 
+        {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
     Texture tileTexture("res/textures/tile.png",           FLIP_TEXTURES, SRGB, GL_REPEAT);
     Texture concreteTexture("res/textures/concrete.jpg",   FLIP_TEXTURES, SRGB, GL_REPEAT);
@@ -203,12 +203,13 @@ int main(int argc, char **argv)
         renderer.clear();
 
         app.models[app.currentModelIndex].resetMatrix();
-        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
-        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
-        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
+        app.models[app.currentModelIndex].translate(app.currentModelPosition);
+        app.models[app.currentModelIndex].rotate(app.currentModelRotation);
+        app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
         renderer.draw(app.models[app.currentModelIndex], app.shaders[6]); 
 
+        glFrontFace(GL_CW);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
@@ -221,6 +222,7 @@ int main(int argc, char **argv)
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube, app.shaders[6]); 
+        glFrontFace(GL_CCW);
 
         glDisable(GL_CULL_FACE);
         oakTexture.bind(1);
@@ -251,12 +253,13 @@ int main(int argc, char **argv)
         renderer.setLightingUniforms(currentShader);
 
         app.models[app.currentModelIndex].resetMatrix();
-        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
-        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
-        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
+        app.models[app.currentModelIndex].translate(app.currentModelPosition);
+        app.models[app.currentModelIndex].rotate(app.currentModelRotation);
+        app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
         renderer.draw(app.models[app.currentModelIndex], currentShader); 
 
+        glFrontFace(GL_CW);
         glUniform1i(currentShader.getUniform("u_material.diffuse"), 1);
         glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
         glUniform1i(currentShader.getUniform("u_specularSet"), false);
@@ -274,6 +277,7 @@ int main(int argc, char **argv)
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube, currentShader); 
+        glFrontFace(GL_CCW);
 
         glDisable(GL_CULL_FACE);
         oakTexture.bind(1);
@@ -289,12 +293,12 @@ int main(int argc, char **argv)
             app.cube.resetMatrix();
             app.cube.translate(light.position);
             app.cube.scale(glm::vec3{0.03125});
-            app.plainColorShader.bind();
-            glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-            glUniformMatrix4fv(currentShader.getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-            glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-            renderer.draw(app.cube, app.plainColorShader);
+            app.shaders[7].bind();
+            glUniform3fv(app.shaders[7].getUniform("u_color"), 1, &light.color.x);
+            glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+            glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+            glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+            renderer.draw(app.cube, app.shaders[7]);
         } 
 // ================== //
 
