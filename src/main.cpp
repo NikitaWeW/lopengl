@@ -76,7 +76,8 @@ int main(int argc, char **argv)
 //       =========================================
         {"shaders/post_process.glsl",   SHOW_LOGS},
         {"shaders/depth.glsl",          SHOW_LOGS},
-        {"shaders/plain_color.glsl",    SHOW_LOGS}
+        {"shaders/plain_color.glsl",    SHOW_LOGS},
+        {"shaders/skybox.glsl"}
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
@@ -207,21 +208,21 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].rotate(app.currentModelRotation);
         app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        renderer.draw(app.models[app.currentModelIndex], app.shaders[6]); 
+        renderer.draw(app.models[app.currentModelIndex]); 
 
         glFrontFace(GL_CW);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube, app.shaders[6]); 
+        renderer.draw(app.cube); 
         
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 2.0f, -3.0});
         app.cube.rotate({60.0f, 0.0f, 60.0f});
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube, app.shaders[6]); 
+        renderer.draw(app.cube); 
         glFrontFace(GL_CCW);
 
         glDisable(GL_CULL_FACE);
@@ -230,7 +231,7 @@ int main(int argc, char **argv)
         app.cube.translate({0, 0, 0});
         app.cube.scale({10, 10, 10});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube, app.shaders[6]); 
+        renderer.draw(app.cube); 
         planeVAO.bind();
         glEnable(GL_CULL_FACE);
 
@@ -257,18 +258,15 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].rotate(app.currentModelRotation);
         app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        renderer.draw(app.models[app.currentModelIndex], currentShader); 
+        renderer.draw(app.models[app.currentModelIndex]); 
 
         glFrontFace(GL_CW);
-        glUniform1i(currentShader.getUniform("u_material.diffuse"), 1);
-        glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
-        glUniform1i(currentShader.getUniform("u_specularSet"), false);
         oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube, currentShader); 
+        renderer.draw(app.cube); 
         
         concreteTexture.bind(1);
         app.cube.resetMatrix();
@@ -276,7 +274,7 @@ int main(int argc, char **argv)
         app.cube.rotate({60.0f, 0.0f, 60.0f});
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube, currentShader); 
+        renderer.draw(app.cube); 
         glFrontFace(GL_CCW);
 
         glDisable(GL_CULL_FACE);
@@ -285,7 +283,7 @@ int main(int argc, char **argv)
         app.cube.translate({0, 0, 0});
         app.cube.scale({10, 10, 10});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube, currentShader); 
+        renderer.draw(app.cube); 
         glEnable(GL_CULL_FACE);
 
         if(light.enabled) {
@@ -298,8 +296,21 @@ int main(int argc, char **argv)
             glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
             glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
             glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-            renderer.draw(app.cube, app.shaders[7]);
+            renderer.draw(app.cube);
         } 
+
+
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        depthMap.bind(1);
+        app.shaders[8].bind();
+        glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+        glUniform1i(app.shaders[8].getUniform("skybox"), 1);
+        renderer.draw(app.cube);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        
 // ================== //
 
         imguistuff(app, camera, light, flashlight, sun);
@@ -310,3 +321,7 @@ int main(int argc, char **argv)
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
 }
+/*
+c++ be like:
+Because the lvalueness or rvalueness of an expression is independent of its type, it’s possible to have lvalues whose type is rvalue reference, and it’s also possible to have rvalues of the type rvalue reference.
+*/

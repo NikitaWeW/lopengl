@@ -22,8 +22,9 @@ public:
 
     void setLightingUniforms(ShaderProgram const &shader) const;
 
-    void draw(Mesh const &mesh, ShaderProgram const &shader) const;
-    void draw(Model const &model, ShaderProgram const &shader) const;
+    void draw(Mesh const &mesh) const;
+    void draw(Model const &model) const;
+
 
     inline std::vector<Light *> &getLights() { return m_lights; }
     inline std::vector<Light *> const &getLights() const { return m_lights; }

@@ -200,7 +200,7 @@ float shadow(PointLight light, samplerCube depthMap) {
     float currentDepth = length(fragToLight);
 
     float bias = max(0.05 * (1.0 - dot(fs_in.v_normal, normalize(fragToLight))), 0.005);
-    return 0;
+    // return 0;
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
 float shadow(DirectionalLight light, sampler2D depthMap) {

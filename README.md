@@ -8,7 +8,7 @@ uses cmake:
 ``` shell
 cmake -S . -B build
 cmake --build build
-build/main.exe # fast option for faster loading. it wont load everythyng. useful when developing
+build/main.exe
 ```
 
 # really important note

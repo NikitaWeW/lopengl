@@ -91,7 +91,6 @@ void ShaderProgram::unbind() const {
 }
 int ShaderProgram::getUniform(std::string const &name) const
 {
-    bind(); // probably will set uniform so bind it
     if(m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) return m_UniformLocationCache[name];
     int location = glGetUniformLocation(m_renderID, name.c_str());
     m_UniformLocationCache[name] = location;

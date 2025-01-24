@@ -10,7 +10,6 @@ uniform mat4 u_viewMat;
 
 void main() {
     v_texCoords = a_position;
-    // gl_Position = (u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1)).xyww;
     gl_Position = u_projectionMat * mat4(mat3(u_viewMat)) * vec4(a_position, 1);
 }
 
@@ -26,6 +25,7 @@ out vec4 o_color;
 uniform samplerCube skybox;
 
 void main() {
-    o_color = texture(skybox, v_texCoords);
+    // o_color = texture(skybox, v_texCoords);
+    o_color = vec4(vec3((texture(skybox, v_texCoords) * 10).r), 1);
     gl_FragDepth = 1.0;
 }

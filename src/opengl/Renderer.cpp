@@ -48,20 +48,18 @@ void Renderer::setLightingUniforms(ShaderProgram const &shader) const
 // }
 
 
-void Renderer::draw(Mesh const &mesh, ShaderProgram const &shader) const
+void Renderer::draw(Mesh const &mesh) const
 {
-    shader.bind();
     mesh.va.bind();
     mesh.ib.bind();
     glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
 }
 
 
-void Renderer::draw(Model const &model, ShaderProgram const &shader) const
+void Renderer::draw(Model const &model) const
 {
-    shader.bind();
     for(Mesh const &mesh : model.getMeshes()) {
-        draw(mesh, shader);
+        draw(mesh);
     }
 }
 
