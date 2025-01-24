@@ -307,7 +307,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
         glUniform1i(app.shaders[8].getUniform("skybox"), 1);
-        renderer.draw(app.cube);
+        // renderer.draw(app.cube);
         glDepthFunc(GL_LESS);
         glDepthMask(GL_TRUE);
         

@@ -5,7 +5,7 @@ layout(location = 1) in vec4 a_normal;
 layout(location = 2) in vec2 a_texCoord;
 
 out VS_OUT {
-    vec2 v_texCoord;
+    vec2 v_texCoords;
     vec4 v_fragPosition;
     vec3 v_normal;
     mat4 v_viewMat;
@@ -18,17 +18,16 @@ uniform mat4 u_normalMat;
 
 void main() {
     gl_Position = u_projectionMat * u_viewMat * u_modelMat * a_position;
-    vs_out.v_texCoord = a_texCoord;
+    vs_out.v_texCoords = a_texCoord;
     vs_out.v_fragPosition = u_modelMat * a_position;
     vs_out.v_normal = normalize(vec3(u_normalMat * a_normal));
     vs_out.v_viewMat = u_viewMat;
 }
 
 #shader fragment
-// its horrible
 #version 430 core
 
-out vec4 o_color;
+#define LIGHTS_CAPASITY 10
 
 struct Material {
     sampler2D diffuse;
@@ -72,13 +71,11 @@ struct DirectionalLight {
 };
 
 in VS_OUT {
-    vec2 v_texCoord;
+    vec2 v_texCoords;
     vec4 v_fragPosition;
     vec3 v_normal;
     mat4 v_viewMat;
 } fs_in;
-
-#define LIGHTS_CAPASITY 10
 
 uniform Material u_material;
 
@@ -92,7 +89,8 @@ uniform int u_spotLightCount;
 uniform vec3 u_viewPos;
 uniform bool u_specularSet;
 
-// TODO: move in the light struct, manage by renderer
+out vec4 o_color;
+
 uniform samplerCube u_depthMap;
 
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir);
@@ -102,7 +100,7 @@ float shadow(PointLight light, samplerCube depthMap);
 float shadow(DirectionalLight light, sampler2D depthMap);
 float shadow(SpotLight light, sampler2D depthMap);
 
-void main() { // TODO: displacement
+void main() {
     vec4 lightColor = vec4(0, 0, 0, 1);
 
     vec3 norm = normalize(fs_in.v_normal);
@@ -117,9 +115,10 @@ void main() { // TODO: displacement
     for(int i = 0; i < u_spotLightCount; ++i) {
         lightColor += light(u_spotLights[i], u_material, norm, viewDir);
     }
-    o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoord);
+    o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
+
 
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 lightDir = normalize(light.position - vec3(fs_in.v_fragPosition));
@@ -138,7 +137,7 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
         light.color * 
         attenuation *
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-        (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
+        (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
     float shadow = shadow(light, u_depthMap);
 
     return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
@@ -153,7 +152,7 @@ vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 specular = 
         light.color * 
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-        (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
+        (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
     // float shadow = shadow(light, u_depthMap);
     float shadow = 0;
 
@@ -183,7 +182,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
             intensity * 
             attenuation *
             pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-            (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoord)) : vec3(.25));
+            (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
         // float shadow = shadow(light, u_depthMap);
         float shadow = 0;
 
@@ -193,16 +192,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
     }
 }
 
-// TODO: pcf
-float shadow(PointLight light, samplerCube depthMap) {
-    vec3 fragToLight = fs_in.v_fragPosition.xyz - light.position;
-    float closestDepth = texture(depthMap, fragToLight).r * 100; // 100 -- far plane (too lazy to set uniform)
-    float currentDepth = length(fragToLight);
-
-    float bias = max(0.05 * (1.0 - dot(fs_in.v_normal, normalize(fragToLight))), 0.005);
-    // return 0;
-    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
-}
+// TODO: pcfz
 float shadow(DirectionalLight light, sampler2D depthMap) {
     vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.v_fragPosition;
     vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
