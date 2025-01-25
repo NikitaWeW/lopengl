@@ -96,9 +96,9 @@ uniform samplerCube u_depthMap;
 vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir);
 vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir);
 vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir);
-float shadow(PointLight light, samplerCube depthMap);
-float shadow(DirectionalLight light, sampler2D depthMap);
-float shadow(SpotLight light, sampler2D depthMap);
+float calculateShadow(PointLight light, samplerCube depthMap);
+float calculateShadow(DirectionalLight light, sampler2D depthMap);
+float calculateShadow(SpotLight light, sampler2D depthMap);
 
 void main() {
     vec4 lightColor = vec4(0, 0, 0, 1);
@@ -106,17 +106,39 @@ void main() {
     vec3 norm = normalize(fs_in.v_normal);
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.v_fragPosition));
 
-    for(int i = 0; i < u_pointLightCount; ++i) {
-        lightColor += light(u_pointLights[0], u_material, norm, viewDir);
-    }
-    for(int i = 0; i < u_dirLightCount; ++i) {
-        lightColor += light(u_dirLights[i], u_material, norm, viewDir);
-    }
-    for(int i = 0; i < u_spotLightCount; ++i) {
-        lightColor += light(u_spotLights[i], u_material, norm, viewDir);
-    }
+
+    vec3 lightDir = normalize(u_pointLights[0].position - vec3(fs_in.v_fragPosition));
+    float distanceLightFragment = length(u_pointLights[0].position - vec3(fs_in.v_fragPosition));
+    float attenuation = 1.0 / (u_pointLights[0].constant + u_pointLights[0].linear * distanceLightFragment + u_pointLights[0].quadratic * distanceLightFragment * distanceLightFragment);
+
+    vec3 ambient = 
+        u_pointLights[0].color * 0.125 * 
+        attenuation;
+    vec3 diffuse = 
+        u_pointLights[0].color * 
+        attenuation *
+        vec3(max(dot(norm, lightDir), 0.0));
+    vec3 specular = 
+        u_pointLights[0].color * 
+        attenuation *
+        pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
+        (u_specularSet ? vec3(texture(u_material.specular, fs_in.v_texCoords)) : vec3(.25));
+    float shadow = calculateShadow(u_pointLights[0], u_depthMap);
+
+    // o_color = vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0) * texture(u_material.diffuse, fs_in.v_texCoords);
+    o_color = vec4(vec3(1 - shadow), 1.0);
+    // o_color = vec4(ambient + (diffuse + specular), 1.0);
+    // for(int i = 0; i < u_pointLightCount; ++i) {
+    //     lightColor += light(u_pointLights[0], u_material, norm, viewDir);
+    // }
+    // for(int i = 0; i < u_dirLightCount; ++i) {
+    //     lightColor += light(u_dirLights[i], u_material, norm, viewDir);
+    // }
+    // for(int i = 0; i < u_spotLightCount; ++i) {
+    //     lightColor += light(u_spotLights[i], u_material, norm, viewDir);
+    // }
     // o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
-    o_color = vec4(vec3(1 - shadow(u_pointLights[0], u_depthMap)), 1);
+    // o_color = vec4(vec3(1 - shadow), 1);
 
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
@@ -140,7 +162,7 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
         attenuation *
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
         (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
-    float shadow = shadow(light, u_depthMap);
+    float shadow = calculateShadow(light, u_depthMap);
 
     return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
 }
@@ -155,7 +177,7 @@ vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
         light.color * 
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
         (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
-    // float shadow = shadow(light, u_depthMap);
+    // float shadow = calculateShadow(light, u_depthMap);
     float shadow = 0;
 
     return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
@@ -185,7 +207,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
             attenuation *
             pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
             (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
-        // float shadow = shadow(light, u_depthMap);
+        // float shadow = calculateShadow(light, u_depthMap);
         float shadow = 0;
 
         return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
@@ -195,7 +217,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
 }
 
 // TODO: pcf
-float shadow(PointLight light, samplerCube depthMap) {
+float calculateShadow(PointLight light, samplerCube depthMap) {
     vec3 fragToLight = vec3(fs_in.v_fragPosition.xyz - light.position);
     float closestDepth = texture(depthMap, fragToLight).r * 100; // 100 -- far plane
     float currentDepth = length(fragToLight);
@@ -203,7 +225,7 @@ float shadow(PointLight light, samplerCube depthMap) {
     float bias = 0.5;
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
-float shadow(DirectionalLight light, sampler2D depthMap) {
+float calculateShadow(DirectionalLight light, sampler2D depthMap) {
     vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.v_fragPosition;
     vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projectedCoords = projectedCoords * 0.5 + 0.5;
@@ -215,6 +237,6 @@ float shadow(DirectionalLight light, sampler2D depthMap) {
     float bias = max(0.05 * (1.0 - dot(fs_in.v_normal, light.direction)), 0.005);
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
-float shadow(SpotLight light, sampler2D depthMap) {
+float calculateShadow(SpotLight light, sampler2D depthMap) {
     return 0;
 }
