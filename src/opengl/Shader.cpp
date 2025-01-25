@@ -16,7 +16,8 @@ void ShaderProgram::deallocate() {
 
 bool compileShader(ShaderProgram::Shader &shader, std::string &log) {
     shader.renderID = glCreateShader(shader.type);
-    glShaderSource(shader.renderID, 1, &shader.source.begin().base(), nullptr);
+    char *source = &*shader.source.begin();
+    glShaderSource(shader.renderID, 1, &source, nullptr);
     glCompileShader(shader.renderID);
     int success;
     glGetShaderiv(shader.renderID, GL_COMPILE_STATUS, &success);

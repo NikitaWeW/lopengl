@@ -202,6 +202,7 @@ int main(int argc, char **argv)
 
         glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
         renderer.clear();
+        glDisable(GL_CULL_FACE);
 
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.currentModelPosition);
@@ -210,7 +211,6 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
         renderer.draw(app.models[app.currentModelIndex]); 
 
-        glFrontFace(GL_CW);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
@@ -223,9 +223,10 @@ int main(int argc, char **argv)
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
-        glFrontFace(GL_CCW);
 
-        glDisable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CW);
+        glCullFace(GL_FRONT);
         oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({0, 0, 0});
@@ -233,7 +234,8 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
         planeVAO.bind();
-        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
 
 // ===================== //
 //     draw the scene    //
@@ -275,16 +277,16 @@ int main(int argc, char **argv)
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
-        glFrontFace(GL_CCW);
 
-        glDisable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
         oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({0, 0, 0});
         app.cube.scale({10, 10, 10});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
-        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
 
         if(light.enabled) {
             // draw the light cube
@@ -307,7 +309,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
         glUniform1i(app.shaders[8].getUniform("skybox"), 1);
-        // renderer.draw(app.cube);
+        renderer.draw(app.cube);
         glDepthFunc(GL_LESS);
         glDepthMask(GL_TRUE);
         

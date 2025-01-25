@@ -107,7 +107,7 @@ void main() {
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.v_fragPosition));
 
     for(int i = 0; i < u_pointLightCount; ++i) {
-        lightColor += light(u_pointLights[i], u_material, norm, viewDir);
+        lightColor += light(u_pointLights[0], u_material, norm, viewDir);
     }
     for(int i = 0; i < u_dirLightCount; ++i) {
         lightColor += light(u_dirLights[i], u_material, norm, viewDir);
@@ -115,8 +115,8 @@ void main() {
     for(int i = 0; i < u_spotLightCount; ++i) {
         lightColor += light(u_spotLights[i], u_material, norm, viewDir);
     }
-    o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
-    // o_color = vec4(vec3(texture(u_depthMap, fs_in.v_fragPosition.xyz - u_pointLights[0].position).r), 1);
+    // o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
+    o_color = vec4(vec3(1 - shadow(u_pointLights[0], u_depthMap)), 1);
 
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
@@ -196,8 +196,8 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
 
 // TODO: pcf
 float shadow(PointLight light, samplerCube depthMap) {
-    vec3 fragToLight = vec3(fs_in.v_fragPosition.xyz - u_pointLights[0].position);
-    float closestDepth = texture(u_depthMap, fragToLight).r * 100; // 100 -- far plane
+    vec3 fragToLight = vec3(fs_in.v_fragPosition.xyz - light.position);
+    float closestDepth = texture(depthMap, fragToLight).r * 100; // 100 -- far plane
     float currentDepth = length(fragToLight);
 
     float bias = 0.5;
