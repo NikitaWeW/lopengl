@@ -197,7 +197,7 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
 // TODO: pcf
 float shadow(PointLight light, samplerCube depthMap) {
     vec3 fragToLight = vec3(fs_in.v_fragPosition.xyz - u_pointLights[0].position);
-    float closestDepth = texture(u_depthMap, fragToLight).r * 100; // 100 -- far plane (too lazy to set uniform)
+    float closestDepth = texture(u_depthMap, fragToLight).r * 100; // 100 -- far plane
     float currentDepth = length(fragToLight);
 
     float bias = 0.5;
