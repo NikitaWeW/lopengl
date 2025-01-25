@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     Texture tileTexture("res/textures/tile.png",           FLIP_TEXTURES, SRGB, GL_REPEAT);
     Texture concreteTexture("res/textures/concrete.jpg",   FLIP_TEXTURES, SRGB, GL_REPEAT);
     Texture oakTexture("res/textures/oak.jpg",             FLIP_TEXTURES, SRGB, GL_REPEAT);
-    // app.loadTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
+    Texture whiteTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
     // app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 
 // =========================== //
@@ -251,6 +251,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(currentShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
         glUniform1i(currentShader.getUniform("u_material.diffuse"), 1);
+        glUniform1i(currentShader.getUniform("u_material.specular"), 2);
         glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
         glUniform1i(currentShader.getUniform("u_specularSet"), false);
         renderer.setLightingUniforms(currentShader);
