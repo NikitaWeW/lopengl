@@ -116,6 +116,8 @@ void main() {
         lightColor += light(u_spotLights[i], u_material, norm, viewDir);
     }
     o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
+    // o_color = vec4(vec3(texture(u_depthMap, fs_in.v_fragPosition.xyz - u_pointLights[0].position).r), 1);
+
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
@@ -192,7 +194,15 @@ vec4 light(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
     }
 }
 
-// TODO: pcfz
+// TODO: pcf
+float shadow(PointLight light, samplerCube depthMap) {
+    vec3 fragToLight = vec3(fs_in.v_fragPosition.xyz - u_pointLights[0].position);
+    float closestDepth = texture(u_depthMap, fragToLight).r * 100; // 100 -- far plane (too lazy to set uniform)
+    float currentDepth = length(fragToLight);
+
+    float bias = 0.5;
+    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+}
 float shadow(DirectionalLight light, sampler2D depthMap) {
     vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.v_fragPosition;
     vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
