@@ -261,6 +261,8 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].rotate(app.currentModelRotation);
         app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
+        glm::mat4 normalMat = glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()));
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
         renderer.draw(app.models[app.currentModelIndex]); 
 
         glFrontFace(GL_CW);
@@ -269,6 +271,8 @@ int main(int argc, char **argv)
         app.cube.translate({-1.5f, 1.0f, 1.5});
         app.cube.scale(glm::vec3{0.5f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        normalMat = glm::transpose(glm::inverse(app.cube.getModelMat()));
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
         renderer.draw(app.cube); 
         
         concreteTexture.bind(1);
@@ -277,18 +281,20 @@ int main(int argc, char **argv)
         app.cube.rotate({60.0f, 0.0f, 60.0f});
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        normalMat = glm::transpose(glm::inverse(app.cube.getModelMat()));
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
         renderer.draw(app.cube); 
 
-        glCullFace(GL_FRONT);
         oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({0, 0, 0});
-        app.cube.scale({10, 10, 10});
+        app.cube.scale(glm::vec3{-10});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        normalMat = glm::transpose(glm::inverse(app.cube.getModelMat())) * glm::scale(glm::mat4{1.0f}, glm::vec3{-1});
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
         renderer.draw(app.cube); 
-        glCullFace(GL_BACK);
-        glFrontFace(GL_CCW);
 
+        glFrontFace(GL_CCW);
         if(light.enabled) {
             // draw the light cube
             app.cube.resetMatrix();

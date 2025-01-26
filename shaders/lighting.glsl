@@ -113,9 +113,9 @@ void main() {
     for(int i = 0; i < u_spotLightCount; ++i) {
         lightColor += light(u_spotLights[i], u_material, fs_in.v_normal, viewDir);
     }
-    // o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
+    o_color = lightColor * texture(u_material.diffuse, fs_in.v_texCoords);
     // o_color = lightColor;
-    o_color = vec4(vec3(fs_in.v_normal), 1); // FIXME: normal is (0; 0; 0)?
+    // o_color = vec4(vec3(fs_in.v_normal), 1);
 
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
@@ -127,7 +127,7 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.125 * 
+        light.color * 0.000125 * 
         attenuation;
     vec3 diffuse = 
         light.color * 
@@ -140,7 +140,7 @@ vec4 light(PointLight light, Material material, vec3 norm, vec3 viewDir) {
         (u_specularSet ? vec3(texture(material.specular, fs_in.v_texCoords)) : vec3(.25));
     float shadow = calculateShadow(light, u_depthMap);
 
-    return vec4(norm , 1.0);
+    return vec4(ambient + vec3(1 - shadow) * (diffuse + specular), 1.0);
 }
 vec4 light(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
