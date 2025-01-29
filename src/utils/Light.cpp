@@ -46,9 +46,6 @@ void DirectionalLight::setUniforms(ShaderProgram const &shader, unsigned &pointL
     shader.bind();
     std::string element = "u_dirLights[" + std::to_string(dirLightCount++) + ']';
     glUniform3fv(shader.getUniform(element + ".color"), 1,    &color.r);
-    glUniform1f (shader.getUniform(element + ".constant"),     constant);
-    glUniform1f (shader.getUniform(element + ".linear"),       linear);
-    glUniform1f (shader.getUniform(element + ".quadratic"),    quadratic);
     glUniform3fv(shader.getUniform(element + ".direction"), 1, &direction.x);
     glUniformMatrix4fv(shader.getUniform(element + ".projectionMat"), 1, GL_FALSE, &m_projMat[0][0]);
     glUniformMatrix4fv(shader.getUniform(element + ".viewMat"), 1, GL_FALSE, &getViewMatrix()[0][0]);

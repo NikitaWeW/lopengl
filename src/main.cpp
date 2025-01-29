@@ -68,16 +68,17 @@ int main(int argc, char **argv)
     renderer.getLights().push_back(&sun);
 
     app.shaders = {
-        {"shaders/basic.glsl",          SHOW_LOGS},
-        {"shaders/lighting.glsl",       SHOW_LOGS},
-        {"shaders/reflection.glsl",     SHOW_LOGS},
-        {"shaders/refraction.glsl",     SHOW_LOGS},
-        {"shaders/explode.glsl",        SHOW_LOGS},
+        {"shaders/basic.glsl",          SHOW_LOGS}, // 0
+        {"shaders/lighting.glsl",       SHOW_LOGS}, // 1
+        {"shaders/reflection.glsl",     SHOW_LOGS}, // 2
+        {"shaders/refraction.glsl",     SHOW_LOGS}, // 3
+        {"shaders/explode.glsl",        SHOW_LOGS}, // 4
 //       =========================================
-        {"shaders/post_process.glsl",   SHOW_LOGS},
-        {"shaders/depth.glsl",          SHOW_LOGS},
-        {"shaders/plain_color.glsl",    SHOW_LOGS},
-        {"shaders/skybox.glsl"}
+        {"shaders/post_process.glsl",   SHOW_LOGS}, // 5
+        {"shaders/depth_omnidir.glsl",  SHOW_LOGS}, // 6
+        {"shaders/depth_regular.glsl",  SHOW_LOGS}, // 7
+        {"shaders/plain_color.glsl",    SHOW_LOGS}, // 8
+        {"shaders/skybox.glsl",         SHOW_LOGS}, // 9
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
@@ -86,9 +87,9 @@ int main(int argc, char **argv)
     light.position= glm::vec3{2, 1, 0};
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
-    flashlight.enabled = !true;
-    light.enabled =       true;
-    sun.enabled =        !true;
+    flashlight.enabled = false;
+    light.enabled =      true;
+    sun.enabled =        true;
 
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
@@ -101,16 +102,15 @@ int main(int argc, char **argv)
         {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
-    Texture tileTexture("res/textures/tile.png",           FLIP_TEXTURES, SRGB, GL_REPEAT);
-    Texture concreteTexture("res/textures/concrete.jpg",   FLIP_TEXTURES, SRGB, GL_REPEAT);
+    // Texture concreteTexture("res/textures/concrete.jpg",   FLIP_TEXTURES, SRGB, GL_REPEAT);
     Texture oakTexture("res/textures/oak.jpg",             FLIP_TEXTURES, SRGB, GL_REPEAT);
-    Texture whiteTexture("res/textures/white.png",                       {  FLIP_TEXTURES });
-    // app.loadTexture("res/textures/brick_wall.jpg",                  {  FLIP_TEXTURES });
 
 // =========================== //
 
     app.currentModelIndex = 1;    // sphere
     app.currentShaderIndex = 1;   // lighting
+
+// =========================== //
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_MULTISAMPLE);
@@ -155,20 +155,38 @@ int main(int argc, char **argv)
 // ============================ //
 
     const unsigned SHADOW_RESOLUTION = 2048;
-    Cubemap depthMap{GL_CLAMP_TO_EDGE, GL_NEAREST};
-    depthMap.bind();
+    
+// =========================== //
+
+    Cubemap lightDepthMap{GL_CLAMP_TO_EDGE, GL_NEAREST};
+    lightDepthMap.bind();
     for(unsigned i = 0; i < 6; ++i) {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     }
 
-    Framebuffer depthMapFBO;
-    depthMapFBO.bind();
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthMap.getRenderID(), 0);
+    Framebuffer lightDepthMapFBO;
+    lightDepthMapFBO.bind();
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, lightDepthMap.getRenderID(), 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 
-    depthMapFBO.unbind();
-    assert(depthMapFBO.isComplete());
+    lightDepthMapFBO.unbind();
+    assert(lightDepthMapFBO.isComplete());
+
+// =========================== //
+
+    Texture sunDepthMap{GL_CLAMP_TO_BORDER};
+    sunDepthMap.bind();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    Framebuffer sunDepthMapFBO;
+    sunDepthMapFBO.bind();
+    sunDepthMapFBO.attach(sunDepthMap, GL_DEPTH_ATTACHMENT);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    sunDepthMapFBO.unbind();
+    assert(sunDepthMapFBO.isComplete());
 
 // =========================== //
 
@@ -186,6 +204,10 @@ int main(int argc, char **argv)
 // ============================ //
 // TODO: draw the depth map in renderer
 
+// ===================== //
+//         light         //
+// ===================== //
+
         glm::mat4 shadowTransformations[] = {
             light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)),
             light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)),
@@ -194,7 +216,7 @@ int main(int argc, char **argv)
             light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)),
             light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0))
         };
-        depthMapFBO.bind();
+        lightDepthMapFBO.bind();
         app.shaders[6].bind();
         glUniform3fv(app.shaders[6].getUniform("u_light.position"), 1, &light.position.x);
         for(int i = 0; i < 6; ++i)
@@ -208,118 +230,132 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].translate(app.currentModelPosition);
         app.models[app.currentModelIndex].rotate(app.currentModelRotation);
         app.models[app.currentModelIndex].scale(app.currentModelScale);
+
         glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
         renderer.draw(app.models[app.currentModelIndex]); 
 
-        app.cube.resetMatrix();
-        app.cube.translate({-1.5f, 1.0f, 1.5});
-        app.cube.scale(glm::vec3{0.5f});
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube); 
-        
-        app.cube.resetMatrix();
-        app.cube.translate({-1.5f, 2.0f, -3.0});
-        app.cube.rotate({60.0f, 0.0f, 60.0f});
-        app.cube.scale(glm::vec3{0.75f});
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube); 
-
+        glDisable(GL_CULL_FACE);
+        glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &glm::mat4{1}[0][0]);
+        planeVAO.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        
         glFrontFace(GL_CW);
-        glCullFace(GL_FRONT);
         oakTexture.bind(1);
         app.cube.resetMatrix();
-        app.cube.translate({0, 0, 0});
-        app.cube.scale({10, 10, 10});
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        app.cube.translate({-1.5f, 1.0f, 1.5});
+        app.cube.scale(glm::vec3{0.75f});
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
+        glFrontFace(GL_CCW);
+
+        glEnable(GL_CULL_FACE);
+
+// ===================== //
+//          sun          //
+// ===================== //
+
+        glCullFace(GL_FRONT);
+        sunDepthMapFBO.bind();
+        glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+        renderer.clear();
+
+        app.shaders[7].bind();
+        glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"),      1, GL_FALSE, &sun.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &sun.getProjectionMatrix()[0][0]);
+
+        app.models[app.currentModelIndex].resetMatrix();
+        app.models[app.currentModelIndex].translate(app.currentModelPosition);
+        app.models[app.currentModelIndex].rotate(app.currentModelRotation);
+        app.models[app.currentModelIndex].scale(app.currentModelScale);
+
+        glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
+        renderer.draw(app.models[app.currentModelIndex]); 
+
+        glDisable(GL_CULL_FACE);
+        glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &glm::mat4{1}[0][0]);
         planeVAO.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+
+        
+        glFrontFace(GL_CW);
+        oakTexture.bind(1);
+        app.cube.resetMatrix();
+        app.cube.translate({-1.5f, 1.0f, 1.5});
+        app.cube.scale(glm::vec3{0.75f});
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+        renderer.draw(app.cube); 
         glFrontFace(GL_CCW);
 
 // ===================== //
 //     draw the scene    //
 // ===================== //
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
 
-        depthMap.bind(0);
-        oakTexture.bind(1);
+        lightDepthMap.bind(0);
+        sunDepthMap.bind(1);
+        oakTexture.bind(2);
         currentShader.bind();
-        glUniform1i(currentShader.getUniform("u_depthMap"), 0);
+        glUniform3fv(currentShader.getUniform("u_viewPos"), 1, &camera.position.x);
+        glUniform1i(currentShader.getUniform("u_pointLights[0].depthMap"),   0);
+        glUniform1i(currentShader.getUniform("u_dirLights[0].depthMap"),   1);
         glUniformMatrix4fv(currentShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-        glUniform1i(currentShader.getUniform("u_material.diffuse"), 1);
-        glUniform1i(currentShader.getUniform("u_material.specular"), 2);
+        glUniform1i(currentShader.getUniform("u_material.diffuse"), 2);
+        glUniform1i(currentShader.getUniform("u_material.specular"), 3);
         glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
         glUniform1i(currentShader.getUniform("u_specularSet"), false);
         renderer.setLightingUniforms(currentShader);
+
+// ================== //
 
         app.models[app.currentModelIndex].resetMatrix();
         app.models[app.currentModelIndex].translate(app.currentModelPosition);
         app.models[app.currentModelIndex].rotate(app.currentModelRotation);
         app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        glm::mat4 normalMat = glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()));
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()))[0][0]);
         renderer.draw(app.models[app.currentModelIndex]); 
 
+        glDisable(GL_CULL_FACE);
+        glm::mat4 planeModelMat = glm::mat4{1};
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &planeModelMat[0][0]);
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(planeModelMat))[0][0]);
+        planeVAO.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
         glFrontFace(GL_CW);
-        oakTexture.bind(1);
         app.cube.resetMatrix();
         app.cube.translate({-1.5f, 1.0f, 1.5});
-        app.cube.scale(glm::vec3{0.5f});
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        normalMat = glm::transpose(glm::inverse(app.cube.getModelMat()));
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
-        renderer.draw(app.cube); 
-        
-        concreteTexture.bind(1);
-        app.cube.resetMatrix();
-        app.cube.translate({-1.5f, 2.0f, -3.0});
-        app.cube.rotate({60.0f, 0.0f, 60.0f});
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        normalMat = glm::transpose(glm::inverse(app.cube.getModelMat()));
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.cube.getModelMat()))[0][0]);
         renderer.draw(app.cube); 
-
-        oakTexture.bind(1);
-        app.cube.resetMatrix();
-        app.cube.translate({0, 0, 0});
-        app.cube.scale(glm::vec3{-10});
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        normalMat = glm::transpose(glm::inverse(app.cube.getModelMat())) * glm::scale(glm::mat4{1.0f}, glm::vec3{-1});
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &normalMat[0][0]);
-        renderer.draw(app.cube); 
-
         glFrontFace(GL_CCW);
+
+// ================== //
+        
         if(light.enabled) {
             // draw the light cube
             app.cube.resetMatrix();
             app.cube.translate(light.position);
             app.cube.scale(glm::vec3{0.03125});
-            app.shaders[7].bind();
-            glUniform3fv(app.shaders[7].getUniform("u_color"), 1, &light.color.x);
-            glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-            glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-            glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+            app.shaders[8].bind();
+            glUniform3fv(app.shaders[8].getUniform("u_color"), 1, &light.color.x);
+            glUniformMatrix4fv(app.shaders[8].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+            glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+            glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
             renderer.draw(app.cube);
         } 
 
-
-        glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LEQUAL);
-        depthMap.bind(1);
-        app.shaders[8].bind();
-        glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-        glUniform1i(app.shaders[8].getUniform("skybox"), 1);
-        renderer.draw(app.cube);
-        glDepthFunc(GL_LESS);
-        glDepthMask(GL_TRUE);
-        
 // ================== //
 
         imguistuff(app, camera, light, flashlight, sun);
