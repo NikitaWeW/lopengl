@@ -30,12 +30,12 @@ void PointLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCo
 DirectionalLight::DirectionalLight()
 {
     type = LightType::DIRECTIONAL;
-    m_projMat = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
+    m_projMat = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.01f, 100.0f);
 }
 
 glm::mat4 DirectionalLight::getViewMatrix() const
 {
-    return glm::lookAt(-direction, {0, 0, 0}, {0, 1, 0});
+    return glm::lookAt(glm::normalize(-direction) * 10.0f, {0, 0, 0}, {0, 1, 0});
     // return glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
     //     glm::vec3( 0.0f, 0.0f, 0.0f),
     //     glm::vec3( 0.0f, 1.0f, 0.0f));
