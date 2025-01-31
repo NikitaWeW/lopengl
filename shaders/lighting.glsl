@@ -204,10 +204,9 @@ float calculateShadow(DirectionalLight light) {
     float closestDepth = texture(light.depthMap, projectedCoords.xy).r;
     float currentDepth = projectedCoords.z;
 
-    float bias = max(min(0.05, (1.0 - dot(fs_in.v_normal, light.direction))), 0.005);
-    bias = 0.00001;
+    float bias = min(0.5 - dot(fs_in.v_normal, normalize(light.direction)), 0.00001);
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
 float calculateShadow(SpotLight light) {
-    return 0;
+    return 0; // nah
 }

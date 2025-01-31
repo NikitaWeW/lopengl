@@ -96,7 +96,7 @@ int ShaderProgram::getUniform(std::string const &name) const
     int location = glGetUniformLocation(m_renderID, name.c_str());
     m_UniformLocationCache[name] = location;
     if(location == -1) {
-        LOG_WARN("uniform \"%s\" in shader \"%s\" does not exist!", name.c_str(), getFilePath().c_str());
+        LOG_WARN("uniform \"%s\" in shader \"%s\" is not used.", name.c_str(), getFilePath().c_str());
     }
     return location;
 }
