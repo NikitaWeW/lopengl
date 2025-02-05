@@ -187,31 +187,40 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir)
 
 float calculateShadow(PointLight light) {
     vec3 fragToLight = vec3(fs_in.fragPosition.xyz - light.position);
-    float closestDepth = texture(light.depthMap, fragToLight).r * 100; // 100 -- far plane
     float currentDepth = length(fragToLight);
 
     float bias = 0.05;
-    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    float shadow = 0.0;
+
+    // filtering
+    float samplesPerAxis = 4;
+    float offset = 0.1;
+    for(float x = -offset; x < offset; x += offset / (samplesPerAxis * 0.5))
+        for(float y = -offset; y < offset; y += offset / (samplesPerAxis * 0.5))
+            for(float z = -offset; z < offset; z += offset / (samplesPerAxis * 0.5)) {
+                float closestDepth = texture(light.depthMap, fragToLight + vec3(x, y, z)).r * 100; // 100 -- far plane of the light's frustrum
+                shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+            }
+    shadow /= samplesPerAxis * samplesPerAxis * samplesPerAxis;
+    return shadow;
 }
 float calculateShadow(DirectionalLight light) {
     vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.fragPosition;
     vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projectedCoords = projectedCoords * 0.5 + 0.5;
+    projectedCoords = projectedCoords * 0.5 + 0.5; // from 0 to 1
     if(projectedCoords.z > 0.99) return 0;
-
-    float bias = min(-dot(normalize(light.direction) * 0.01, fs_in.normal), 0.0009);
     float currentDepth = projectedCoords.z;
 
-    float closestDepth = texture(light.depthMap, projectedCoords.xy).r;
-    // return currentDepth - bias > closestDepth ? 1.0 : 0.0;
-
+    float bias = min(-dot(normalize(light.direction) * 0.0001, fs_in.normal), 0.0009);
     float shadow = 0.0;
+
+    // filtering
     vec2 texelSize = 1.0 / textureSize(light.depthMap, 0);
     int numSamples = 0;
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(light.depthMap, projectedCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+            float closestDepth = texture(light.depthMap, projectedCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += (currentDepth - bias > closestDepth) ? 1.0 : 0.0;
             ++numSamples;
         }
     }
