@@ -16,16 +16,12 @@ public:
     LightType type = NONE;
     bool enabled = true;
     glm::vec3 color = glm::vec3{1};
+    glm::vec3 position = glm::vec3{0};
 
     float constant = 1.0f;
     float linear = 0.14f;
     float quadratic = 0.07f;
 
-    // Light() = default;
-    // Light(Light &other) = default;
-    // Light(Light &&other) = default;
-    // Light &operator=(Light &other) = default;
-    // Light &operator=(Light &&other) = default;
     virtual glm::mat4 getViewMatrix() const;
     inline glm::mat4 getProjectionMatrix() { return m_projMat; }
     virtual ~Light() = default;
@@ -34,7 +30,6 @@ public:
 
 struct PointLight : public Light {
     PointLight();
-    glm::vec3 position = glm::vec3{0};
     virtual glm::mat4 getViewMatrix() const;
     virtual void setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
 };
@@ -48,7 +43,6 @@ struct DirectionalLight : public Light {
 
 struct SpotLight : public Light {
     SpotLight();
-    glm::vec3 position = glm::vec3{0};
     glm::vec3 direction = glm::vec3{0, 0, -1};
     float innerCutoff = glm::cos(glm::radians(20.0f));
     float outerCutoff = glm::cos(glm::radians(40.0f));

@@ -72,25 +72,11 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
     if(ImGui::Button("reload shaders")) {
-        for(ShaderProgram &shader : app.shaders) {
-            LOG_DEBUG("reloading shader: \"%s\"", shader.getFilePath().c_str());
-            ShaderProgram copy = shader;
-            if(!shader.ParceShaderFile(shader.getFilePath())) {
-                app.lastFailedShaderLog = shader.getLog();
-                app.lastFailedShaderName = shader.getFilePath();
-                std::swap(shader, copy);
-                ImGui::OpenPopup("failed to reload shaders!");
-                break;
-            };
-            if(!shader.CompileShaders()) {
-                app.lastFailedShaderLog = shader.getLog();
-                app.lastFailedShaderName = shader.getFilePath();
-                std::swap(shader, copy);
-                ImGui::OpenPopup("failed to reload shaders!");
-                break;
-            }
-        }
-        LOG_DEBUG("done reloading!");
+        if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
+    }
+    if(app.failedToReloadShaders) {
+        ImGui::OpenPopup("failed to reload shaders!");
+        app.failedToReloadShaders = false;
     }
     ImGui::Separator();
 
@@ -183,7 +169,8 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         ImGui::DragFloat("sun quadratic attenuation", &sun.quadratic, 0.01, 0, 50);
         if (ImGui::Button("reset sun"))
         {
-            sun.direction = glm::vec3(1, 0, 0);
+            sun.position = {0, 0, 0};
+            sun.direction = {1, -0.3, 1};
             sun.color = glm::vec3(1.0);
             sun.constant = 1.0f;
             sun.linear = 0.14f;

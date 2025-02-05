@@ -90,15 +90,15 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
     }
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
-        Application::openglError.severity = "high severity";
+        Application::openglError.severity = "high";
         break;
 
         case GL_DEBUG_SEVERITY_MEDIUM:
-        Application::openglError.severity = "medium severity";
+        Application::openglError.severity = "medium";
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
-        Application::openglError.severity = "low severity";
+        Application::openglError.severity = "low";
         break;
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
@@ -106,11 +106,11 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         break;
 
         default:
-        Application::openglError.severity = "unknown severity";
+        Application::openglError.severity = "unknown";
         break;
     }
 
-    LOG_WARN("%d: opengl %s %s, raised from %s:\n\t%s", 
+    LOG_WARN("%d: opengl %s severity %s, raised from %s:\n\t%s", 
             Application::openglError.id, 
             Application::openglError.severity.c_str(), 
             Application::openglError.type.c_str(), 
@@ -173,10 +173,33 @@ Application::~Application()
     glfwTerminate();
 }
 
+bool Application::reloadShaders()
+{
+    for(ShaderProgram &shader : shaders) {
+        // LOG_DEBUG("reloading shader: \"%s\"", shader.getFilePath().c_str());
+        ShaderProgram copy = shader;
+        if(!shader.ParceShaderFile(shader.getFilePath())) {
+            lastFailedShaderLog = shader.getLog();
+            lastFailedShaderName = shader.getFilePath();
+            std::swap(shader, copy);
+            return false;
+        };
+        if(!shader.CompileShaders()) {
+            lastFailedShaderLog = shader.getLog();
+            lastFailedShaderName = shader.getFilePath();
+            std::swap(shader, copy);
+            return false;
+        }
+    }
+    return true;
+}
+
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
+    Application *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+    ControllableCamera &camera = *app->camera;
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) camera.locked = !camera.locked;
+    if (key == GLFW_KEY_R && action == GLFW_PRESS) if(!app->reloadShaders()) app->failedToReloadShaders = true;
     if (camera.locked) {
         camera.firstCursorMove = true;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -194,7 +217,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    ControllableCamera *cam = static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
+    ControllableCamera *cam = static_cast<Application *>(glfwGetWindowUserPointer(window))->camera;
     if(cam->locked) {
         cam->fov -= (float)yoffset * 4.5f;
         if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {

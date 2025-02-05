@@ -93,6 +93,7 @@ int main(int argc, char **argv)
 
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
+    app.camera = &camera;
 
 //   ==================================================================
     app.models = {
@@ -123,23 +124,23 @@ int main(int argc, char **argv)
 
     glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    glfwSetWindowUserPointer(window, &camera);
+    glfwSetWindowUserPointer(window, &app);
     glfwSetKeyCallback(window, key_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     LOG_INFO("loaded!");
 
 // =========================== //
-
+    constexpr float planeSize = 20;
     float planeVertices[] = {
-        // positions            // normals         // texcoords
-         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-        -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+        // positions                    // normals         // texcoords
+         planeSize, -0.5f,  planeSize,  0.0f, 1.0f, 0.0f,  planeSize, 0.0f,
+        -planeSize, -0.5f,  planeSize,  0.0f, 1.0f, 0.0f,  0.0f,      0.0f,
+        -planeSize, -0.5f, -planeSize,  0.0f, 1.0f, 0.0f,  0.0f,      planeSize,
 
-         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
-         10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+         planeSize, -0.5f,  planeSize,  0.0f, 1.0f, 0.0f,  planeSize, 0.0f,
+        -planeSize, -0.5f, -planeSize,  0.0f, 1.0f, 0.0f,  0.0f,      planeSize,
+         planeSize, -0.5f, -planeSize,  0.0f, 1.0f, 0.0f,  planeSize, planeSize
     };
     VertexBuffer planeVBO{planeVertices, sizeof(planeVertices)};
     InterleavedVertexBufferLayout planeVBLayout{
@@ -175,7 +176,7 @@ int main(int argc, char **argv)
 
 // =========================== //
 
-    Texture sunDepthMap{GL_CLAMP_TO_BORDER};
+    Texture sunDepthMap{GL_CLAMP_TO_BORDER, GL_NEAREST};
     sunDepthMap.bind();
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -196,7 +197,6 @@ int main(int argc, char **argv)
         camera.update(app.deltatime);
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
-        int lastWidth = camera.width, lastHeight = camera.height;
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
 // ============================ //
@@ -248,14 +248,14 @@ int main(int argc, char **argv)
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
-        glFrontFace(GL_CCW);
-
-        glEnable(GL_CULL_FACE);
 
 // ===================== //
 //          sun          //
 // ===================== //
 
+        glPolygonOffset(1, 0);
+        glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CCW);
         glCullFace(GL_FRONT);
         sunDepthMapFBO.bind();
         glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
@@ -288,12 +288,13 @@ int main(int argc, char **argv)
         app.cube.scale(glm::vec3{0.75f});
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
         renderer.draw(app.cube); 
-        glFrontFace(GL_CCW);
 
 // ===================== //
 //     draw the scene    //
 // ===================== //
 
+        glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CCW);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);

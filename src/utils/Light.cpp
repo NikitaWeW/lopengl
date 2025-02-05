@@ -35,10 +35,8 @@ DirectionalLight::DirectionalLight()
 
 glm::mat4 DirectionalLight::getViewMatrix() const
 {
+    // return glm::lookAt(position, glm::normalize(direction), {0, 1, 0});
     return glm::lookAt(glm::normalize(-direction) * 10.0f, {0, 0, 0}, {0, 1, 0});
-    // return glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-    //     glm::vec3( 0.0f, 0.0f, 0.0f),
-    //     glm::vec3( 0.0f, 1.0f, 0.0f));
 }
 
 void DirectionalLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const

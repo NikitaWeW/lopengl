@@ -12,8 +12,7 @@ private:
     int m_Width = 0, m_Height = 0, m_BPP = 0;
 public:
     std::string type; 
-    Texture(GLenum wrap = GL_REPEAT);
-    Texture(GLsizei width, GLsizei height, GLenum wrap = GL_REPEAT);
+    Texture(GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR);
     Texture(std::string const &filepath, bool flip = true, bool srgb = false, GLenum wrap = GL_REPEAT);
     ~Texture();
 

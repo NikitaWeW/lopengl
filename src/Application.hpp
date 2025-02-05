@@ -4,6 +4,7 @@
 #include "opengl/Texture.hpp"
 #include <stdexcept>
 #include <optional>
+#include "utils/ControllableCamera.hpp"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 struct OpenGlError {
@@ -34,6 +35,8 @@ public:
     std::string lastFailedShaderName;
     GLFWwindow *window;
 
+    ControllableCamera *camera;
+
     Model quad;
     Model cube;
 
@@ -60,7 +63,9 @@ public:
     char loadModelBuffer[1024];
     char loadTextureBuffer[1024];
 
+    bool failedToReloadShaders = false;
 public:
     Application();
     ~Application();
+    bool reloadShaders();
 };

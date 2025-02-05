@@ -4,25 +4,14 @@
 
 #include "Texture.hpp"
 
-Texture::Texture(GLenum wrap)
+Texture::Texture(GLenum wrap, GLenum filter)
 {
     glGenTextures(1, &m_RenderID);
     bind();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-}
-
-Texture::Texture(GLsizei width, GLsizei height, GLenum wrap) : m_Width(width), m_Height(height)
-{
-    glGenTextures(1, &m_RenderID);
-    glBindTexture(GL_TEXTURE_2D, m_RenderID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 }
 
 Texture::Texture(std::string const &filepath, bool flip, bool srgb, GLenum wrap) : m_FilePath(filepath)
