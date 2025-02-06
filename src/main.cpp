@@ -88,8 +88,8 @@ int main(int argc, char **argv)
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
     flashlight.enabled = false;
-    light.enabled =      true;
-    sun.enabled =        true;
+    sun.enabled        = false;
+    light.enabled      = true;
 
     app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
@@ -101,14 +101,13 @@ int main(int argc, char **argv)
         {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
+        {"res/models/wall/wall.obj",                       FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
-    // Texture concreteTexture("res/textures/concrete.jpg",   FLIP_TEXTURES, SRGB, GL_REPEAT);
-    Texture oakTexture("res/textures/oak.jpg",             FLIP_TEXTURES, SRGB, GL_REPEAT);
 
 // =========================== //
 
-    app.currentModelIndex = 1;    // sphere
+    app.currentModelIndex = 5;    // backpack
     app.currentShaderIndex = 1;   // lighting
 
 // =========================== //
@@ -131,65 +130,6 @@ int main(int argc, char **argv)
     LOG_INFO("loaded!");
 
 // =========================== //
-    constexpr float planeSize = 20;
-    float planeVertices[] = {
-        // positions                    // normals         // texcoords
-         planeSize, -0.5f,  planeSize,  0.0f, 1.0f, 0.0f,  planeSize, 0.0f,
-        -planeSize, -0.5f,  planeSize,  0.0f, 1.0f, 0.0f,  0.0f,      0.0f,
-        -planeSize, -0.5f, -planeSize,  0.0f, 1.0f, 0.0f,  0.0f,      planeSize,
-
-         planeSize, -0.5f,  planeSize,  0.0f, 1.0f, 0.0f,  planeSize, 0.0f,
-        -planeSize, -0.5f, -planeSize,  0.0f, 1.0f, 0.0f,  0.0f,      planeSize,
-         planeSize, -0.5f, -planeSize,  0.0f, 1.0f, 0.0f,  planeSize, planeSize
-    };
-    VertexBuffer planeVBO{planeVertices, sizeof(planeVertices)};
-    InterleavedVertexBufferLayout planeVBLayout{
-        {3, GL_FLOAT},
-        {3, GL_FLOAT},
-        {2, GL_FLOAT}
-    };
-    VertexArray planeVAO{};
-    planeVAO.addBuffer(planeVBO, planeVBLayout);
-
-// ============================ //
-//     generate a depth map     //
-// ============================ //
-
-    const unsigned SHADOW_RESOLUTION = 2048;
-    
-// =========================== //
-
-    Cubemap lightDepthMap{GL_CLAMP_TO_EDGE, GL_NEAREST};
-    lightDepthMap.bind();
-    for(unsigned i = 0; i < 6; ++i) {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    }
-
-    Framebuffer lightDepthMapFBO;
-    lightDepthMapFBO.bind();
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, lightDepthMap.getRenderID(), 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-
-    lightDepthMapFBO.unbind();
-    assert(lightDepthMapFBO.isComplete());
-
-// =========================== //
-
-    Texture sunDepthMap{GL_CLAMP_TO_BORDER, GL_NEAREST};
-    sunDepthMap.bind();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    Framebuffer sunDepthMapFBO;
-    sunDepthMapFBO.bind();
-    sunDepthMapFBO.attach(sunDepthMap, GL_DEPTH_ATTACHMENT);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    sunDepthMapFBO.unbind();
-    assert(sunDepthMapFBO.isComplete());
-
-// =========================== //
 
     while (!glfwWindowShouldClose(window))
     {
@@ -198,96 +138,6 @@ int main(int argc, char **argv)
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.width, &camera.height);
-
-// ============================ //
-//     draw to the depth map    //
-// ============================ //
-// TODO: draw the depth map in renderer
-
-// ===================== //
-//         light         //
-// ===================== //
-
-        glm::mat4 shadowTransformations[] = {
-            light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)),
-            light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)),
-            light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)),
-            light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)),
-            light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)),
-            light.getProjectionMatrix() * glm::lookAt(light.position, light.position + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0))
-        };
-        lightDepthMapFBO.bind();
-        app.shaders[6].bind();
-        glUniform3fv(app.shaders[6].getUniform("u_light.position"), 1, &light.position.x);
-        for(int i = 0; i < 6; ++i)
-            glUniformMatrix4fv(app.shaders[6].getUniform("u_shadowMatrices[" + std::to_string(i) + "]"), 1, GL_FALSE, &shadowTransformations[i][0][0]);
-
-        glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-        renderer.clear();
-        glDisable(GL_CULL_FACE);
-
-        app.models[app.currentModelIndex].resetMatrix();
-        app.models[app.currentModelIndex].translate(app.currentModelPosition);
-        app.models[app.currentModelIndex].rotate(app.currentModelRotation);
-        app.models[app.currentModelIndex].scale(app.currentModelScale);
-
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        renderer.draw(app.models[app.currentModelIndex]); 
-
-        glDisable(GL_CULL_FACE);
-        glUniformMatrix4fv(app.shaders[6].getUniform("u_modelMat"), 1, GL_FALSE, &glm::mat4{1}[0][0]);
-        planeVAO.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        
-        glFrontFace(GL_CW);
-        oakTexture.bind(1);
-        app.cube.resetMatrix();
-        app.cube.translate({-1.5f, 1.0f, 1.5});
-        app.cube.scale(glm::vec3{0.75f});
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube); 
-
-// ===================== //
-//          sun          //
-// ===================== //
-
-        glPolygonOffset(1, 0);
-        glEnable(GL_CULL_FACE);
-        glFrontFace(GL_CCW);
-        glCullFace(GL_FRONT);
-        sunDepthMapFBO.bind();
-        glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-        renderer.clear();
-
-        app.shaders[7].bind();
-        glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"),      1, GL_FALSE, &sun.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &sun.getProjectionMatrix()[0][0]);
-
-        app.models[app.currentModelIndex].resetMatrix();
-        app.models[app.currentModelIndex].translate(app.currentModelPosition);
-        app.models[app.currentModelIndex].rotate(app.currentModelRotation);
-        app.models[app.currentModelIndex].scale(app.currentModelScale);
-
-        glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        renderer.draw(app.models[app.currentModelIndex]); 
-
-        glDisable(GL_CULL_FACE);
-        glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &glm::mat4{1}[0][0]);
-        planeVAO.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-
-        
-        glFrontFace(GL_CW);
-        oakTexture.bind(1);
-        app.cube.resetMatrix();
-        app.cube.translate({-1.5f, 1.0f, 1.5});
-        app.cube.scale(glm::vec3{0.75f});
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        renderer.draw(app.cube); 
 
 // ===================== //
 //     draw the scene    //
@@ -299,20 +149,12 @@ int main(int argc, char **argv)
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
 
-        lightDepthMap.bind(0);
-        sunDepthMap.bind(1);
-        oakTexture.bind(2);
         currentShader.bind();
+        // set uniforms
         glUniform3fv(currentShader.getUniform("u_viewPos"), 1, &camera.position.x);
-        glUniform1i(currentShader.getUniform("u_pointLights[0].depthMap"),   0);
-        glUniform1i(currentShader.getUniform("u_dirLights[0].depthMap"),   1);
         glUniformMatrix4fv(currentShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-        glUniform1i(currentShader.getUniform("u_material.diffuse"), 2);
-        glUniform1i(currentShader.getUniform("u_material.specular"), 3);
-        glUniform1f(currentShader.getUniform("u_material.shininess"), 32);
-        glUniform1i(currentShader.getUniform("u_specularSet"), false);
-        renderer.setLightingUniforms(currentShader);
+        renderer.setLightingUniforms(currentShader); // it sucks.
 
 // ================== //
 
@@ -322,25 +164,24 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
         glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()))[0][0]);
-        renderer.draw(app.models[app.currentModelIndex]); 
-
-        glDisable(GL_CULL_FACE);
-        glm::mat4 planeModelMat = glm::mat4{1};
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &planeModelMat[0][0]);
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(planeModelMat))[0][0]);
-        planeVAO.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-
-        glFrontFace(GL_CW);
-        app.cube.resetMatrix();
-        app.cube.translate({-1.5f, 1.0f, 1.5});
-        app.cube.scale(glm::vec3{0.75f});
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.cube.getModelMat()))[0][0]);
-        renderer.draw(app.cube); 
-        glFrontFace(GL_CCW);
+        for(Mesh const &mesh : app.models[app.currentModelIndex].getMeshes()) { // FIXME: fuck invalid operation
+            bool specularSet = false;
+            unsigned int textureCount = 1; // leave 0 for other purposes
+            for(Texture const &texture : mesh.textures) {
+                int location = currentShader.getUniform("u_material." + texture.type);
+                if(location != -1) {
+                    glUniform1i(location, textureCount); // 5 nests wtf
+                    texture.bind(textureCount);
+                    ++textureCount;
+                }
+                if(texture.type == "specular") {
+                    specularSet = true;
+                }
+            }
+            glUniform1f(currentShader.getUniform("u_material.shininess"), mesh.material.shininess);
+            glUniform1i(currentShader.getUniform("u_material.specularSet"), specularSet);
+            renderer.draw(mesh);
+        }
 
 // ================== //
         

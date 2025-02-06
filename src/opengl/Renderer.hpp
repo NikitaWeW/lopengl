@@ -1,3 +1,7 @@
+/*
+thats probably the worst class in this project. useless draw calls and m_lights vector that should not be there.
+*/
+
 #pragma once
 
 #include "VertexArray.hpp"

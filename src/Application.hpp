@@ -57,6 +57,7 @@ public:
     int debugView = 0;
 
     std::vector<Model> models;
+    std::vector<Texture> textures;
     std::vector<ShaderProgram> shaders;
     std::vector<unsigned> displayShaders;
 

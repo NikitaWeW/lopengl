@@ -32,7 +32,11 @@ void main() {
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
+    sampler2D normal;
     float shininess;
+    
+    bool specularSet;
+    bool normalSet;
 };
 struct PointLight {
     vec3 position;
@@ -89,11 +93,7 @@ uniform SpotLight        u_spotLights [LIGHTS_CAPASITY];
 uniform DirectionalLight u_dirLights  [LIGHTS_CAPASITY];
 uniform PointLight       u_pointLights[LIGHTS_CAPASITY];
 
-uniform int u_pointLightCount;
-uniform int u_dirLightCount;
-uniform int u_spotLightCount;
 uniform vec3 u_viewPos;
-uniform bool u_specularSet;
 
 out vec4 o_color;
 
@@ -108,10 +108,10 @@ void main() {
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.fragPosition));
 
     o_color = (
-        calculateLight(u_pointLights[0], u_material, fs_in.normal, viewDir) + 
-        calculateLight(u_dirLights[0], u_material, fs_in.normal, viewDir)
+        // calculateLight(u_pointLights[0], u_material, fs_in.normal, viewDir)
+        1
     ) * texture(u_material.diffuse, fs_in.texCoords);
-// o_color = calculateLight(u_dirLights[0], u_material, fs_in.normal, viewDir);
+o_color = u_material.specularSet ? vec4(1, 1, 1, 1) : vec4(0, 0, 0, 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
@@ -132,7 +132,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
         light.color * 
         attenuation *
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-        (u_specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
+        (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
     float shadow = calculateShadow(light);
 
     return vec4(ambient + vec3(1 - shadow) * (diffuse + specular), 1.0);
@@ -147,9 +147,9 @@ vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 v
     vec3 specular = 
         light.color * 
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-        (u_specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
+        (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
     float shadow = calculateShadow(light);
-// return vec4(vec3(shadow), 1);
+
     return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
 }
 vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
@@ -176,7 +176,7 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir)
             intensity * 
             attenuation *
             pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-            (u_specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
+            (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
         float shadow = calculateShadow(light);
 
         return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
@@ -186,6 +186,7 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir)
 }
 
 float calculateShadow(PointLight light) {
+    return 0;
     vec3 fragToLight = vec3(fs_in.fragPosition.xyz - light.position);
     float currentDepth = length(fragToLight);
 
@@ -205,13 +206,14 @@ float calculateShadow(PointLight light) {
     return shadow;
 }
 float calculateShadow(DirectionalLight light) {
+    return 0;
     vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.fragPosition;
     vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projectedCoords = projectedCoords * 0.5 + 0.5; // from 0 to 1
     if(projectedCoords.z > 0.99) return 0;
     float currentDepth = projectedCoords.z;
 
-    float bias = min(-dot(normalize(light.direction) * 0.0001, fs_in.normal), 0.0009);
+    float bias = min(-dot(normalize(light.direction) * 0.001, fs_in.normal), 0.0009);
     float shadow = 0.0;
 
     // filtering
