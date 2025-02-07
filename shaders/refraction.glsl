@@ -44,7 +44,7 @@ uniform vec3 u_viewPos;
 uniform bool u_specularSet;
 
 void main() {
-    float ratio = 1 / 1.33;
+    float ratio = 1 / 1.1;
     vec3 viewToFrag = normalize(v_fragPosition - u_viewPos);
     vec3 refractionDir = refract(viewToFrag, v_normal, ratio);
     o_color = texture(u_skybox, refractionDir);

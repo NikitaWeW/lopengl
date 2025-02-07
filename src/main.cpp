@@ -166,6 +166,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()))[0][0]);
         for(Mesh const &mesh : app.models[app.currentModelIndex].getMeshes()) { // FIXME: fuck invalid operation
             bool specularSet = false;
+            bool normalSet = false;
             unsigned int textureCount = 1; // leave 0 for other purposes
             for(Texture const &texture : mesh.textures) {
                 int location = currentShader.getUniform("u_material." + texture.type);
@@ -176,10 +177,13 @@ int main(int argc, char **argv)
                 }
                 if(texture.type == "specular") {
                     specularSet = true;
+                } else if(texture.type == "normal") {
+                    specularSet = true;
                 }
             }
             glUniform1f(currentShader.getUniform("u_material.shininess"), mesh.material.shininess);
             glUniform1i(currentShader.getUniform("u_material.specularSet"), specularSet);
+            glUniform1i(currentShader.getUniform("u_material.normalSet"), normalSet);
             renderer.draw(mesh);
         }
 

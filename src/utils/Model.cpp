@@ -80,11 +80,11 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
         std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular", flipTextures);
         mesh.textures.insert(mesh.textures.end(), specularMaps.begin(), specularMaps.end());
 
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "normal", flipTextures);
+        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal", flipTextures);
         mesh.textures.insert(mesh.textures.end(), normalMaps.begin(), normalMaps.end());
 
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient", flipTextures);
-        mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
+        // std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient", flipTextures);
+        // mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
         
         aiColor4D color;
         if(aiGetMaterialColor(material, AI_MATKEY_SHININESS, &color) == AI_SUCCESS) {
@@ -95,7 +95,7 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     VertexBufferLayout layout;
     /*  positions */ layout.push(3, GL_FLOAT, 0);
     /*   normals  */ layout.push(3, GL_FLOAT, positions.size() * sizeof(positions[0]));
-    /* tex coords */ layout.push(2, GL_FLOAT, positions.size() * sizeof(positions[0]) + normals.size()   * sizeof(normals[0]));
+    /* tex coords */ layout.push(2, GL_FLOAT, positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]));
     
     mesh.va.bind();
     mesh.ib = IndexBuffer {indices.data(),  indices.size()  * sizeof(unsigned)};

@@ -106,12 +106,17 @@ float calculateShadow(SpotLight light);
 
 void main() {
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.fragPosition));
+    vec3 normal;
+    if(u_material.normalSet) {
+        normal = normalize(texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0);
+    } else {
+        normal = fs_in.normal;
+    }
 
     o_color = (
-        // calculateLight(u_pointLights[0], u_material, fs_in.normal, viewDir)
-        1
+        calculateLight(u_pointLights[0], u_material, normal, viewDir)
     ) * texture(u_material.diffuse, fs_in.texCoords);
-o_color = u_material.specularSet ? vec4(1, 1, 1, 1) : vec4(0, 0, 0, 1);
+
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
@@ -135,7 +140,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
         (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
     float shadow = calculateShadow(light);
 
-    return vec4(ambient + vec3(1 - shadow) * (diffuse + specular), 1.0);
+    return vec4(ambient + (diffuse + specular), 1.0);
 }
 vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
