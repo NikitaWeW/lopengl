@@ -117,6 +117,7 @@ void main() {
         calculateLight(u_pointLights[0], u_material, normal, viewDir)
     ) * texture(u_material.diffuse, fs_in.texCoords);
 
+    o_color = vec4(vec3(normal), 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
@@ -140,7 +141,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
         (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
     float shadow = calculateShadow(light);
 
-    return vec4(ambient + (diffuse + specular), 1.0);
+    return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
 }
 vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);

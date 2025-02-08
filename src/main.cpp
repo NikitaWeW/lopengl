@@ -50,8 +50,6 @@ int main(int argc, char **argv)
     printf("loading...\n"); // TODO: cool progress bar
     Application app;
     GLFWwindow *window = app.window;
-    Model lightCube("res/models/cube.obj");
-    Model oneSideQuad{"res/models/one_side_quad.obj"};
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
     PointLight light;
     DirectionalLight sun;
@@ -91,13 +89,12 @@ int main(int argc, char **argv)
     sun.enabled        = false;
     light.enabled      = true;
 
-    app.quad = Model{"res/models/quad.obj"};
     app.cube = Model{"res/models/cube.obj"};
     app.camera = &camera;
 
 //   ==================================================================
     app.models = {
-        {"res/models/cube.obj",                            FLIP_TEXTURES,  FLIP_WINING_ORDER },
+        app.cube,
         {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
@@ -164,7 +161,7 @@ int main(int argc, char **argv)
         app.models[app.currentModelIndex].scale(app.currentModelScale);
         glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
         glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()))[0][0]);
-        for(Mesh const &mesh : app.models[app.currentModelIndex].getMeshes()) { // FIXME: fuck invalid operation
+        for(Mesh const &mesh : app.models[app.currentModelIndex].getMeshes()) {
             bool specularSet = false;
             bool normalSet = false;
             unsigned int textureCount = 1; // leave 0 for other purposes
@@ -178,7 +175,7 @@ int main(int argc, char **argv)
                 if(texture.type == "specular") {
                     specularSet = true;
                 } else if(texture.type == "normal") {
-                    specularSet = true;
+                    normalSet = true;
                 }
             }
             glUniform1f(currentShader.getUniform("u_material.shininess"), mesh.material.shininess);

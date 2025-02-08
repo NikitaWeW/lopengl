@@ -74,14 +74,19 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     if(aimesh->mMaterialIndex >= 0) {
         aiMaterial *material = m_scene->mMaterials[aimesh->mMaterialIndex];
 
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse", flipTextures);
-        mesh.textures.insert(mesh.textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+        std::vector<Texture> textures;
 
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular", flipTextures);
-        mesh.textures.insert(mesh.textures.end(), specularMaps.begin(), specularMaps.end());
+        textures = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse", flipTextures);
+        mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
 
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal", flipTextures);
-        mesh.textures.insert(mesh.textures.end(), normalMaps.begin(), normalMaps.end());
+        textures = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular", flipTextures);
+        mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
+
+        textures = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal", flipTextures);
+        mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
+        
+        // textures = loadMaterialTextures(material, aiTextureType_NORMALS, "normal", flipTextures);
+        // mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
 
         // std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient", flipTextures);
         // mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
