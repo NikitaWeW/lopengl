@@ -3,12 +3,15 @@
 layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec4 a_normal;
 layout(location = 2) in vec2 a_texCoord;
+layout(location = 3) in vec4 a_tangent;
+layout(location = 4) in vec4 a_bitangent;
 
 out VS_OUT {
     vec2 texCoords;
     vec4 fragPosition;
     vec3 normal;
     mat4 viewMat;
+    mat3 TBN;
 } vs_out;
 
 uniform mat4 u_modelMat;
@@ -22,6 +25,10 @@ void main() {
     vs_out.fragPosition = u_modelMat * a_position;
     vs_out.normal = normalize(vec3(u_normalMat * a_normal));
     vs_out.viewMat = u_viewMat;
+
+    vec4 T = normalize(u_modelMat * a_tangent);
+    vec4 B = normalize(u_modelMat * a_bitangent);
+    vs_out.TBN = (mat3(T, B, vs_out.normal));
 }
 
 #shader fragment
@@ -85,6 +92,7 @@ in VS_OUT {
     vec4 fragPosition;
     vec3 normal;
     mat4 viewMat;
+    mat3 TBN;
 } fs_in;
 
 uniform Material u_material;
@@ -108,7 +116,7 @@ void main() {
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.fragPosition));
     vec3 normal;
     if(u_material.normalSet) {
-        normal = normalize(texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0);
+        normal = normalize(fs_in.TBN * (texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0));
     } else {
         normal = fs_in.normal;
     }
@@ -117,7 +125,7 @@ void main() {
         calculateLight(u_pointLights[0], u_material, normal, viewDir)
     ) * texture(u_material.diffuse, fs_in.texCoords);
 
-    o_color = vec4(vec3(normal), 1);
+    // o_color = vec4(vec3(normal), 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 

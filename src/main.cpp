@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
-    light.position= glm::vec3{2, 1, 0};
+    light.position= glm::vec3{1, 1, 2};
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
     flashlight.enabled = false;

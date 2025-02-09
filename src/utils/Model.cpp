@@ -41,30 +41,56 @@ void Model::processNode(aiNode *node, bool flipTextures) {
     }
 }
 Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
+    assert(aimesh->HasTangentsAndBitangents());
+    assert(aimesh->HasTextureCoords(0));
+
     Mesh mesh;
     std::vector<unsigned>  indices;
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
+    std::vector<glm::vec3> tangents;
+    std::vector<glm::vec3> bitangents;
     std::vector<glm::vec2> textureCoords;
-
+    
     for(unsigned i = 0; i < aimesh->mNumVertices; ++i) {
         positions.push_back({ aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z });
         normals.push_back({ aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z });
+        tangents.push_back({ aimesh->mTangents[i].x, aimesh->mTangents[i].y, aimesh->mTangents[i].z });
+        bitangents.push_back({ aimesh->mBitangents[i].x, aimesh->mBitangents[i].y, aimesh->mBitangents[i].z });
         if(aimesh->mTextureCoords[0]) {
-            textureCoords.push_back({ aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y });
+            textureCoords.push_back({ aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y }); // but what if there are no texture coords?
         }
     }
     mesh.vb = VertexBuffer{
-        positions.size()     * sizeof(positions[0]) + 
-        normals.size()       * sizeof(normals[0]) + 
-        textureCoords.size() * sizeof(textureCoords[0])
+        positions.size()     * sizeof(glm::vec3) + 
+        normals.size()       * sizeof(glm::vec3) + 
+        textureCoords.size() * sizeof(glm::vec2) + 
+        tangents.size()      * sizeof(glm::vec3) +
+        bitangents.size()    * sizeof(glm::vec3)
     };
 
     mesh.ib.bind();
-    glBufferSubData(GL_ARRAY_BUFFER, 0,                                     positions.size() * sizeof(positions[0]), positions.data());
-    glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), normals.size() * sizeof(normals[0]), normals.data());
-    if(aimesh->mTextureCoords[0]) 
-        glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), textureCoords.size() * sizeof(textureCoords[0]), textureCoords.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 
+        0, 
+        positions.size() * sizeof(positions[0]), 
+        positions.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 
+        positions.size() * sizeof(positions[0]), 
+        normals.size() * sizeof(normals[0]), 
+        normals.data());
+    if(aimesh->HasTextureCoords(0))
+        glBufferSubData(GL_ARRAY_BUFFER, 
+            positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), 
+            textureCoords.size() * sizeof(textureCoords[0]), 
+            textureCoords.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 
+        positions.size() * sizeof(glm::vec3) + normals.size() * sizeof(glm::vec3) + textureCoords.size() * sizeof(glm::vec2), 
+        tangents.size() * sizeof(glm::vec3), 
+        tangents.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 
+        positions.size() * sizeof(glm::vec3) + normals.size() * sizeof(glm::vec3) + textureCoords.size() * sizeof(glm::vec2) + tangents.size() * sizeof(glm::vec3), 
+        bitangents.size() * sizeof(glm::vec3), 
+        bitangents.data());
 
     for(unsigned i = 0; i < aimesh->mNumFaces; ++i) {
         aiFace face = aimesh->mFaces[i];
@@ -87,9 +113,6 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
         
         // textures = loadMaterialTextures(material, aiTextureType_NORMALS, "normal", flipTextures);
         // mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
-
-        // std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient", flipTextures);
-        // mesh.textures.insert(mesh.textures.end(), heightMaps.begin(), heightMaps.end());
         
         aiColor4D color;
         if(aiGetMaterialColor(material, AI_MATKEY_SHININESS, &color) == AI_SUCCESS) {
@@ -98,9 +121,11 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     }
 
     VertexBufferLayout layout;
-    /*  positions */ layout.push(3, GL_FLOAT, 0);
-    /*   normals  */ layout.push(3, GL_FLOAT, positions.size() * sizeof(positions[0]));
-    /* tex coords */ layout.push(2, GL_FLOAT, positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]));
+    /* 0  positions */ layout.push(3, GL_FLOAT, 0);
+    /* 1   normals  */ layout.push(3, GL_FLOAT, positions.size() * sizeof(glm::vec3));
+    /* 2 tex coords */ layout.push(2, GL_FLOAT, positions.size() * sizeof(glm::vec3) + normals.size() * sizeof(glm::vec3));
+    /* 3  tangents  */ layout.push(3, GL_FLOAT, positions.size() * sizeof(glm::vec3) + normals.size() * sizeof(glm::vec3) + textureCoords.size() * sizeof(glm::vec2)); 
+    /* 4 bitangents */ layout.push(3, GL_FLOAT, positions.size() * sizeof(glm::vec3) + normals.size() * sizeof(glm::vec3) + textureCoords.size() * sizeof(glm::vec2) + tangents.size() * sizeof(glm::vec3));
     
     mesh.va.bind();
     mesh.ib = IndexBuffer {indices.data(),  indices.size()  * sizeof(unsigned)};

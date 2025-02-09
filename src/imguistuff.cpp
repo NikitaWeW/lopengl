@@ -55,15 +55,15 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     ImGui::Begin("properties");
-    if(app.deltatime >= 1/100) {
-        ImGui::Text("!  delta time: %f", app.deltatime);
-        ImGui::Text("!  FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
-    } else if(app.deltatime >= 1/30) {
+    if(app.deltatime <= 1/100) {
+        ImGui::Text("! delta time: %f", app.deltatime);
+        ImGui::Text("! FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
+    } else if(app.deltatime <= 1/30) {
         ImGui::Text("!! delta time: %f", app.deltatime);
         ImGui::Text("!! FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
     } else {
-        ImGui::Text("   delta time: %f", app.deltatime);
-        ImGui::Text("   FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
+        ImGui::Text("delta time: %f", app.deltatime);
+        ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
     }
     ImGui::Separator();
 
@@ -153,7 +153,7 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
         ImGui::DragFloat("light quadratic attenuation", &light.quadratic, 0.01, 0, 50);
         if (ImGui::Button("reset light"))
         {
-            light.position = glm::vec3(2, 1, 3);
+            light.position = glm::vec3(1, 1, 2);
             light.color = glm::vec3(1.0);
             light.constant = 1.0f;
             light.linear = 0.14f;
