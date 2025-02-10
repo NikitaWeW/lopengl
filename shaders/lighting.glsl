@@ -3,8 +3,8 @@
 layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec4 a_normal;
 layout(location = 2) in vec2 a_texCoord;
-layout(location = 3) in vec4 a_tangent;
-layout(location = 4) in vec4 a_bitangent;
+layout(location = 3) in vec3 a_tangent;
+layout(location = 4) in vec3 a_bitangent;
 
 out VS_OUT {
     vec2 texCoords;
@@ -26,9 +26,10 @@ void main() {
     vs_out.normal = normalize(vec3(u_normalMat * a_normal));
     vs_out.viewMat = u_viewMat;
 
-    vec4 T = normalize(u_modelMat * a_tangent);
-    vec4 B = normalize(u_modelMat * a_bitangent);
-    vs_out.TBN = (mat3(T, B, vs_out.normal));
+    vec4 T = normalize(u_modelMat * vec4(a_tangent, 0));
+    vec4 B = normalize(u_modelMat * vec4(a_bitangent, 0)); // FIXME: please dont tell me tangents are wrong
+    vec4 N = normalize(u_normalMat * a_normal);
+    vs_out.TBN = mat3(T, B, vs_out.normal);
 }
 
 #shader fragment
@@ -125,7 +126,7 @@ void main() {
         calculateLight(u_pointLights[0], u_material, normal, viewDir)
     ) * texture(u_material.diffuse, fs_in.texCoords);
 
-    // o_color = vec4(vec3(normal), 1);
+    o_color = vec4(vec3(normal), 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
