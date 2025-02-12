@@ -26,8 +26,8 @@ void main() {
     vs_out.normal = normalize(vec3(u_normalMat * a_normal));
     vs_out.viewMat = u_viewMat;
 
-    vec3 T = normalize(vec3(u_modelMat * a_tangent));
-    vec3 B = normalize(vec3(u_modelMat * a_bitangent));
+    vec3 T = normalize(vec3(u_normalMat * a_tangent));
+    vec3 B = normalize(vec3(u_normalMat * a_bitangent));
     vs_out.TBN = mat3(T, B, vs_out.normal);
 }
 
@@ -125,7 +125,7 @@ void main() {
         calculateLight(u_pointLights[0], u_material, normal, viewDir)
     ) * texture(u_material.diffuse, fs_in.texCoords);
 
-    o_color = vec4(vec3(normal*0.5+0.5), 1);
+    // o_color = vec4(vec3(normal*0.5+0.5), 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
@@ -136,7 +136,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.125 * 
+        light.color * 0.125 *
         attenuation;
     vec3 diffuse = 
         light.color * 
