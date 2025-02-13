@@ -4,7 +4,6 @@ layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec4 a_normal;
 layout(location = 2) in vec2 a_texCoord;
 layout(location = 3) in vec4 a_tangent;
-layout(location = 4) in vec4 a_bitangent;
 
 out VS_OUT {
     vec2 texCoords;
@@ -27,7 +26,9 @@ void main() {
     vs_out.viewMat = u_viewMat;
 
     vec3 T = normalize(vec3(u_normalMat * a_tangent));
-    vec3 B = normalize(vec3(u_normalMat * a_bitangent));
+    // re-orthogonalize T with respect to N
+    T = normalize(T - dot(T, vs_out.normal) * vs_out.normal);
+    vec3 B = cross(vs_out.normal, T);
     vs_out.TBN = mat3(T, B, vs_out.normal);
 }
 

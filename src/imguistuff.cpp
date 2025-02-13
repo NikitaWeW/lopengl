@@ -49,9 +49,9 @@
 void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight, DirectionalLight &sun)
 {
     // dont ask why this logic is in imgui stuff (idk)
-    if(app.models[app.currentModelIndex].getFilepath() == "res/models/wall/wall.obj") {
-        app.currentModelRotation += glm::vec3{app.deltatime * 30, app.deltatime * -10, app.deltatime * 20};
-    }
+    // if(app.models[app.currentModelIndex].getFilepath() == "res/models/wall/wall.obj") {
+    //     app.currentModelRotation += glm::vec3{app.deltatime * 30, app.deltatime * -10, app.deltatime * 20};
+    // }
 
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();

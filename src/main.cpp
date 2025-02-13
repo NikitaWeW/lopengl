@@ -164,6 +164,7 @@ int main(int argc, char **argv)
         for(Mesh const &mesh : app.models[app.currentModelIndex].getMeshes()) {
             bool specularSet = false;
             bool normalSet = false;
+            bool heightSet = false;
             unsigned int textureCount = 1; // leave 0 for other purposes
             for(Texture const &texture : mesh.textures) {
                 int location = currentShader.getUniform("u_material." + texture.type);
