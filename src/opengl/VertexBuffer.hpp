@@ -17,13 +17,11 @@ public:
 private:
     std::vector<Element> m_elements;
 public:
-    size_t m_stride;
     VertexBufferLayout() = default;
     VertexBufferLayout(std::vector<Element> const &elements);
     VertexBufferLayout(std::initializer_list<Element> const &elements);
     ~VertexBufferLayout() = default;
     void push(unsigned const count, unsigned type, size_t offset);
-    inline unsigned getStride() const { return m_stride; }
     inline std::vector<Element> const &getElements() const { return m_elements; }
 };
 

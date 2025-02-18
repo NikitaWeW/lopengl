@@ -25,11 +25,10 @@ void main() {
     vs_out.normal = normalize(vec3(u_normalMat * a_normal));
     vs_out.viewMat = u_viewMat;
 
-    vec3 T = normalize(vec3(u_normalMat * a_tangent));
-    // re-orthogonalize T with respect to N
-    T = normalize(T - dot(T, vs_out.normal) * vs_out.normal);
-    vec3 B = cross(vs_out.normal, T);
-    vs_out.TBN = mat3(T, B, vs_out.normal);
+    vec3 tangent = normalize(vec3(u_normalMat * a_tangent));
+    tangent = normalize(tangent - dot(tangent, vs_out.normal) * vs_out.normal);
+    vec3 bitangent = cross(vs_out.normal, tangent);
+    vs_out.TBN = mat3(tangent, bitangent, vs_out.normal);
 }
 
 #shader fragment
@@ -117,7 +116,7 @@ void main() {
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.fragPosition));
     vec3 normal;
     if(u_material.normalSet) {
-        normal = normalize(fs_in.TBN * (texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0));
+        normal = normalize(fs_in.TBN * normalize(texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0));
     } else {
         normal = fs_in.normal;
     }
@@ -125,8 +124,7 @@ void main() {
     o_color = (
         calculateLight(u_pointLights[0], u_material, normal, viewDir)
     ) * texture(u_material.diffuse, fs_in.texCoords);
-
-    // o_color = vec4(vec3(normal*0.5+0.5), 1);
+    // o_color = vec4(vec3(normal), 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
@@ -137,7 +135,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.125 *
+        light.color * 0.125 * 0*
         attenuation;
     vec3 diffuse = 
         light.color * 

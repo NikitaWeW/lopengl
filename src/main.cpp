@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     printf("loading...\n"); // TODO: cool progress bar
     Application app;
     GLFWwindow *window = app.window;
-    ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
+    ControllableCamera camera(window, {0, 0, -3}, {90, 0, 0});
     PointLight light;
     DirectionalLight sun;
     SpotLight flashlight;
@@ -82,14 +82,14 @@ int main(int argc, char **argv)
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
-    light.position= glm::vec3{1, 1, 2};
+    light.position= glm::vec3{1, 1, -2};
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
     flashlight.enabled = false;
     sun.enabled        = false;
     light.enabled      = true;
 
-    app.cube = Model{"res/models/cube.obj"};
+    app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     app.camera = &camera;
 
 //   ==================================================================

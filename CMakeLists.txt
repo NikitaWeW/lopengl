@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -rdynamic -O0")
 
 project(learning-opengl C CXX)
-set(GLAD_API "gl:core=4.3")
+set(GLAD_API "gl:compatibility=4.3")
 set(IMGUI_BACKEND_SOURCES imgui_impl_opengl3.cpp imgui_impl_glfw.cpp)
 set(DEPS OpenGL GLFW Logger GLM imgui STB assimp)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
