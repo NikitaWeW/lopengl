@@ -29,7 +29,7 @@ Texture::Texture(std::string const &filepath, bool flip, bool srgb, GLenum wrap)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_Buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, srgb ? GL_SRGB_ALPHA : GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_Buffer);
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(m_Buffer);
     m_Buffer = 0;
