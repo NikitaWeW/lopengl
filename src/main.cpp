@@ -98,9 +98,14 @@ int main(int argc, char **argv)
         {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
-        {"res/models/wall/rock_wall_13_1k.gltf",           FLIP_TEXTURES, !FLIP_WINING_ORDER },
+        {"res/models/wall/wall.obj",                       FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
+    {
+        Texture heightMap{"res/models/wall/height.jpg", FLIP_TEXTURES, !SRGB};
+        heightMap.type = "height";
+        app.models[4].getMeshes()[0].textures.push_back(heightMap);
+    }
 
 // =========================== //
 
@@ -177,11 +182,16 @@ int main(int argc, char **argv)
                     specularSet = true;
                 } else if(texture.type == "normal") {
                     normalSet = true;
+                } else if(texture.type == "height") {
+                    heightSet = true;
                 }
             }
             glUniform1f(currentShader.getUniform("u_material.shininess"), mesh.material.shininess);
+
             glUniform1i(currentShader.getUniform("u_material.specularSet"), specularSet);
             glUniform1i(currentShader.getUniform("u_material.normalSet"), normalSet);
+            glUniform1i(currentShader.getUniform("u_material.heightSet"), heightSet);
+            
             renderer.draw(mesh);
         }
 

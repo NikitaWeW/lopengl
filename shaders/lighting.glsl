@@ -37,13 +37,16 @@ void main() {
 #define LIGHTS_CAPASITY 10
 
 struct Material {
+    float shininess;
+
     sampler2D diffuse;
     sampler2D specular;
     sampler2D normal;
-    float shininess;
+    sampler2D height;
     
     bool specularSet;
     bool normalSet;
+    bool heightSet;
 };
 struct PointLight {
     vec3 position;
@@ -57,7 +60,7 @@ struct PointLight {
     mat4 projectionMat;
     mat4 viewMat;
 
-    samplerCube depthMap;
+    // samplerCube depthMap;
 };
 struct SpotLight {
     vec3 position;
@@ -75,7 +78,7 @@ struct SpotLight {
     mat4 projectionMat;
     mat4 viewMat;
     
-    sampler2D depthMap;
+    // sampler2D depthMap;
 };
 struct DirectionalLight {
     vec3 direction;
@@ -84,7 +87,7 @@ struct DirectionalLight {
     mat4 projectionMat;
     mat4 viewMat;
     
-    sampler2D depthMap;
+    // sampler2D depthMap;
 };
 
 in VS_OUT {
@@ -105,30 +108,41 @@ uniform vec3 u_viewPos;
 
 out vec4 o_color;
 
-vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir);
-vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir);
-vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir);
+vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords);
+vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords);
+vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords);
 float calculateShadow(PointLight light);
 float calculateShadow(DirectionalLight light);
 float calculateShadow(SpotLight light);
 
+vec2 parralaxMapping(vec2 texCoords, vec3 viewDir) {
+    return texCoords;
+}
+
 void main() {
     vec3 viewDir = normalize(u_viewPos - vec3(fs_in.fragPosition));
+    vec2 texCoords;
+    // if(u_material.heightSet) {
+        texCoords = parralaxMapping(fs_in.texCoords, viewDir);
+    // } else {
+    //     texCoords = fs_in.texCoords;
+    // }
+
     vec3 normal;
     if(u_material.normalSet) {
-        normal = normalize(fs_in.TBN * normalize(texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0));
+        normal = normalize(fs_in.TBN * normalize(texture(u_material.normal, texCoords).rgb * 2.0 - 1.0));
     } else {
         normal = fs_in.normal;
     }
 
     o_color = (
-        calculateLight(u_pointLights[0], u_material, normal, viewDir)
-    ) * texture(u_material.diffuse, fs_in.texCoords);
+        calculateLight(u_pointLights[0], u_material, normal, viewDir, texCoords)
+    ) * texture(u_material.diffuse, texCoords);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
 
-vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir) {
+vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords) {
     vec3 lightDir = normalize(light.position - vec3(fs_in.fragPosition));
     float distanceLightFragment = length(light.position - vec3(fs_in.fragPosition));
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
@@ -144,12 +158,12 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
         light.color * 
         attenuation *
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-        (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
+        (material.specularSet ? vec3(texture(material.specular, texCoords)) : vec3(.25));
     float shadow = calculateShadow(light);
 
     return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
 }
-vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir) {
+vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords) {
     vec3 lightDir = normalize(-light.direction);
 
     vec3 ambient = light.color * 0.125;
@@ -159,12 +173,12 @@ vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 v
     vec3 specular = 
         light.color * 
         pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-        (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
+        (material.specularSet ? vec3(texture(material.specular, texCoords)) : vec3(.25));
     float shadow = calculateShadow(light);
 
     return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
 }
-vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir) {
+vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords) {
     
     vec3 lightDir = normalize(light.position - vec3(fs_in.fragPosition));
     float distanceLightFragment = length(light.position - vec3(fs_in.fragPosition));
@@ -188,7 +202,7 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir)
             intensity * 
             attenuation *
             pow(max(dot(norm, normalize(lightDir + viewDir)), 0.0), u_material.shininess) * 
-            (material.specularSet ? vec3(texture(material.specular, fs_in.texCoords)) : vec3(.25));
+            (material.specularSet ? vec3(texture(material.specular, texCoords)) : vec3(.25));
         float shadow = calculateShadow(light);
 
         return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
@@ -199,47 +213,47 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir)
 
 float calculateShadow(PointLight light) {
     return 0;
-    vec3 fragToLight = vec3(fs_in.fragPosition.xyz - light.position);
-    float currentDepth = length(fragToLight);
+    // vec3 fragToLight = vec3(fs_in.fragPosition.xyz - light.position);
+    // float currentDepth = length(fragToLight);
 
-    float bias = 0.05;
-    float shadow = 0.0;
+    // float bias = 0.05;
+    // float shadow = 0.0;
 
-    // filtering
-    float samplesPerAxis = 4;
-    float offset = 0.1;
-    for(float x = -offset; x < offset; x += offset / (samplesPerAxis * 0.5))
-        for(float y = -offset; y < offset; y += offset / (samplesPerAxis * 0.5))
-            for(float z = -offset; z < offset; z += offset / (samplesPerAxis * 0.5)) {
-                float closestDepth = texture(light.depthMap, fragToLight + vec3(x, y, z)).r * 100; // 100 -- far plane of the light's frustrum
-                shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
-            }
-    shadow /= samplesPerAxis * samplesPerAxis * samplesPerAxis;
-    return shadow;
+    // // filtering
+    // float samplesPerAxis = 4;
+    // float offset = 0.1;
+    // for(float x = -offset; x < offset; x += offset / (samplesPerAxis * 0.5))
+    //     for(float y = -offset; y < offset; y += offset / (samplesPerAxis * 0.5))
+    //         for(float z = -offset; z < offset; z += offset / (samplesPerAxis * 0.5)) {
+    //             float closestDepth = texture(light.depthMap, fragToLight + vec3(x, y, z)).r * 100; // 100 -- far plane of the light's frustrum
+    //             shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    //         }
+    // shadow /= samplesPerAxis * samplesPerAxis * samplesPerAxis;
+    // return shadow;
 }
 float calculateShadow(DirectionalLight light) {
     return 0;
-    vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.fragPosition;
-    vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projectedCoords = projectedCoords * 0.5 + 0.5; // from 0 to 1
-    if(projectedCoords.z > 0.99) return 0;
-    float currentDepth = projectedCoords.z;
+    // vec4 fragPosLightSpace = light.projectionMat * light.viewMat * fs_in.fragPosition;
+    // vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // projectedCoords = projectedCoords * 0.5 + 0.5; // from 0 to 1
+    // if(projectedCoords.z > 0.99) return 0;
+    // float currentDepth = projectedCoords.z;
 
-    float bias = min(-dot(normalize(light.direction) * 0.001, fs_in.normal), 0.0009);
-    float shadow = 0.0;
+    // float bias = min(-dot(normalize(light.direction) * 0.001, fs_in.normal), 0.0009);
+    // float shadow = 0.0;
 
-    // filtering
-    vec2 texelSize = 1.0 / textureSize(light.depthMap, 0);
-    int numSamples = 0;
-    for(int x = -1; x <= 1; ++x) {
-        for(int y = -1; y <= 1; ++y) {
-            float closestDepth = texture(light.depthMap, projectedCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += (currentDepth - bias > closestDepth) ? 1.0 : 0.0;
-            ++numSamples;
-        }
-    }
-    shadow /= numSamples;
-    return shadow;
+    // // filtering
+    // vec2 texelSize = 1.0 / textureSize(light.depthMap, 0);
+    // int numSamples = 0;
+    // for(int x = -1; x <= 1; ++x) {
+    //     for(int y = -1; y <= 1; ++y) {
+    //         float closestDepth = texture(light.depthMap, projectedCoords.xy + vec2(x, y) * texelSize).r;
+    //         shadow += (currentDepth - bias > closestDepth) ? 1.0 : 0.0;
+    //         ++numSamples;
+    //     }
+    // }
+    // shadow /= numSamples;
+    // return shadow;
 }
 float calculateShadow(SpotLight light) {
     return 0; // nah
