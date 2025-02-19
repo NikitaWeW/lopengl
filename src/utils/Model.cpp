@@ -78,11 +78,10 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
         positions.size() * sizeof(positions[0]), 
         normals.size() * sizeof(normals[0]), 
         normals.data());
-    if(aimesh->HasTextureCoords(0))
-        glBufferSubData(GL_ARRAY_BUFFER, 
-            positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), 
-            textureCoords.size() * sizeof(textureCoords[0]), 
-            textureCoords.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 
+        positions.size() * sizeof(positions[0]) + normals.size() * sizeof(normals[0]), 
+        textureCoords.size() * sizeof(textureCoords[0]), 
+        textureCoords.data());
     glBufferSubData(GL_ARRAY_BUFFER, 
         positions.size() * sizeof(glm::vec3) + normals.size() * sizeof(glm::vec3) + textureCoords.size() * sizeof(glm::vec2), 
         tangents.size() * sizeof(glm::vec3), 
@@ -111,8 +110,8 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
         textures = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal", flipTextures);
         mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
         
-        // textures = loadMaterialTextures(material, aiTextureType_NORMALS, "normal", flipTextures);
-        // mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
+        textures = loadMaterialTextures(material, aiTextureType_NORMALS, "normal", flipTextures);
+        mesh.textures.insert(mesh.textures.end(), textures.begin(), textures.end());
         
         aiColor4D color;
         if(aiGetMaterialColor(material, AI_MATKEY_SHININESS, &color) == AI_SUCCESS) {

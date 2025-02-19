@@ -98,7 +98,7 @@ int main(int argc, char **argv)
         {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
-        {"res/models/wall/wall.obj",                       FLIP_TEXTURES, !FLIP_WINING_ORDER },
+        {"res/models/wall/rock_wall_13_1k.gltf",           FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
 
