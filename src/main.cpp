@@ -97,19 +97,18 @@ int main(int argc, char **argv)
         app.cube,
         {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES, !FLIP_WINING_ORDER },
-        {"res/models/apple/food_apple_01_4k.gltf",         FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/wall/wall.obj",                       FLIP_TEXTURES, !FLIP_WINING_ORDER },
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
     {
         Texture heightMap{"res/models/wall/height.jpg", FLIP_TEXTURES, !SRGB};
         heightMap.type = "height";
-        app.models[4].getMeshes()[0].textures.push_back(heightMap);
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back(heightMap);
     }
 
 // =========================== //
-
-    app.currentModelIndex = 5;    // backpack
+    // how to get segfault 101
+    app.currentModelIndex = 3;    // wall
     app.currentShaderIndex = 1;   // lighting
 
 // =========================== //

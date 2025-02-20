@@ -123,9 +123,23 @@ float calculateShadow(DirectionalLight light);
 float calculateShadow(SpotLight light);
 
 vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTangent, float scale) {
-    float height = texture(displacementMap, texCoords).r;
-    vec2 offset = viewDirTangent.xy * (height * scale);
-    return texCoords - offset;
+    const float minLayers = 25;
+    const float maxLayers = 100;
+
+    const float numLayers = mix(minLayers, maxLayers, dot(vec3(0, 0, 1), viewDirTangent));
+
+    float layerDepth = 1 / numLayers;
+    float currentLayerDepth = 0;
+    vec2 offsetPerLayer = viewDirTangent.xy / viewDirTangent.z * scale / numLayers;
+
+    vec2 newTexCoords = texCoords;
+    float currentDepth = texture(displacementMap, newTexCoords).r;
+    while(currentLayerDepth < currentDepth) {
+        newTexCoords -= offsetPerLayer;
+        currentDepth = texture(displacementMap, newTexCoords).r;
+        currentLayerDepth += layerDepth;
+    }
+    return newTexCoords;
 }
 
 void main() {
@@ -162,7 +176,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
     float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.125 * 0*
+        light.color * 0.125 *
         attenuation;
     vec3 diffuse = 
         light.color * 
