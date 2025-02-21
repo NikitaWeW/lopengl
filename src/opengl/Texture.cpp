@@ -14,7 +14,7 @@ Texture::Texture(GLenum wrap, GLenum filter)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 }
 
-Texture::Texture(std::string const &filepath, bool flip, bool srgb, GLenum wrap) : m_FilePath(filepath)
+Texture::Texture(std::string const &filepath, bool flip, bool srgb, GLenum wrap, GLenum filter) : m_FilePath(filepath)
 {
     stbi_set_flip_vertically_on_load(flip);
     m_Buffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
@@ -24,8 +24,8 @@ Texture::Texture(std::string const &filepath, bool flip, bool srgb, GLenum wrap)
     glGenTextures(1, &m_RenderID);
     glBindTexture(GL_TEXTURE_2D, m_RenderID);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 

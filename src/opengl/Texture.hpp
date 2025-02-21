@@ -13,7 +13,7 @@ private:
 public:
     std::string type; 
     Texture(GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR);
-    Texture(std::string const &filepath, bool flip = true, bool srgb = false, GLenum wrap = GL_REPEAT);
+    Texture(std::string const &filepath, bool flip = true, bool srgb = false, GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR);
     ~Texture();
 
     void bind(unsigned slot = 0) const;

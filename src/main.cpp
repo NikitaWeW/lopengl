@@ -101,7 +101,7 @@ int main(int argc, char **argv)
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES, !FLIP_WINING_ORDER },
     };
     {
-        Texture heightMap{"res/models/wall/height.jpg", FLIP_TEXTURES, !SRGB};
+        Texture heightMap{"res/models/wall/height.jpg", FLIP_TEXTURES, !SRGB, GL_REPEAT, GL_NEAREST};
         heightMap.type = "height";
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back(heightMap);
     }
