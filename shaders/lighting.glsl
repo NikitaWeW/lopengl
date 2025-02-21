@@ -123,7 +123,7 @@ float calculateShadow(DirectionalLight light);
 float calculateShadow(SpotLight light);
 
 vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTangent, float scale) {
-    const float minLayers = 25;
+    const float minLayers = 10;
     const float maxLayers = 100;
 
     const float numLayers = mix(minLayers, maxLayers, dot(vec3(0, 0, 1), viewDirTangent));
@@ -140,6 +140,16 @@ vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTang
         currentDepth = texture(displacementMap, newTexCoords).r;
         currentLayerDepth += layerDepth;
     }
+    vec2 prevTexCoords = newTexCoords;
+    prevTexCoords.x += offsetPerLayer.x;
+    prevTexCoords.y -= offsetPerLayer.y;
+
+    float nextDepth = currentDepth - currentLayerDepth;
+    float beforeDepth = texture(displacementMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+
+    float weight = beforeDepth / (beforeDepth - nextDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + newTexCoords * (1 - weight);
+
     return newTexCoords;
 }
 
