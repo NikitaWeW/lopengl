@@ -34,8 +34,8 @@ void main() {
     vec3 bitangent = cross(tangent, vs_out.normal);
     vs_out.TBN = mat3(tangent, bitangent, vs_out.normal);
 
-    vs_out.fragPositionTangent = vs_out.TBN * vs_out.fragPosition;
-    vs_out.viewPosTangent = vs_out.TBN * vs_out.viewPos;
+    vs_out.fragPositionTangent = transpose(vs_out.TBN) * vs_out.fragPosition;
+    vs_out.viewPosTangent = transpose(vs_out.TBN) * vs_out.viewPos;
 }
 
 #shader fragment
@@ -135,7 +135,8 @@ vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTang
     vec2 newTexCoords = texCoords;
     float currentDepth = texture(displacementMap, newTexCoords).r;
     while(currentLayerDepth < currentDepth) {
-        newTexCoords -= offsetPerLayer;
+        newTexCoords.x -= offsetPerLayer.x;
+        newTexCoords.y += offsetPerLayer.y;
         currentDepth = texture(displacementMap, newTexCoords).r;
         currentLayerDepth += layerDepth;
     }
@@ -165,7 +166,7 @@ void main() {
         calculateLight(u_pointLights[0], u_material, normal, viewDir, texCoords)
     ) * texture(u_material.diffuse, texCoords);
 
-    // o_color = vec4(vec3(normal), 1);
+    // o_color = vec4(vec3(fs_in.fragPositionTangent), 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
