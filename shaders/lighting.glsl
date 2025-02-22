@@ -124,7 +124,7 @@ float calculateShadow(SpotLight light);
 
 vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTangent, float scale) {
     const float minLayers = 10;
-    const float maxLayers = 100;
+    const float maxLayers = 200;
 
     const float numLayers = mix(minLayers, maxLayers, dot(vec3(0, 0, 1), viewDirTangent));
 
@@ -135,22 +135,24 @@ vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTang
     vec2 newTexCoords = texCoords;
     float currentDepth = texture(displacementMap, newTexCoords).r;
     while(currentLayerDepth < currentDepth) {
-        newTexCoords.x -= offsetPerLayer.x;
+        newTexCoords.x -= offsetPerLayer.x; // why
         newTexCoords.y += offsetPerLayer.y;
         currentDepth = texture(displacementMap, newTexCoords).r;
         currentLayerDepth += layerDepth;
     }
-    vec2 prevTexCoords = newTexCoords;
-    prevTexCoords.x += offsetPerLayer.x;
-    prevTexCoords.y -= offsetPerLayer.y;
+    
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = newTexCoords + offsetPerLayer;
 
-    float nextDepth = currentDepth - currentLayerDepth;
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepth - currentLayerDepth;
     float beforeDepth = texture(displacementMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+ 
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + newTexCoords * (1.0 - weight);
 
-    float weight = beforeDepth / (beforeDepth - nextDepth);
-    vec2 finalTexCoords = prevTexCoords * weight + newTexCoords * (1 - weight);
-
-    return newTexCoords;
+    return finalTexCoords;
 }
 
 void main() {
