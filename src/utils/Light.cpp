@@ -19,9 +19,7 @@ void PointLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCo
     shader.bind();
     std::string element = "u_pointLights[" + std::to_string(pointLightCount++) + ']';
     glUniform3fv(shader.getUniform(element + ".color"), 1,    &color.r);
-    glUniform1f (shader.getUniform(element + ".constant"),     constant);
-    glUniform1f (shader.getUniform(element + ".linear"),       linear);
-    glUniform1f (shader.getUniform(element + ".quadratic"),    quadratic);
+    glUniform1f (shader.getUniform(element + ".attenuation"), attenuation);
     glUniform3fv(shader.getUniform(element + ".position"), 1, &position.x);
     glUniformMatrix4fv(shader.getUniform(element + ".projectionMat"), 1, GL_FALSE, &m_projMat[0][0]);
     glUniformMatrix4fv(shader.getUniform(element + ".viewMat"), 1, GL_FALSE, &getViewMatrix()[0][0]);
@@ -65,9 +63,7 @@ void SpotLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCou
     shader.bind();
     std::string element = "u_spotLights[" + std::to_string(spotLightCount++) + ']';
     glUniform3fv(shader.getUniform(element + ".color"), 1,    &color.r);
-    glUniform1f (shader.getUniform(element + ".constant"),     constant);
-    glUniform1f (shader.getUniform(element + ".linear"),       linear);
-    glUniform1f (shader.getUniform(element + ".quadratic"),    quadratic);
+    glUniform1f (shader.getUniform(element + ".attenuation"), attenuation);
     glUniform3fv(shader.getUniform(element + ".position"), 1, &position.x);
     glUniform3fv(shader.getUniform(element + ".direction"),1, &direction.x);
     glUniform1f (shader.getUniform(element + ".innerCutoff"),  innerCutoff);

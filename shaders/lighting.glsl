@@ -60,9 +60,7 @@ struct PointLight {
 
     vec3 color;
 
-    float constant;
-    float linear;
-    float quadratic;
+    float attenuation;
 
     mat4 projectionMat;
     mat4 viewMat;
@@ -78,9 +76,7 @@ struct SpotLight {
 
     vec3 color;
 
-    float constant;
-    float linear;
-    float quadratic;
+    float attenuation;
 
     mat4 projectionMat;
     mat4 viewMat;
@@ -113,6 +109,10 @@ uniform SpotLight        u_spotLights [LIGHTS_CAPASITY];
 uniform DirectionalLight u_dirLights  [LIGHTS_CAPASITY];
 uniform PointLight       u_pointLights[LIGHTS_CAPASITY];
 
+uniform int u_spotLightCount;
+uniform int u_dirLightCount;
+uniform int u_pointLightCount;
+
 out vec4 o_color;
 
 vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords);
@@ -121,39 +121,7 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir,
 float calculateShadow(PointLight light);
 float calculateShadow(DirectionalLight light);
 float calculateShadow(SpotLight light);
-
-vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTangent, float scale) {
-    const float minLayers = 10;
-    const float maxLayers = 200;
-
-    const float numLayers = mix(minLayers, maxLayers, dot(vec3(0, 0, 1), viewDirTangent));
-
-    float layerDepth = 1 / numLayers;
-    float currentLayerDepth = 0;
-    vec2 offsetPerLayer = viewDirTangent.xy / viewDirTangent.z * scale / numLayers;
-
-    vec2 newTexCoords = texCoords;
-    float currentDepth = texture(displacementMap, newTexCoords).r;
-    while(currentLayerDepth < currentDepth) {
-        newTexCoords.x -= offsetPerLayer.x; // why
-        newTexCoords.y += offsetPerLayer.y;
-        currentDepth = texture(displacementMap, newTexCoords).r;
-        currentLayerDepth += layerDepth;
-    }
-    
-    // get texture coordinates before collision (reverse operations)
-    vec2 prevTexCoords = newTexCoords + offsetPerLayer;
-
-    // get depth after and before collision for linear interpolation
-    float afterDepth  = currentDepth - currentLayerDepth;
-    float beforeDepth = texture(displacementMap, prevTexCoords).r - currentLayerDepth + layerDepth;
- 
-    // interpolation of texture coordinates
-    float weight = afterDepth / (afterDepth - beforeDepth);
-    vec2 finalTexCoords = prevTexCoords * weight + newTexCoords * (1.0 - weight);
-
-    return finalTexCoords;
-}
+vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTangent, float scale);
 
 void main() {
     vec3 viewDir = normalize(fs_in.viewPos - fs_in.fragPosition);
@@ -186,7 +154,7 @@ void main() {
 vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords) {
     vec3 lightDir = normalize(light.position - fs_in.fragPosition);
     float distanceLightFragment = length(light.position - fs_in.fragPosition);
-    float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
+    float attenuation = 1.0 / (light.attenuation * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
         light.color * 0.125 *
@@ -223,7 +191,7 @@ vec4 calculateLight(SpotLight light, Material material, vec3 norm, vec3 viewDir,
     
     vec3 lightDir = normalize(light.position - fs_in.fragPosition);
     float distanceLightFragment = length(light.position - fs_in.fragPosition);
-    float attenuation = 1.0 / (light.constant + light.linear * distanceLightFragment + light.quadratic * distanceLightFragment * distanceLightFragment);
+    float attenuation = 1.0 / (light.attenuation * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
         light.color * 0.125 * 
@@ -298,4 +266,37 @@ float calculateShadow(DirectionalLight light) {
 }
 float calculateShadow(SpotLight light) {
     return 0; // nah
+}
+
+vec2 parralaxMapping(sampler2D displacementMap, vec2 texCoords, vec3 viewDirTangent, float scale) {
+    const float minLayers = 10;
+    const float maxLayers = 200;
+
+    const float numLayers = mix(minLayers, maxLayers, dot(vec3(0, 0, 1), viewDirTangent));
+
+    float layerDepth = 1 / numLayers;
+    float currentLayerDepth = 0;
+    vec2 offsetPerLayer = viewDirTangent.xy / viewDirTangent.z * scale / numLayers;
+
+    vec2 newTexCoords = texCoords;
+    float currentDepth = texture(displacementMap, newTexCoords).r;
+    while(currentLayerDepth < currentDepth) {
+        newTexCoords.x -= offsetPerLayer.x; // why
+        newTexCoords.y += offsetPerLayer.y;
+        currentDepth = texture(displacementMap, newTexCoords).r;
+        currentLayerDepth += layerDepth;
+    }
+    
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = newTexCoords + offsetPerLayer;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepth - currentLayerDepth;
+    float beforeDepth = texture(displacementMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+ 
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + newTexCoords * (1.0 - weight);
+
+    return finalTexCoords;
 }

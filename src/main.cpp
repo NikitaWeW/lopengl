@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     printf("loading...\n"); // TODO: cool progress bar
     Application app;
     GLFWwindow *window = app.window;
-    ControllableCamera camera(window, {0, 0, -3}, {90, 0, 0});
+    ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
     PointLight light;
     DirectionalLight sun;
     SpotLight flashlight;
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
-    light.position= glm::vec3{1, 1, -2};
+    light.position= glm::vec3{1, 1, 2};
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
     flashlight.enabled = false;
@@ -169,11 +169,11 @@ int main(int argc, char **argv)
             bool specularSet = false;
             bool normalSet = false;
             bool heightSet = false;
-            unsigned int textureCount = 1; // leave 0 for other purposes
+            unsigned int textureCount = 0;
             for(Texture const &texture : mesh.textures) {
                 int location = currentShader.getUniform("u_material." + texture.type);
                 if(location != -1) {
-                    glUniform1i(location, textureCount); // 5 nests wtf
+                    glUniform1i(location, textureCount);
                     texture.bind(textureCount);
                     ++textureCount;
                 }
