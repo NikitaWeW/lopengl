@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     
 //  =========================================== 
 
-    glfwGetWindowSize(window, &camera.width, &camera.height);
+    // glfwGetWindowSize(window, &camera.width, &camera.height);
 
     renderer.getLights().push_back(&flashlight);
     renderer.getLights().push_back(&light);
@@ -92,6 +92,9 @@ int main(int argc, char **argv)
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     app.camera = &camera;
 
+    Model quad{"res/models/quad.obj"};
+    ShaderProgram postProcessShader{"shaders/post_process.glsl", SHOW_LOGS};
+
 //   ==================================================================
     app.models = {
         app.cube,
@@ -108,7 +111,7 @@ int main(int argc, char **argv)
 
 // =========================== //
     // how to get segfault 101
-    app.currentModelIndex = 3;    // wall
+    app.currentModelIndex = 4;    // backpack
     app.currentShaderIndex = 1;   // lighting
 
 // =========================== //
@@ -132,9 +135,19 @@ int main(int argc, char **argv)
 
 // =========================== //
 
+    MultisampleTexture HDRtexture{100, 100, GL_RGBA16F};
+    MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10};
+    Framebuffer HDRframebuffer;
+    HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
+    HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
+    assert(HDRframebuffer.isComplete());
+
+// =========================== //
+
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
+        int prevWidth = camera.width, prevHeight = camera.height;
         camera.update(app.deltatime);
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
@@ -145,8 +158,8 @@ int main(int argc, char **argv)
 // ===================== //
 
         glEnable(GL_CULL_FACE);
+        HDRframebuffer.bind();
         glFrontFace(GL_CCW);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
 
@@ -209,7 +222,28 @@ int main(int argc, char **argv)
             renderer.draw(app.cube);
         } 
 
+// ====================== //
+//  draw the framebuffer
+// ====================== //
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, camera.width, camera.height);
+        renderer.clear();
+        quad.resetMatrix();
+        postProcessShader.bind();
+        glUniform1i(postProcessShader.getUniform("u_texture"), 0);
+        HDRtexture.bind(0);
+        renderer.draw(quad);
+
 // ================== //
+
+        if(prevWidth != camera.width || prevHeight != camera.height) {
+            HDRtexture.bind();
+            HDRrbo.bind();
+            HDRtexture.bind();
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+        }
 
         imguistuff(app, camera, light, flashlight, sun);
 

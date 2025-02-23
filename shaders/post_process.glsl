@@ -13,21 +13,26 @@ void main() {
 #shader fragment
 #version 430 core
 in vec2 v_texCoords;
-uniform sampler2D u_texture;
+uniform sampler2DMS u_texture;
 
 out vec4 o_color;
 
-float LinearizeDepth(float depth)
+vec4 textureMS(sampler2DMS sampler, ivec2 coord, int samples)
 {
-    float near_plane = 0.1;
-    float far_plane = 100.0;
-    float z = depth * 2.0 - 1.0; // Back to NDC
-    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
+    vec4 color = vec4(0.0);
+
+    ivec2 size = textureSize(sampler);
+
+    for (int i = 0; i < samples; i++)
+        color += texelFetch(sampler, size * coord, i);
+
+    color /= float(samples);
+
+    return color;
 }
 
 void main()
 {
-    o_color = texture(u_texture, v_texCoords);
+    o_color = textureMS(u_texture, ivec2(v_texCoords), 4);
     // o_color = vec4(vec3(0.2126 * o_color.r + 0.7152 * o_color.g + 0.0722 * o_color.b), 1.0); // grayscale
-    o_color = vec4(vec3(LinearizeDepth(o_color.r)), 1);
 }

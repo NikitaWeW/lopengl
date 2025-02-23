@@ -58,11 +58,11 @@ void Texture::unbindStatic(unsigned slot)
 }
 
 
-MultisampleTexture::MultisampleTexture(GLsizei width, GLsizei height, GLenum wrap)
+MultisampleTexture::MultisampleTexture(GLsizei width, GLsizei height, GLenum format)
 {
     glGenTextures(1, &m_RenderID);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_RenderID);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, width, height, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, format, width, height, GL_TRUE);
 }
 
 MultisampleTexture::~MultisampleTexture()
@@ -75,11 +75,11 @@ MultisampleTexture::~MultisampleTexture()
 void MultisampleTexture::bind(unsigned slot) const
 {
     glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_RenderID);
 }
 
 void MultisampleTexture::unbind(unsigned slot) const
 {
     glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_RenderID);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 }
