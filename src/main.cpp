@@ -99,18 +99,11 @@ int main(int argc, char **argv)
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES },
         {"res/models/wall/wall.obj",                       FLIP_TEXTURES },
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES },
-        {"res/models/sponza/sponza.obj",                   FLIP_TEXTURES },
     };
     { // do model specific stuff
         Texture heightMap{"res/models/wall/height.jpg", FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR};
         heightMap.type = "height";
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back(heightMap);
-
-        for(Mesh &mesh : std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sponza/sponza.obj"; })->getMeshes()) {
-            for(Texture &texture : mesh.textures) {
-                if(texture.type == "normal") texture.type = "height";
-            }
-        }
     }
 
 // =========================== //

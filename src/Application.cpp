@@ -124,8 +124,8 @@ Application::Application()
     logger_initConsoleLogger(stdout);
     logger_setLevel(debug ? LogLevel_DEBUG : LogLevel_INFO);
     if (!glfwInit()) {
-        LOG_FATAL("failed to init glfw!");
-        throw std::runtime_error("failed to init glfw!");
+        LOG_FATAL("failed to initialize glfw!");
+        throw std::runtime_error("failed to initialize");
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
@@ -139,14 +139,14 @@ Application::Application()
     window = glfwCreateWindow(mode->width * 0.7, mode->height * 0.9, "opengl", nullptr, nullptr);
 
     if (!window) {
-        LOG_FATAL("failed to initialise window.");
-        throw std::runtime_error("failed to initialise");
+        LOG_FATAL("failed to initialize window.");
+        throw std::runtime_error("failed to initialize");
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     if (!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) {
         LOG_FATAL("gladLoadGL: Failed to initialize GLAD!");
-        throw std::runtime_error("failed to initialise");
+        throw std::runtime_error("failed to initialize");
     }
     
     ImGui::CreateContext();
