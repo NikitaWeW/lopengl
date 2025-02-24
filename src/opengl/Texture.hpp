@@ -38,7 +38,7 @@ private:
 public:
     std::string type; 
     MultisampleTexture() = default;
-    MultisampleTexture(GLsizei width, GLsizei height, GLenum format = GL_RGBA);
+    MultisampleTexture(GLsizei width, GLsizei height, unsigned samples = 4, GLenum format = GL_RGBA);
     ~MultisampleTexture();
 
     void bind(unsigned slot = 0) const;

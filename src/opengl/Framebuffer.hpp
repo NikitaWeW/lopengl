@@ -21,7 +21,7 @@ private:
     unsigned m_renderID = 0;
 public:
     MultisampleRenderbuffer();
-    MultisampleRenderbuffer(unsigned format, int width, int height);
+    MultisampleRenderbuffer(unsigned format, int width, int height, int samples = 4);
     ~MultisampleRenderbuffer();
 
     void bind();

@@ -71,11 +71,11 @@ void Texture::unbindStatic(unsigned slot)
 }
 
 
-MultisampleTexture::MultisampleTexture(GLsizei width, GLsizei height, GLenum format)
+MultisampleTexture::MultisampleTexture(GLsizei width, GLsizei height, unsigned samples, GLenum format)
 {
     glGenTextures(1, &m_RenderID);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_RenderID);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, format, width, height, GL_TRUE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_TRUE);
 }
 
 MultisampleTexture::~MultisampleTexture()

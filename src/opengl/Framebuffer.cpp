@@ -74,11 +74,11 @@ MultisampleRenderbuffer::MultisampleRenderbuffer()
     glGenRenderbuffers(1, &m_renderID);
 }
 
-MultisampleRenderbuffer::MultisampleRenderbuffer(unsigned format, int width, int height)
+MultisampleRenderbuffer::MultisampleRenderbuffer(unsigned format, int width, int height, int samples)
 {
     glGenRenderbuffers(1, &m_renderID);
     bind();
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, format, width, height);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, format, width, height);
 }
 
 MultisampleRenderbuffer::~MultisampleRenderbuffer()

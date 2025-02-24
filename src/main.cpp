@@ -135,8 +135,8 @@ int main(int argc, char **argv)
 
 // =========================== //
 
-    Texture HDRtexture{10, 10, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
-    Renderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10};
+    MultisampleTexture HDRtexture{10, 10, 4, GL_RGBA16F};
+    MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10, 4};
     Framebuffer HDRframebuffer;
     HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
     HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
@@ -152,6 +152,14 @@ int main(int argc, char **argv)
         flashlight.position  = camera.position;
         flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.width, &camera.height);
+
+        if(prevWidth != camera.width || prevHeight != camera.height) {
+            HDRtexture.bind();
+            HDRrbo.bind();
+            HDRtexture.bind();
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+        }
 
 // ===================== //
 //     draw the scene    //
@@ -228,25 +236,18 @@ int main(int argc, char **argv)
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
-        renderer.clear();
-        quad.resetMatrix();
-        postProcessShader.bind();
-        glUniform1i(postProcessShader.getUniform("u_texture"), 0);
-        HDRtexture.bind(0);
-        renderer.draw(quad);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, HDRframebuffer.getRenderID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        // renderer.clear();
+        // quad.resetMatrix();
+        // postProcessShader.bind();
+        // glUniform1i(postProcessShader.getUniform("u_texture"), 0);
+        // HDRtexture.bind(0);
+        // renderer.draw(quad);
 
 // ================== //
 
-        if(prevWidth != camera.width || prevHeight != camera.height) {
-            HDRtexture.bind();
-            HDRrbo.bind();
-            HDRtexture.bind();
-            // glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
-            // glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-
-        }
 
         imguistuff(app, camera, light, flashlight, sun);
 
