@@ -13,7 +13,7 @@ void main() {
 #shader fragment
 #version 430 core
 in vec2 v_texCoords;
-uniform sampler2DMS u_texture;
+uniform sampler2D u_texture;
 
 out vec4 o_color;
 
@@ -33,6 +33,6 @@ vec4 textureMS(sampler2DMS sampler, ivec2 coord, int samples)
 
 void main()
 {
-    o_color = textureMS(u_texture, ivec2(v_texCoords), 4);
+    o_color = texture(u_texture, (v_texCoords));
     // o_color = vec4(vec3(0.2126 * o_color.r + 0.7152 * o_color.g + 0.0722 * o_color.b), 1.0); // grayscale
 }

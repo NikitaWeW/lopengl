@@ -135,8 +135,8 @@ int main(int argc, char **argv)
 
 // =========================== //
 
-    MultisampleTexture HDRtexture{100, 100, GL_RGBA16F};
-    MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10};
+    Texture HDRtexture{10, 10, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Renderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10};
     Framebuffer HDRframebuffer;
     HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
     HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
@@ -241,8 +241,11 @@ int main(int argc, char **argv)
             HDRtexture.bind();
             HDRrbo.bind();
             HDRtexture.bind();
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            // glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            // glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+
         }
 
         imguistuff(app, camera, light, flashlight, sun);
