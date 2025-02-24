@@ -93,7 +93,7 @@ int main(int argc, char **argv)
     app.camera = &camera;
 
     Model quad{"res/models/quad.obj"};
-    ShaderProgram postProcessShader{"shaders/post_process.glsl", SHOW_LOGS};
+    ShaderProgram hdrShader{"shaders/hdr.glsl", SHOW_LOGS};
 
 //   ==================================================================
     app.models = {
@@ -236,15 +236,12 @@ int main(int argc, char **argv)
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, HDRframebuffer.getRenderID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        // renderer.clear();
-        // quad.resetMatrix();
-        // postProcessShader.bind();
-        // glUniform1i(postProcessShader.getUniform("u_texture"), 0);
-        // HDRtexture.bind(0);
-        // renderer.draw(quad);
+        renderer.clear();
+        quad.resetMatrix();
+        hdrShader.bind();
+        glUniform1i(hdrShader.getUniform("u_texture"), 0);
+        HDRtexture.bind(0);
+        renderer.draw(quad);
 
 // ================== //
 
