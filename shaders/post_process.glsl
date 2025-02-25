@@ -35,7 +35,12 @@ vec4 textureMS(sampler2DMS sampler, vec2 coord, int samples)
 
 void main() {
     vec3 hdrColor = textureMS(u_texture, (v_texCoords), 4).rgb;
+
+    vec3 highExposure = 1 - exp(-hdrColor * 2);
+    vec3 lowExposure  = 1 - exp(-hdrColor * 0.5);
+
     vec3 mappedColor = 1 - exp(-hdrColor * u_exposure);
-    o_color = vec4(mappedColor, 1);
+
+    o_color = vec4((highExposure + lowExposure) * 0.5, 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }

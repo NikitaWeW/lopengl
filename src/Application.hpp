@@ -64,7 +64,7 @@ public:
 
     bool failedToReloadShaders = false;
 
-    float exposure;
+    float exposure = 1;
 public:
     Application();
     ~Application();
