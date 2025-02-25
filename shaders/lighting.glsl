@@ -142,12 +142,19 @@ void main() {
         normal = fs_in.normal;
     }
 
+    vec4 lightColor = vec4(0);
+
+    for(int i = 0; i < u_pointLightCount; ++i) {
+        lightColor += calculateLight(u_pointLights[i], u_material, normal, viewDir, texCoords);
+    }
+
     o_color = (
-        calculateLight(u_pointLights[0], u_material, normal, viewDir, texCoords)
+        lightColor
     ) * texture(u_material.diffuse, texCoords);
 
     // o_color = vec4(vec3(fs_in.fragPositionTangent), 1);
-    o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
+    // gamma correction moved to post process for now
+    // o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
 
 

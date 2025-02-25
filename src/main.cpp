@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     Application app;
     GLFWwindow *window = app.window;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
-    PointLight light;
+    PointLight light0;
     DirectionalLight sun;
     SpotLight flashlight;
     Renderer renderer;
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     // glfwGetWindowSize(window, &camera.width, &camera.height);
 
     renderer.getLights().push_back(&flashlight);
-    renderer.getLights().push_back(&light);
+    renderer.getLights().push_back(&light0);
     renderer.getLights().push_back(&sun);
 
     app.shaders = {
@@ -76,24 +76,23 @@ int main(int argc, char **argv)
         {"shaders/depth_omnidir.glsl",  SHOW_LOGS}, // 6
         {"shaders/depth_regular.glsl",  SHOW_LOGS}, // 7
         {"shaders/plain_color.glsl",    SHOW_LOGS}, // 8
-        {"shaders/skybox.glsl",         SHOW_LOGS}, // 9
+        {"shaders/skybox.glsl",SHOW_LOGS}, // 9
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
-    light.position= glm::vec3{1, 1, 2};
+    light0.position= glm::vec3{1, 1, 2};
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
     flashlight.enabled = false;
     sun.enabled        = false;
-    light.enabled      = true;
+    light0.enabled      = true;
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     app.camera = &camera;
 
     Model quad{"res/models/quad.obj"};
-    ShaderProgram hdrShader{"shaders/hdr.glsl", SHOW_LOGS};
 
 //   ==================================================================
     app.models = {
@@ -104,14 +103,13 @@ int main(int argc, char **argv)
         {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES },
     };
     { // do model specific stuff
-        Texture heightMap{"res/models/wall/height.jpg", FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR};
-        heightMap.type = "height";
-        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back(heightMap);
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/oak.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
     }
 
 // =========================== //
     // how to get segfault 101
-    app.currentModelIndex = 4;    // backpack
+    app.currentModelIndex = 0;    // cube
     app.currentShaderIndex = 1;   // lighting
 
 // =========================== //
@@ -141,6 +139,19 @@ int main(int argc, char **argv)
     HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
     HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
     assert(HDRframebuffer.isComplete());
+
+// =========================== //
+
+    app.currentModelScale = {-2, -2, -10};
+    light0.position = {0, 0, -4};
+    PointLight light1;
+    light1.position = {0.3f, -0.2f, -1};
+    light1.color = {0.2, 0.6, 0.4};
+    renderer.getLights().push_back(&light1);
+    PointLight light2;
+    light2.position = {-0.3f, 0.2f, -2};
+    light2.color = {0.6, 0.6, 0.2};
+    renderer.getLights().push_back(&light2);
 
 // =========================== //
 
@@ -217,18 +228,22 @@ int main(int argc, char **argv)
 
 // ================== //
         
-        if(light.enabled) {
-            // draw the light cube
-            app.cube.resetMatrix();
-            app.cube.translate(light.position);
-            app.cube.scale(glm::vec3{0.03125});
-            app.shaders[8].bind();
-            glUniform3fv(app.shaders[8].getUniform("u_color"), 1, &light.color.x);
-            glUniformMatrix4fv(app.shaders[8].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-            glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-            glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-            renderer.draw(app.cube);
-        } 
+        for(Light const *light : renderer.getLights()) {
+            if(light->enabled || light->type == POINT) {
+                // draw the light cube
+                PointLight const *plight = dynamic_cast<PointLight const *>(light);
+                assert(plight);
+                app.cube.resetMatrix();
+                app.cube.translate(plight->position);
+                app.cube.scale(glm::vec3{0.03125});
+                app.shaders[8].bind();
+                glUniform3fv(app.shaders[8].getUniform("u_color"), 1, &plight->color.x);
+                glUniformMatrix4fv(app.shaders[8].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+                glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+                glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+                renderer.draw(app.cube);
+            } 
+        }
 
 // ====================== //
 //  draw the framebuffer
@@ -238,15 +253,15 @@ int main(int argc, char **argv)
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear();
         quad.resetMatrix();
-        hdrShader.bind();
-        glUniform1i(hdrShader.getUniform("u_texture"), 0);
+        app.shaders[5].bind();
+        glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
         HDRtexture.bind(0);
         renderer.draw(quad);
 
 // ================== //
 
 
-        imguistuff(app, camera, light, flashlight, sun);
+        imguistuff(app, camera, light0, flashlight, sun);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

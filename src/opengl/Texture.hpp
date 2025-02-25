@@ -14,7 +14,7 @@ public:
     std::string type; 
     Texture(size_t width, size_t height, GLenum format = GL_RGBA, GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR);
     Texture(GLenum wrap, GLenum filter);
-    Texture(std::string const &filepath, bool flip = true, bool srgb = false, GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR);
+    Texture(std::string const &filepath, bool flip = true, bool srgb = false, GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR, std::string const &type = "");
     ~Texture();
 
     void bind(unsigned slot = 0) const;
