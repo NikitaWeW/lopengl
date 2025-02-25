@@ -53,7 +53,6 @@ public:
     int currentModelIndex = 0; 
     int currentShaderIndex = 0;
     int currentSceneIndex = 0;
-    int debugView = 0;
 
     std::vector<Model> models;
     std::vector<Texture> textures;
@@ -64,6 +63,8 @@ public:
     char loadTextureBuffer[1024];
 
     bool failedToReloadShaders = false;
+
+    float exposure;
 public:
     Application();
     ~Application();

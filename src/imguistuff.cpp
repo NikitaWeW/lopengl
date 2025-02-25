@@ -90,10 +90,9 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
     // ImGui::Checkbox("skybox", &app.skybox);
     // ImGui::Checkbox("show normals", &app.showNormals);
     // ImGui::Checkbox("face culling", &app.faceCulling);
-    ImGui::Checkbox("debug view", (bool *) &app.debugView);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
+    ImGui::InputFloat("exposure", &app.exposure);
     ImGui::Separator();
-
 
     size_t triangles = 0;
     for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {

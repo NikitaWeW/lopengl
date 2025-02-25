@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     renderer.getLights().push_back(&light1);
     PointLight light2;
     light2.position = {-0.3f, 0.2f, -2};
-    light2.color = {0.6, 0.6, 0.2};
+    light2.color = {0.200f, 0.200f, 0.067f};
     renderer.getLights().push_back(&light2);
 
 // =========================== //
@@ -255,6 +255,7 @@ int main(int argc, char **argv)
         quad.resetMatrix();
         app.shaders[5].bind();
         glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
+        glUniform1f(app.shaders[5].getUniform("u_exposure"), app.exposure);
         HDRtexture.bind(0);
         renderer.draw(quad);
 
