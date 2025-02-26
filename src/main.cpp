@@ -134,10 +134,15 @@ int main(int argc, char **argv)
 // =========================== //
 
     MultisampleTexture HDRtexture{10, 10, 4, GL_RGBA16F};
+    MultisampleTexture bloomTexture{10, 10, 4, GL_RGBA16F};
     MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10, 4};
     Framebuffer HDRframebuffer;
     HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
+    HDRframebuffer.attach(bloomTexture, GL_COLOR_ATTACHMENT1);
     HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
+    GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, buffers);
+
     assert(HDRframebuffer.isComplete());
 
 // =========================== //
@@ -166,9 +171,10 @@ int main(int argc, char **argv)
 
         if(prevWidth != camera.width || prevHeight != camera.height) {
             HDRtexture.bind();
-            HDRrbo.bind();
-            HDRtexture.bind();
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            bloomTexture.bind();
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            HDRrbo.bind();
             glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
@@ -254,9 +260,9 @@ int main(int argc, char **argv)
         renderer.clear();
         quad.resetMatrix();
         app.shaders[5].bind();
-        glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
         glUniform1f(app.shaders[5].getUniform("u_exposure"), app.exposure);
-        HDRtexture.bind(0);
+        glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
+        bloomTexture.bind(0);
         renderer.draw(quad);
 
 // ================== //

@@ -9,7 +9,7 @@
 include(FetchContent)
 
 if(NOT STB_INCLUDE_DIRS OR STB_SET_BY_SCRIPT)
-    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/STB)
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb)
         FetchContent_Populate(
             STB
             GIT_REPOSITORY https://github.com/nothings/stb.git

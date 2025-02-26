@@ -113,7 +113,8 @@ uniform int u_spotLightCount;
 uniform int u_dirLightCount;
 uniform int u_pointLightCount;
 
-out vec4 o_color;
+layout(location = 0) out vec4 o_color;
+layout(location = 1) out vec4 o_bloomColor;
 
 vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords);
 vec4 calculateLight(DirectionalLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords);
@@ -151,6 +152,10 @@ void main() {
     o_color = (
         lightColor
     ) * texture(u_material.diffuse, texCoords);
+
+    float brightness = dot(o_color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1) o_bloomColor = vec4(o_color.rgb, 1);
+    else o_bloomColor = vec4(0,0,0,1);
 
     // o_color = vec4(vec3(fs_in.fragPositionTangent), 1);
     // gamma correction moved to post process for now
