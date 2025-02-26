@@ -51,7 +51,6 @@ int main(int argc, char **argv)
     Application app;
     GLFWwindow *window = app.window;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
-    PointLight light0;
     DirectionalLight sun;
     SpotLight flashlight;
     Renderer renderer;
@@ -62,7 +61,6 @@ int main(int argc, char **argv)
     // glfwGetWindowSize(window, &camera.width, &camera.height);
 
     renderer.getLights().push_back(&flashlight);
-    renderer.getLights().push_back(&light0);
     renderer.getLights().push_back(&sun);
 
     app.shaders = {
@@ -73,21 +71,17 @@ int main(int argc, char **argv)
         {"shaders/explode.glsl",        SHOW_LOGS}, // 4
 //       =========================================
         {"shaders/post_process.glsl",   SHOW_LOGS}, // 5
-        {"shaders/depth_omnidir.glsl",  SHOW_LOGS}, // 6
-        {"shaders/depth_regular.glsl",  SHOW_LOGS}, // 7
-        {"shaders/plain_color.glsl",    SHOW_LOGS}, // 8
-        {"shaders/skybox.glsl",SHOW_LOGS}, // 9
+        {"shaders/blur.glsl",           SHOW_LOGS}, // 6
+        {"shaders/plain_color.glsl",    SHOW_LOGS}, // 7
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
     flashlight.position  = camera.position;
     flashlight.direction = camera.getFront();
-    light0.position= glm::vec3{1, 1, 2};
     sun.direction = glm::vec3{1, -0.5f, 0.5f};
 
     flashlight.enabled = false;
     sun.enabled        = false;
-    light0.enabled      = true;
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     app.camera = &camera;
@@ -133,26 +127,41 @@ int main(int argc, char **argv)
 
 // =========================== //
 
-    MultisampleTexture HDRtexture{10, 10, 4, GL_RGBA16F};
+    MultisampleTexture mainTexture{10, 10, 4, GL_RGBA16F};
     MultisampleTexture bloomTexture{10, 10, 4, GL_RGBA16F};
     MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10, 4};
-    Framebuffer HDRframebuffer;
-    HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
-    HDRframebuffer.attach(bloomTexture, GL_COLOR_ATTACHMENT1);
-    HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
+    Framebuffer mainFramebuffer;
+    mainFramebuffer.attach(mainTexture, GL_COLOR_ATTACHMENT0);
+    mainFramebuffer.attach(bloomTexture, GL_COLOR_ATTACHMENT1);
+    mainFramebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
     GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
     glDrawBuffers(2, buffers);
+    assert(mainFramebuffer.isComplete());
+    mainFramebuffer.unbind();
+    
+    Framebuffer pinpongFramebuffers[2];
+    MultisampleTexture pinpongTextures[2];
+    for(unsigned i = 0; i < 2; ++i) {
+        pinpongTextures[i] = {10, 10, 4, GL_RGBA16F};
+        pinpongFramebuffers[i].attach(pinpongTextures[i], GL_COLOR_ATTACHMENT0);
+    }
 
-    assert(HDRframebuffer.isComplete());
+    float weights[] = { 0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162 };
 
 // =========================== //
 
     app.currentModelScale = {-2, -2, -10};
+
+    PointLight light0;
     light0.position = {0, 0, -4};
+    light0.color = {10, 10, 10};
+    renderer.getLights().push_back(&light0);
+
     PointLight light1;
     light1.position = {0.3f, -0.2f, -1};
     light1.color = {0.2, 0.6, 0.4};
     renderer.getLights().push_back(&light1);
+
     PointLight light2;
     light2.position = {-0.3f, 0.2f, -2};
     light2.color = {0.200f, 0.200f, 0.067f};
@@ -170,7 +179,7 @@ int main(int argc, char **argv)
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
         if(prevWidth != camera.width || prevHeight != camera.height) {
-            HDRtexture.bind();
+            mainTexture.bind();
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
             bloomTexture.bind();
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
@@ -183,7 +192,7 @@ int main(int argc, char **argv)
 // ===================== //
 
         glEnable(GL_CULL_FACE);
-        HDRframebuffer.bind();
+        mainFramebuffer.bind();
         glFrontFace(GL_CCW);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
@@ -238,17 +247,41 @@ int main(int argc, char **argv)
             if(light->enabled || light->type == POINT) {
                 // draw the light cube
                 PointLight const *plight = dynamic_cast<PointLight const *>(light);
-                assert(plight);
+                assert(plight); // should not fail, because we checked the type
                 app.cube.resetMatrix();
                 app.cube.translate(plight->position);
                 app.cube.scale(glm::vec3{0.03125});
-                app.shaders[8].bind();
-                glUniform3fv(app.shaders[8].getUniform("u_color"), 1, &plight->color.x);
-                glUniformMatrix4fv(app.shaders[8].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-                glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-                glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+                app.shaders[7].bind();
+                glUniform3fv(app.shaders[7].getUniform("u_color"), 1, &plight->color.x);
+                glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+                glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+                glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
                 renderer.draw(app.cube);
             } 
+        }
+
+// ====================== //
+//  blur bloom texture.
+// ====================== //
+
+        pinpongFramebuffers[0].bind();
+        renderer.clear();
+        pinpongFramebuffers[1].bind();
+        renderer.clear();
+        
+        app.shaders[6].bind();
+        for(unsigned i = 0; i < 10; ++i) {
+            bool const horizontal = i % 2 == 0;
+            if(i == 0) { // first iteration
+                bloomTexture.bind(0);
+            } else {
+                pinpongTextures[horizontal].bind(0);
+            }
+            pinpongFramebuffers[horizontal].bind();
+            glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
+            glUniform1i(app.shaders[5].getUniform("u_horizontal"), horizontal);
+            // glUniform1fv(app.shaders[5].getUniform("u_weight"), 5, weights);
+            renderer.draw(quad);
         }
 
 // ====================== //
