@@ -278,8 +278,8 @@ int main(int argc, char **argv)
                 pinpongTextures[horizontal].bind(0);
             }
             pinpongFramebuffers[horizontal].bind();
-            glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
-            glUniform1i(app.shaders[5].getUniform("u_horizontal"), horizontal);
+            glUniform1i(app.shaders[6].getUniform("u_texture"), 0);
+            glUniform1i(app.shaders[6].getUniform("u_horizontal"), horizontal);
             // glUniform1fv(app.shaders[5].getUniform("u_weight"), 5, weights);
             renderer.draw(quad);
         }
