@@ -15,30 +15,17 @@ void main() {
 in vec2 v_texCoords;
 
 uniform float u_exposure;
-uniform sampler2DMS u_texture;
+uniform sampler2D u_texture;
+uniform sampler2D u_bloomTexture;
 
 out vec4 o_color;
 
-vec4 textureMS(sampler2DMS sampler, vec2 coord, int samples)
-{
-    vec4 color = vec4(0.0);
-
-    ivec2 size = textureSize(sampler);
-
-    for (int i = 0; i < samples; i++)
-        color += texelFetch(sampler, ivec2(size * coord), i);
-
-    color /= float(samples);
-
-    return color;
-}
-
 void main() {
-    vec3 hdrColor = textureMS(u_texture, (v_texCoords), 4).rgb;
+    vec3 hdrColor = texture(u_texture, (v_texCoords)).rgb;
+    vec3 bloomColor = texture(u_bloomTexture, v_texCoords).rgb;
+    hdrColor += bloomColor;
     vec3 mappedColor = 1 - exp(-hdrColor * u_exposure);
 
-    vec3 bloomColor = vec3(0,0,0);
-
-    o_color = vec4((mappedColor + bloomColor) * 0.5, 1);
+    o_color = vec4(mappedColor, 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }

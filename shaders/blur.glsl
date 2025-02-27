@@ -21,7 +21,7 @@ uniform bool u_horizontal;
 out vec4 o_color;
 
 void main() {
-    vec2 texelSize = 1 / textureSize(u_texture, 0);
+    vec2 texelSize = 1.0 / textureSize(u_texture, 0);
     vec3 result = texture(u_texture, v_texCoords).rgb * weight[0];
 
     if(u_horizontal) {

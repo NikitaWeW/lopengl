@@ -127,9 +127,9 @@ int main(int argc, char **argv)
 
 // =========================== //
 
-    MultisampleTexture mainTexture{10, 10, 4, GL_RGBA16F};
-    MultisampleTexture bloomTexture{10, 10, 4, GL_RGBA16F};
-    MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10, 4};
+    Texture mainTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Texture bloomTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Renderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 1, 1};
     Framebuffer mainFramebuffer;
     mainFramebuffer.attach(mainTexture, GL_COLOR_ATTACHMENT0);
     mainFramebuffer.attach(bloomTexture, GL_COLOR_ATTACHMENT1);
@@ -140,13 +140,11 @@ int main(int argc, char **argv)
     mainFramebuffer.unbind();
     
     Framebuffer pinpongFramebuffers[2];
-    MultisampleTexture pinpongTextures[2];
+    Texture pinpongTextures[2];
     for(unsigned i = 0; i < 2; ++i) {
-        pinpongTextures[i] = {10, 10, 4, GL_RGBA16F};
+        pinpongTextures[i] = {1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
         pinpongFramebuffers[i].attach(pinpongTextures[i], GL_COLOR_ATTACHMENT0);
     }
-
-    float weights[] = { 0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162 };
 
 // =========================== //
 
@@ -180,11 +178,15 @@ int main(int argc, char **argv)
 
         if(prevWidth != camera.width || prevHeight != camera.height) {
             mainTexture.bind();
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             bloomTexture.bind();
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             HDRrbo.bind();
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            pinpongTextures[0].bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            pinpongTextures[1].bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         }
 
 // ===================== //
@@ -256,32 +258,35 @@ int main(int argc, char **argv)
                 glUniformMatrix4fv(app.shaders[7].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[7].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[7].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                renderer.draw(app.cube);
+                // renderer.draw(app.cube);
             } 
         }
 
 // ====================== //
 //  blur bloom texture.
 // ====================== //
-
+        // TODO: when doing bloom, optimize it: https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling 
+        
         pinpongFramebuffers[0].bind();
         renderer.clear();
         pinpongFramebuffers[1].bind();
         renderer.clear();
         
+        bool horizontal = true;
+        const unsigned amount = 10;
         app.shaders[6].bind();
-        for(unsigned i = 0; i < 10; ++i) {
-            bool const horizontal = i % 2 == 0;
-            if(i == 0) { // first iteration
-                bloomTexture.bind(0);
-            } else {
-                pinpongTextures[horizontal].bind(0);
-            }
+        for (unsigned int i = 0; i < amount; i++)
+        {
             pinpongFramebuffers[horizontal].bind();
-            glUniform1i(app.shaders[6].getUniform("u_texture"), 0);
             glUniform1i(app.shaders[6].getUniform("u_horizontal"), horizontal);
-            // glUniform1fv(app.shaders[5].getUniform("u_weight"), 5, weights);
+            glUniform1i(app.shaders[6].getUniform("u_texture"), 0);
+            if(i == 0) {
+                bloomTexture.bind();
+            } else {
+                pinpongTextures[!horizontal].bind();
+            }
             renderer.draw(quad);
+            horizontal = !horizontal;
         }
 
 // ====================== //
@@ -295,7 +300,9 @@ int main(int argc, char **argv)
         app.shaders[5].bind();
         glUniform1f(app.shaders[5].getUniform("u_exposure"), app.exposure);
         glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
-        bloomTexture.bind(0);
+        glUniform1i(app.shaders[5].getUniform("u_bloomTexture"), 1);
+        mainTexture.bind(0);
+        pinpongTextures[!horizontal].bind(1);
         renderer.draw(quad);
 
 // ================== //
