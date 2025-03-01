@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     light1.position = {0.3f, -0.2f, -1};
     light1.color = {0.2, 0.6, 0.4};
     renderer.getLights().push_back(&light1);
-`    PointLight light2;
+    PointLight light2;
     light2.position = {-0.3f, 0.2f, -2};
     light2.color = {0.200f, 0.200f, 0.067f};
     renderer.getLights().push_back(&light2);
