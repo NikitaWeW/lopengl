@@ -27,6 +27,7 @@ cmake --build build && build/main
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <iostream>
 #include <stdexcept>
 
 #ifdef NDEBUG
@@ -44,6 +45,9 @@ extern const bool debug = true;
 void imguistuff(Application &app, ControllableCamera &cam);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+template<typename T> T randRange(T min, T max) { return (T) rand() % (max - min + 1) + min; }
+template<> float randRange(float min, float max) { return fmod((float) rand(), max - min + 1) + min; }
+template<> double randRange(double min, double max) { return fmod((double) rand(), max - min + 1) + min; }
 
 int main(int argc, char **argv)
 {
@@ -80,19 +84,24 @@ int main(int argc, char **argv)
 
 //   ==================================================================
     app.models = {
-        app.cube,
-        {"res/models/sphere/scene.gltf",                   FLIP_TEXTURES },
-        {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES },
-        {"res/models/wall/wall.obj",                       FLIP_TEXTURES },
-        {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES },
+        app.cube,                                                           // 0
+        {"res/models/sphere.obj",                          FLIP_TEXTURES }, // 1
+        {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES }, // 2
+        {"res/models/wall/wall.obj",                       FLIP_TEXTURES }, // 3
+        {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES }, // 4
     };
     { // do model specific stuff
+        // how to get segfault 101
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
-        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/oak.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/rough_normal.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sphere.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sphere.obj"; })->getMeshes()[0].textures.push_back({"res/textures/rough_normal.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
     }
 
 // =========================== //
-    // how to get segfault 101
+    // how to get segfault 101 pt. 2
     app.currentModelIndex = 0;    // cube
     app.currentShaderIndex = 1;   // lighting
 
@@ -112,8 +121,6 @@ int main(int argc, char **argv)
     glfwSetWindowUserPointer(window, &app);
     glfwSetKeyCallback(window, key_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
-    LOG_INFO("loaded!");
 
 // =========================== //
 
@@ -155,6 +162,50 @@ int main(int argc, char **argv)
 
 // =========================== //
 
+//  ----------------------------------
+    // input here
+    constexpr unsigned numLights = 10;
+    constexpr unsigned numModels = 80;
+    constexpr float radius = 10;
+    Model sceneModel = app.models[1];
+//  ----------------------------------
+
+    glm::mat4 modelMatrices[numModels];
+    srand(static_cast<unsigned int>(glfwGetTime())); // initialize random seed
+    for(int i = 0; i < numModels; ++i) {
+        glm::mat4 model{1.0f};
+        model = glm::translate(model, { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) });
+        model = glm::scale(model, glm::vec3{ randRange(0.25f, 2.0f) });
+        model = glm::rotate(model, 1.0f, {randRange(0.0f, 360.0f), randRange(0.0f, 360.0f), randRange(0.0f, 360.0f)});
+        modelMatrices[i] = model;
+    }
+
+    VertexBuffer modelMatricesVB{modelMatrices, numModels * sizeof(glm::mat4)};
+    InstancedArrayLayout modelMatricesVBlayout{
+        {4, GL_FLOAT, 1},
+        {4, GL_FLOAT, 1},
+        {4, GL_FLOAT, 1},
+        {4, GL_FLOAT, 1}
+    };
+
+    for(Mesh &mesh : sceneModel.getMeshes()) {
+        mesh.va.addBuffer(modelMatricesVB, modelMatricesVBlayout);
+    }
+
+    PointLight lights[numLights];
+    for(int i = 0; i < numLights; ++i) {
+        PointLight light;
+        light.position = { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) };
+        light.color = { randRange(0.5f, 2.0f), randRange(0.5f, 2.0f), randRange(0.5f, 2.0f) };
+        light.attenuation = randRange(0.04f, 0.08f);
+        lights[i] = light; // keep them in the memory
+        renderer.getLights().push_back(lights + i);
+    }
+
+// =========================== //
+
+    LOG_INFO("loaded!");
+
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -162,7 +213,7 @@ int main(int argc, char **argv)
         camera.update(app.deltatime);
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
-        if(prevWidth != camera.width || prevHeight != camera.height) {
+        if(prevWidth != camera.width || prevHeight != camera.height) { // close your eyes here
             HDRtexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             HDRrbo.bind();
@@ -199,13 +250,13 @@ int main(int argc, char **argv)
 
 // ================== //
 
-        app.models[app.currentModelIndex].resetMatrix();
-        app.models[app.currentModelIndex].translate(app.currentModelPosition);
-        app.models[app.currentModelIndex].rotate(app.currentModelRotation);
-        app.models[app.currentModelIndex].scale(app.currentModelScale);
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &app.models[app.currentModelIndex].getModelMat()[0][0]);
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[app.currentModelIndex].getModelMat()))[0][0]);
-        for(Mesh const &mesh : app.models[app.currentModelIndex].getMeshes()) {
+        sceneModel.resetMatrix();
+        sceneModel.translate(app.currentModelPosition);
+        sceneModel.rotate(app.currentModelRotation);
+        sceneModel.scale(app.currentModelScale);
+        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &sceneModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(sceneModel.getModelMat()))[0][0]);
+        for(Mesh const &mesh : sceneModel.getMeshes()) {
             bool specularSet = false;
             bool normalSet = false;
             bool heightSet = false;
@@ -230,8 +281,11 @@ int main(int argc, char **argv)
             glUniform1i(currentShader.getUniform("u_material.specularSet"), specularSet);
             glUniform1i(currentShader.getUniform("u_material.normalSet"), normalSet);
             glUniform1i(currentShader.getUniform("u_material.heightSet"), heightSet);
+         
             
-            renderer.draw(mesh);
+            mesh.va.bind();
+            mesh.ib.bind();
+            glDrawElementsInstanced(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr, numModels);
         }
 
 // ================== //
