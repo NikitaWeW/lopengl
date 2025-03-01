@@ -165,9 +165,9 @@ int main(int argc, char **argv)
 
 //  ----------------------------------
     // input here
-    constexpr unsigned numLights = 10;
-    constexpr unsigned numModels = 40;
-    constexpr float radius = 10;
+    constexpr unsigned numLights = 5;
+    constexpr unsigned numModels = 10;
+    constexpr float radius = 5;
     Model sceneModel = app.models[1];
 //  ----------------------------------
 
