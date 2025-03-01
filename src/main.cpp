@@ -41,7 +41,7 @@ extern const bool debug = true;
 #define SRGB              true
 #define currentShader app.shaders[app.displayShaders[app.currentShaderIndex]]
 
-void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight, DirectionalLight &sun);
+void imguistuff(Application &app, ControllableCamera &cam);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -51,19 +51,12 @@ int main(int argc, char **argv)
     Application app;
     GLFWwindow *window = app.window;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
-    PointLight light0;
-    DirectionalLight sun;
-    SpotLight flashlight;
     Renderer renderer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
     
 //  =========================================== 
 
     // glfwGetWindowSize(window, &camera.width, &camera.height);
-
-    renderer.getLights().push_back(&flashlight);
-    renderer.getLights().push_back(&light0);
-    renderer.getLights().push_back(&sun);
 
     app.shaders = {
         {"shaders/basic.glsl",          SHOW_LOGS}, // 0
@@ -79,15 +72,6 @@ int main(int argc, char **argv)
         {"shaders/skybox.glsl",SHOW_LOGS}, // 9
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
     app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
-
-    flashlight.position  = camera.position;
-    flashlight.direction = camera.getFront();
-    light0.position= glm::vec3{1, 1, 2};
-    sun.direction = glm::vec3{1, -0.5f, 0.5f};
-
-    flashlight.enabled = false;
-    sun.enabled        = false;
-    light0.enabled      = true;
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     app.camera = &camera;
@@ -133,25 +117,12 @@ int main(int argc, char **argv)
 
 // =========================== //
 
-    MultisampleTexture HDRtexture{10, 10, 4, GL_RGBA16F};
-    MultisampleRenderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 10, 10, 4};
+    Texture HDRtexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Renderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 1, 1};
     Framebuffer HDRframebuffer;
     HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
     HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
     assert(HDRframebuffer.isComplete());
-
-// =========================== //
-
-    app.currentModelScale = {-2, -2, -10};
-    light0.position = {0, 0, -4};
-    PointLight light1;
-    light1.position = {0.3f, -0.2f, -1};
-    light1.color = {0.2, 0.6, 0.4};
-    renderer.getLights().push_back(&light1);
-    PointLight light2;
-    light2.position = {-0.3f, 0.2f, -2};
-    light2.color = {0.200f, 0.200f, 0.067f};
-    renderer.getLights().push_back(&light2);
 
 // =========================== //
 
@@ -160,16 +131,13 @@ int main(int argc, char **argv)
         auto start = std::chrono::high_resolution_clock::now();
         int prevWidth = camera.width, prevHeight = camera.height;
         camera.update(app.deltatime);
-        flashlight.position  = camera.position;
-        flashlight.direction = camera.getFront();
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
         if(prevWidth != camera.width || prevHeight != camera.height) {
             HDRtexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             HDRrbo.bind();
-            HDRtexture.bind();
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA16F, camera.width, camera.height, GL_TRUE);
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
 // ===================== //
@@ -262,7 +230,7 @@ int main(int argc, char **argv)
 // ================== //
 
 
-        imguistuff(app, camera, light0, flashlight, sun);
+        imguistuff(app, camera);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

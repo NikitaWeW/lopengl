@@ -46,7 +46,7 @@
         }
 */
 
-void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, SpotLight &flashlight, DirectionalLight &sun)
+void imguistuff(Application &app, ControllableCamera &cam)
 {
     // dont ask why this logic is in imgui stuff (idk)
     // if(app.models[app.currentModelIndex].getFilepath() == "res/models/wall/wall.obj") {
@@ -132,43 +132,43 @@ void imguistuff(Application &app, ControllableCamera &cam, PointLight &light, Sp
 
 
     // ImGui::Checkbox("flashlight enabled", &flashlight.enabled);
-    if(flashlight.enabled) {
-        ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
-        ImGui::DragFloat("flashlight attenuation", &flashlight.attenuation, 0.001, 0.00001, 5);
-        if (ImGui::Button("reset flashlight"))
-        {
-            flashlight.color = glm::vec3(1.0);
-            flashlight.attenuation = 0.07f;
-        }
-        ImGui::Separator();
+    // if(flashlight.enabled) {
+    //     ImGui::ColorEdit3("flashlight color", &flashlight.color.r);
+    //     ImGui::DragFloat("flashlight attenuation", &flashlight.attenuation, 0.001, 0.00001, 5);
+    //     if (ImGui::Button("reset flashlight"))
+    //     {
+    //         flashlight.color = glm::vec3(1.0);
+    //         flashlight.attenuation = 0.07f;
+    //     }
+    //     ImGui::Separator();
 
 
-    }
+    // }
     // ImGui::Checkbox("light enabled", &light.enabled);
-    if(light.enabled) {
-        ImGui::DragFloat3("light position", &light.position.x, 0.01f);
-        ImGui::ColorEdit3("light color", &light.color.r);
-        ImGui::DragFloat("light attenuation", &light.attenuation, 0.001, 0.00001, 5);
-        if (ImGui::Button("reset light"))
-        {
-            light.position = glm::vec3(1, 1, 2);
-            light.color = glm::vec3(1.0);
-            flashlight.attenuation = 0.07f;
-        }
-    }
+    // if(light.enabled) {
+    //     ImGui::DragFloat3("light position", &light.position.x, 0.01f);
+    //     ImGui::ColorEdit3("light color", &light.color.r);
+    //     ImGui::DragFloat("light attenuation", &light.attenuation, 0.001, 0.00001, 5);
+    //     if (ImGui::Button("reset light"))
+    //     {
+    //         light.position = glm::vec3(1, 1, 2);
+    //         light.color = glm::vec3(1.0);
+    //         flashlight.attenuation = 0.07f;
+    //     }
+    // }
     // ImGui::Checkbox("sun enabled", &sun.enabled);
-    if(sun.enabled) {
-        ImGui::DragFloat3("sun direction", &sun.direction.x, 0.01f);
-        ImGui::ColorEdit3("sun color", &sun.color.r);
-        if (ImGui::Button("reset sun"))
-        {
-            sun.position = {0, 0, 0};
-            sun.direction = {1, -0.3, 1};
-            sun.color = glm::vec3(1.0);
-            flashlight.attenuation = 0.07f;
-        }
-        ImGui::Separator();
-    }
+    // if(sun.enabled) {
+    //     ImGui::DragFloat3("sun direction", &sun.direction.x, 0.01f);
+    //     ImGui::ColorEdit3("sun color", &sun.color.r);
+    //     if (ImGui::Button("reset sun"))
+    //     {
+    //         sun.position = {0, 0, 0};
+    //         sun.direction = {1, -0.3, 1};
+    //         sun.color = glm::vec3(1.0);
+    //         flashlight.attenuation = 0.07f;
+    //     }
+    //     ImGui::Separator();
+    // }
     ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
     ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
     ImGui::DragFloat("camera near plane", &cam.near, 0.001f);
