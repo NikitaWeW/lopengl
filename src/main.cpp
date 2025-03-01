@@ -120,9 +120,38 @@ int main(int argc, char **argv)
     Texture HDRtexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
     Renderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 1, 1};
     Framebuffer HDRframebuffer;
+    HDRframebuffer.bind();
     HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
     HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
     assert(HDRframebuffer.isComplete());
+    HDRframebuffer.unbind();
+
+// =========================== //
+
+    Framebuffer Gbuffer;
+    Gbuffer.bind();
+
+    Texture GbufferPositionTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Gbuffer.attach(GbufferPositionTexture, GL_COLOR_ATTACHMENT0);
+    
+    Texture GbufferNormalTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Gbuffer.attach(GbufferNormalTexture, GL_COLOR_ATTACHMENT1);
+    
+    Texture GbufferAlbedoTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Gbuffer.attach(GbufferAlbedoTexture, GL_COLOR_ATTACHMENT2);
+    
+    Texture GbufferAlbedoSpecularTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
+    Gbuffer.attach(GbufferAlbedoSpecularTexture, GL_COLOR_ATTACHMENT3);
+
+    Renderbuffer GbufferRBO{GL_DEPTH24_STENCIL8, 1, 1};
+    Gbuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
+
+
+    unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(sizeof(attachments) / sizeof(*attachments), attachments);
+
+    assert(Gbuffer.isComplete());
+    Gbuffer.unbind();
 
 // =========================== //
 
@@ -137,6 +166,17 @@ int main(int argc, char **argv)
             HDRtexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             HDRrbo.bind();
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            
+            GbufferPositionTexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            GbufferNormalTexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            GbufferAlbedoTexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            GbufferAlbedoSpecularTexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            GbufferRBO.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
