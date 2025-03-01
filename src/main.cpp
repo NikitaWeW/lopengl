@@ -92,12 +92,13 @@ int main(int argc, char **argv)
     };
     { // do model specific stuff
         // how to get segfault 101
+        auto normalmap = "res/textures/normalMaps/leather_norm.jpg";
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
-        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/rough_normal.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({normalmap, !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sphere.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
-        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sphere.obj"; })->getMeshes()[0].textures.push_back({"res/textures/rough_normal.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
+        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sphere.obj"; })->getMeshes()[0].textures.push_back({normalmap, !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
     }
 
 // =========================== //
@@ -165,17 +166,17 @@ int main(int argc, char **argv)
 //  ----------------------------------
     // input here
     constexpr unsigned numLights = 10;
-    constexpr unsigned numModels = 80;
+    constexpr unsigned numModels = 40;
     constexpr float radius = 10;
     Model sceneModel = app.models[1];
 //  ----------------------------------
 
     glm::mat4 modelMatrices[numModels];
     srand(static_cast<unsigned int>(glfwGetTime())); // initialize random seed
-    for(int i = 0; i < numModels; ++i) {
+    for(unsigned i = 0; i < numModels; ++i) {
         glm::mat4 model{1.0f};
         model = glm::translate(model, { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) });
-        model = glm::scale(model, glm::vec3{ randRange(0.25f, 2.0f) });
+        model = glm::scale(model, glm::vec3{ randRange(0.5f, 1.5f) });
         model = glm::rotate(model, 1.0f, {randRange(0.0f, 360.0f), randRange(0.0f, 360.0f), randRange(0.0f, 360.0f)});
         modelMatrices[i] = model;
     }
@@ -193,7 +194,7 @@ int main(int argc, char **argv)
     }
 
     PointLight lights[numLights];
-    for(int i = 0; i < numLights; ++i) {
+    for(unsigned i = 0; i < numLights; ++i) {
         PointLight light;
         light.position = { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) };
         light.color = { randRange(0.5f, 2.0f), randRange(0.5f, 2.0f), randRange(0.5f, 2.0f) };

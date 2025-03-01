@@ -153,7 +153,6 @@ void main() {
         lightColor
     ) * texture(u_material.diffuse, texCoords);
 
-    // o_color = vec4(vec3(fs_in.fragPositionTangent), 1);
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
     o_color.a = 1;
