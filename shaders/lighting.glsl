@@ -24,13 +24,14 @@ uniform mat4 u_normalMat;
 uniform vec3 u_viewPos;
 
 void main() {
+    mat4 normalMat = transpose(inverse(a_modelMat));
     gl_Position = u_projectionMat * u_viewMat * a_modelMat * a_position;
     vs_out.texCoords = a_texCoords;
     vs_out.fragPosition = vec3(a_modelMat * a_position);
-    vs_out.normal = normalize(vec3(u_normalMat * a_normal));
+    vs_out.normal = normalize(vec3(normalMat * a_normal));
     vs_out.viewPos = u_viewPos;
 
-    vec3 tangent = normalize(vec3(u_normalMat * vec4(a_tangent.xyz, 0.0)));
+    vec3 tangent = normalize(vec3(normalMat * vec4(a_tangent.xyz, 0.0)));
     tangent = normalize(tangent - dot(tangent, vs_out.normal) * vs_out.normal);
     vec3 bitangent = cross(tangent, vs_out.normal);
     vs_out.TBN = mat3(tangent, bitangent, vs_out.normal);
@@ -128,13 +129,7 @@ void main() {
     vec3 viewDir = normalize(fs_in.viewPos - fs_in.fragPosition);
     vec3 viewDirTangent = normalize(fs_in.viewPosTangent - fs_in.fragPositionTangent);
 
-    vec2 texCoords;
-    if(u_material.heightSet) {
-        texCoords = parralaxMapping(u_material.height, fs_in.texCoords, viewDirTangent, 0.1);
-        if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) discard;
-    } else {
-        texCoords = fs_in.texCoords;
-    }
+    vec2 texCoords = fs_in.texCoords;
 
     vec3 normal;
     if(u_material.normalSet) {
@@ -165,7 +160,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
     float attenuation = 1.0 / (light.attenuation * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.125 *
+        light.color * 0.00125 * 0*
         attenuation;
     vec3 diffuse = 
         light.color * 

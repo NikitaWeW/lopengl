@@ -2,6 +2,25 @@
 i use this (gcc + ninja)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall' -G Ninja
 cmake --build build && build/main
+
+        +____________+
+        /:\         ,:\
+       / : \       , : \
+      /  :  \     ,  :  \
+     /   :   +-----------+
+    +....:../:...+   :  /|
+    |\   +./.:...`...+ / |
+    | \ ,`/  :   :` ,`/  |
+    |  \ /`. :   : ` /`  |
+    | , +-----------+  ` |
+    |,  |   `+...:,.|...`+
+    +...|...,'...+  |   /
+     \  |  ,     `  |  /
+      \ | ,       ` | /
+       \|,         `|/
+        +___________+
+
+2-Dimensional Representation Of A 3-Dimensional Cross-Section Of A 4-Dimensional Cube
 */
 
 #include "glad/gl.h"
@@ -18,6 +37,7 @@ cmake --build build && build/main
 #include "assimp/postprocess.h"
 
 #include "Application.hpp"
+#include "random.hpp"
 #include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
 #include "opengl/Framebuffer.hpp"
@@ -45,9 +65,6 @@ extern const bool debug = true;
 void imguistuff(Application &app, ControllableCamera &cam);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-template<typename T> T randRange(T min, T max) { return (T) rand() % (max - min + 1) + min; }
-template<> float randRange(float min, float max) { return fmod((float) rand(), max - min + 1) + min; }
-template<> double randRange(double min, double max) { return fmod((double) rand(), max - min + 1) + min; }
 
 int main(int argc, char **argv)
 {
@@ -55,6 +72,7 @@ int main(int argc, char **argv)
     Application app;
     GLFWwindow *window = app.window;
     ControllableCamera camera(window, {0, 0, 3}, {-90, 0, 0});
+    camera.far = 500;
     Renderer renderer;
     Cubemap skybox("res/textures/skybox1", {"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg"});
     
@@ -88,11 +106,11 @@ int main(int argc, char **argv)
         {"res/models/sphere.obj",                          FLIP_TEXTURES }, // 1
         {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES }, // 2
         {"res/models/wall/wall.obj",                       FLIP_TEXTURES }, // 3
-        {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES }, // 4
+        // {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES }, // 4
     };
     { // do model specific stuff
         // how to get segfault 101
-        auto normalmap = "res/textures/normalMaps/leather_norm.jpg";
+        auto normalmap = "res/textures/normalMaps/rough_normal.jpg";
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
@@ -145,9 +163,6 @@ int main(int argc, char **argv)
     Texture GbufferNormalTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
     Gbuffer.attach(GbufferNormalTexture, GL_COLOR_ATTACHMENT1);
     
-    Texture GbufferAlbedoTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
-    Gbuffer.attach(GbufferAlbedoTexture, GL_COLOR_ATTACHMENT2);
-    
     Texture GbufferAlbedoSpecularTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
     Gbuffer.attach(GbufferAlbedoSpecularTexture, GL_COLOR_ATTACHMENT3);
 
@@ -162,13 +177,14 @@ int main(int argc, char **argv)
     Gbuffer.unbind();
 
 // =========================== //
+    LOG_DEBUG("generating scene...");
 
 //  ----------------------------------
     // input here
-    constexpr unsigned numLights = 5;
-    constexpr unsigned numModels = 10;
-    constexpr float radius = 5;
-    Model sceneModel = app.models[1];
+    constexpr unsigned numLights = 10;
+    constexpr unsigned numModels = 1000;
+    constexpr float radius = 50;
+    Model sceneModel = app.models[0];
 //  ----------------------------------
 
     glm::mat4 modelMatrices[numModels];
@@ -197,12 +213,13 @@ int main(int argc, char **argv)
     for(unsigned i = 0; i < numLights; ++i) {
         PointLight light;
         light.position = { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) };
-        light.color = { randRange(0.5f, 2.0f), randRange(0.5f, 2.0f), randRange(0.5f, 2.0f) };
-        light.attenuation = randRange(0.04f, 0.08f);
+        light.color = { randRange(0.0f, 2.0f), randRange(0.0f, 2.0f), randRange(0.0f, 2.0f) };
+        light.attenuation = randRange(0.1f, 0.5f);
         lights[i] = light; // keep them in the memory
         renderer.getLights().push_back(lights + i);
     }
 
+    LOG_DEBUG("scene generated!");
 // =========================== //
 
     LOG_INFO("loaded!");
@@ -223,8 +240,6 @@ int main(int argc, char **argv)
             GbufferPositionTexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferNormalTexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            GbufferAlbedoTexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferAlbedoSpecularTexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
