@@ -16,10 +16,10 @@ out VS_OUT {
     vec3 fragPositionTangent;
 } vs_out;
 
-uniform mat4 u_modelMat;
+// uniform mat4 u_modelMat;
+// uniform mat4 u_normalMat;
 uniform mat4 u_viewMat;
 uniform mat4 u_projectionMat;
-uniform mat4 u_normalMat;
 
 uniform vec3 u_viewPos;
 

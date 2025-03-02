@@ -72,63 +72,57 @@ void imguistuff(Application &app, ControllableCamera &cam)
     }
     ImGui::Separator();
 
-
-    std::vector<const char *> shaderNames;
-    for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
-    ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
-    if(ImGui::Button("reload shaders")) {
-        if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
+    if(app.displayShaders.size() != 0) {
+        std::vector<const char *> shaderNames;
+        for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
+        ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
+        if(ImGui::Button("reload shaders")) {
+            if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
+        }
+        if(app.failedToReloadShaders) {
+            ImGui::OpenPopup("failed to reload shaders!");
+            app.failedToReloadShaders = false;
+        }
+        ImGui::Separator();
     }
-    if(app.failedToReloadShaders) {
-        ImGui::OpenPopup("failed to reload shaders!");
-        app.failedToReloadShaders = false;
-    }
-    ImGui::Separator();
-
 
     // ImGui::Checkbox("wireframe", &app.wireframe);
     // ImGui::Checkbox("skybox", &app.skybox);
     // ImGui::Checkbox("show normals", &app.showNormals);
     // ImGui::Checkbox("face culling", &app.faceCulling);
+    // ImGui::InputFloat("exposure", &app.exposure);
     ImGui::ColorEdit3("clear color", &app.clearColor.x);
-    ImGui::InputFloat("exposure", &app.exposure);
     ImGui::Separator();
 
-    size_t triangles = 0;
-    for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {
-        int meshTris = 0;
-        app.models[app.currentModelIndex].getMeshes()[i].ib.bind();
-        glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &meshTris);
-        triangles += meshTris / sizeof(unsigned) / 3;
-    }
-    ImGui::Text("%lu triangles", triangles);
-    ImGui::Text("%lu vertices", triangles * 3);
-    // ImGui::Checkbox("flip textures on load", &app.flipTextures);
-    // ImGui::Checkbox("flip wining order on load", &app.flipWinding);
-    if(app.models.size() > 0) {
-        std::vector<const char *> modelNames;
-        for(Model const &model : app.models) modelNames.push_back(model.getFilepath().c_str());
-        ImGui::ListBox("loaded models", &app.currentModelIndex, modelNames.data(), modelNames.size());
-    }
-    // ImGui::InputText("model path", app.loadModelBuffer, sizeof(app.loadModelBuffer));
-    // if(ImGui::Button("load model")) {
-    //     app.loadModel(app.loadModelBuffer, {app.flipTextures, app.flipWinding});
+    // size_t triangles = 0;
+    // for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {
+    //     int meshTris = 0;
+    //     app.models[app.currentModelIndex].getMeshes()[i].ib.bind();
+    //     glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &meshTris);
+    //     triangles += meshTris / sizeof(unsigned) / 3;
+    // }
+    // ImGui::Text("%lu triangles", triangles);
+    // ImGui::Text("%lu vertices", triangles * 3);
+    // if(app.models.size() > 0) {
+    //     std::vector<const char *> modelNames;
+    //     for(Model const &model : app.models) modelNames.push_back(model.getFilepath().c_str());
+    //     ImGui::ListBox("loaded models", &app.currentModelIndex, modelNames.data(), modelNames.size());
     // }
     // ImGui::Separator();
 
 
-    ImGui::Separator();
-    ImGui::DragFloat3("model position", &app.currentModelPosition.x, 0.01f);
-    ImGui::DragFloat3("rotation", &app.currentModelRotation.x, 0.5f);
-    ImGui::DragFloat3("scale", &app.currentModelScale.x, 0.01f);
-    if (ImGui::Button("reset model"))
-    {
-        app.currentModelPosition = glm::vec3(0);
-        app.currentModelRotation = glm::vec3(0);
-        app.currentModelScale = glm::vec3(1);
-    }
+    // ImGui::Separator();
+    // ImGui::DragFloat3("model position", &app.currentModelPosition.x, 0.01f);
+    // ImGui::DragFloat3("rotation", &app.currentModelRotation.x, 0.5f);
+    // ImGui::DragFloat3("scale", &app.currentModelScale.x, 0.01f);
+    // if (ImGui::Button("reset model"))
+    // {
+    //     app.currentModelPosition = glm::vec3(0);
+    //     app.currentModelRotation = glm::vec3(0);
+    //     app.currentModelScale = glm::vec3(1);
+    // }
 
-    ImGui::Separator();
+    // ImGui::Separator();
 
 
     // ImGui::Checkbox("flashlight enabled", &flashlight.enabled);

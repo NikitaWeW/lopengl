@@ -81,19 +81,11 @@ int main(int argc, char **argv)
     // glfwGetWindowSize(window, &camera.width, &camera.height);
 
     app.shaders = {
-        {"shaders/basic.glsl",          SHOW_LOGS}, // 0
-        {"shaders/lighting.glsl",       SHOW_LOGS}, // 1
-        {"shaders/reflection.glsl",     SHOW_LOGS}, // 2
-        {"shaders/refraction.glsl",     SHOW_LOGS}, // 3
-        {"shaders/explode.glsl",        SHOW_LOGS}, // 4
-//       =========================================
-        {"shaders/post_process.glsl",   SHOW_LOGS}, // 5
-        {"shaders/depth_omnidir.glsl",  SHOW_LOGS}, // 6
-        {"shaders/depth_regular.glsl",  SHOW_LOGS}, // 7
-        {"shaders/plain_color.glsl",    SHOW_LOGS}, // 8
-        {"shaders/skybox.glsl",SHOW_LOGS}, // 9
+        {"shaders/basic.glsl",              SHOW_LOGS}, // 0
+        {"shaders/defferred_lighting.glsl", SHOW_LOGS}, // 1
+        {"shaders/defferred.glsl",          SHOW_LOGS}, // 2
+        {"shaders/plain_color.glsl",        SHOW_LOGS}, // 3
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
-    app.displayShaders = {0, 1, 2, 3, 4}; // shows in shader list.
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     app.camera = &camera;
@@ -219,7 +211,6 @@ int main(int argc, char **argv)
         renderer.getLights().push_back(lights + i);
     }
 
-    LOG_DEBUG("scene generated!");
 // =========================== //
 
     LOG_INFO("loaded!");
@@ -257,12 +248,10 @@ int main(int argc, char **argv)
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
 
-        currentShader.bind();
+        app.shaders[2].bind();
         // set uniforms
-        glUniform3fv(currentShader.getUniform("u_viewPos"), 1, &camera.position.x);
-        glUniformMatrix4fv(currentShader.getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(currentShader.getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-        renderer.setLightingUniforms(currentShader); // it sucks.
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
 
 // ================== //
 
@@ -270,15 +259,15 @@ int main(int argc, char **argv)
         sceneModel.translate(app.currentModelPosition);
         sceneModel.rotate(app.currentModelRotation);
         sceneModel.scale(app.currentModelScale);
-        glUniformMatrix4fv(currentShader.getUniform("u_modelMat"), 1, GL_FALSE, &sceneModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(currentShader.getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(sceneModel.getModelMat()))[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &sceneModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(sceneModel.getModelMat()))[0][0]);
         for(Mesh const &mesh : sceneModel.getMeshes()) {
             bool specularSet = false;
             bool normalSet = false;
             bool heightSet = false;
             unsigned int textureCount = 0;
             for(Texture const &texture : mesh.textures) {
-                int location = currentShader.getUniform("u_material." + texture.type);
+                int location = app.shaders[2].getUniform("u_material." + texture.type);
                 if(location != -1) {
                     glUniform1i(location, textureCount);
                     texture.bind(textureCount);
@@ -314,11 +303,11 @@ int main(int argc, char **argv)
                 app.cube.resetMatrix();
                 app.cube.translate(plight->position);
                 app.cube.scale(glm::vec3{0.03125});
-                app.shaders[8].bind();
-                glUniform3fv(app.shaders[8].getUniform("u_color"), 1, &plight->color.x);
-                glUniformMatrix4fv(app.shaders[8].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
-                glUniformMatrix4fv(app.shaders[8].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
-                glUniformMatrix4fv(app.shaders[8].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+                app.shaders[3].bind();
+                glUniform3fv(app.shaders[3].getUniform("u_color"), 1, &plight->color.x);
+                glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+                glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+                glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
                 renderer.draw(app.cube);
             } 
         }
@@ -331,10 +320,13 @@ int main(int argc, char **argv)
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear();
         quad.resetMatrix();
-        app.shaders[5].bind();
-        glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
-        glUniform1f(app.shaders[5].getUniform("u_exposure"), app.exposure);
-        HDRtexture.bind(0);
+        app.shaders[1].bind();
+
+        glUniform3fv(currentShader.getUniform("u_viewPos"), 1, &camera.position.x);
+        renderer.setLightingUniforms(app.shaders[1]);
+        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
+        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);
+        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2);
         renderer.draw(quad);
 
 // ================== //
