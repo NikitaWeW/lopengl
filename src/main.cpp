@@ -262,9 +262,6 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &sceneModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(sceneModel.getModelMat()))[0][0]);
         for(Mesh const &mesh : sceneModel.getMeshes()) {
-            bool specularSet = false;
-            bool normalSet = false;
-            bool heightSet = false;
             unsigned int textureCount = 0;
             for(Texture const &texture : mesh.textures) {
                 int location = app.shaders[2].getUniform("u_material." + texture.type);
@@ -273,20 +270,7 @@ int main(int argc, char **argv)
                     texture.bind(textureCount);
                     ++textureCount;
                 }
-                if(texture.type == "specular") {
-                    specularSet = true;
-                } else if(texture.type == "normal") {
-                    normalSet = true;
-                } else if(texture.type == "height") {
-                    heightSet = true;
-                }
             }
-            glUniform1f(currentShader.getUniform("u_material.shininess"), mesh.material.shininess);
-
-            glUniform1i(currentShader.getUniform("u_material.specularSet"), specularSet);
-            glUniform1i(currentShader.getUniform("u_material.normalSet"), normalSet);
-            glUniform1i(currentShader.getUniform("u_material.heightSet"), heightSet);
-         
             
             mesh.va.bind();
             mesh.ib.bind();
@@ -322,7 +306,7 @@ int main(int argc, char **argv)
         quad.resetMatrix();
         app.shaders[1].bind();
 
-        glUniform3fv(currentShader.getUniform("u_viewPos"), 1, &camera.position.x);
+        glUniform3fv(app.shaders[1].getUniform("u_viewPos"), 1, &camera.position.x);
         renderer.setLightingUniforms(app.shaders[1]);
         glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
         glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);

@@ -2,7 +2,7 @@
 #version 430 core
 layout(location = 0) in vec4 a_position;
 layout(location = 1) in vec4 a_normal;
-layout(location = 2) in vec2 texCoor
+layout(location = 2) in vec2 a_texCoords;
 layout(location = 3) in vec4 a_tangent;
 layout(location = 5) in mat4 a_modelMat;
 
@@ -46,7 +46,6 @@ struct Material {
     bool normalSet;
 };
 
-in vec2 v_texCoord;
 uniform Material u_material;
 
 in VS_OUT {
@@ -63,6 +62,6 @@ void main() {
     } else {
         o_normal = fs_in.normal;
     }
-    o_albedoSpecular.rgb = texture(u_material.diffuse, v_texCoord).rgb;
-    o_albedoSpecular.a = u_material.specularSet ? texture(u_material.specular, v_texCoord) : 1;
+    o_albedoSpecular.rgb = texture(u_material.diffuse, fs_in.texCoords).rgb;
+    o_albedoSpecular.a = u_material.specularSet ? texture(u_material.specular, fs_in.texCoords).r : 1;
 }

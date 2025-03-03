@@ -7,52 +7,9 @@
 #include "opengl/Shader.hpp"
 #include "utils/Light.hpp"
 #include "logger.h"
-/*
-        skybox.bind(1);
-        // draw the model
-        app.models[app.currentModelIndex].resetMatrix();
-        app.models[app.currentModelIndex].translate(app.models[app.currentModelIndex].m_position);
-        app.models[app.currentModelIndex].rotate(app.models[app.currentModelIndex].m_rotation);
-        app.models[app.currentModelIndex].scale(app.models[app.currentModelIndex].m_scale);
-
-        glUniform1f(currentShader.getUniform("u_timepoint"), glfwGetTime());
-        glUniform1i(currentShader.getUniform("u_skybox"), 1);
-        app.textures[app.currentTextureIndex].bind();
-        renderer.drawLighting(app.models[app.currentModelIndex], currentShader, camera); 
-        app.textures[app.currentTextureIndex].unbind();
-
-        if(app.showNormals) {
-            renderer.drawLighting(app.models[app.currentModelIndex], normalShader, camera); 
-        }
-
-        if(light.enabled) {
-            // draw the light cube
-            app.cube.resetMatrix();
-            app.cube.translate(light.position);
-            app.cube.scale(glm::vec3{0.03125});
-            app.plainColorShader.bind();
-            glUniform3fv(app.plainColorShader.getUniform("u_color"), 1, &light.color.x);
-            renderer.draw(app.cube, app.plainColorShader, camera);
-        }
-
-        if(app.skybox) {
-            // draw the skybox as last
-            glDepthMask(GL_FALSE);
-            glDepthFunc(GL_LEQUAL);
-            glUniform1i(skyboxShader.getUniform("u_skybox"), 1);
-            renderer.draw(app.cube, skyboxShader, camera);
-            glDepthFunc(GL_LESS);
-            glDepthMask(GL_TRUE);
-        }
-*/
 
 void imguistuff(Application &app, ControllableCamera &cam)
 {
-    // dont ask why this logic is in imgui stuff (idk)
-    // if(app.models[app.currentModelIndex].getFilepath() == "res/models/wall/wall.obj") {
-    //     app.currentModelRotation += glm::vec3{app.deltatime * 30, app.deltatime * -10, app.deltatime * 20};
-    // }
-
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -76,15 +33,15 @@ void imguistuff(Application &app, ControllableCamera &cam)
         std::vector<const char *> shaderNames;
         for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
         ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
-        if(ImGui::Button("reload shaders")) {
-            if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
-        }
-        if(app.failedToReloadShaders) {
-            ImGui::OpenPopup("failed to reload shaders!");
-            app.failedToReloadShaders = false;
-        }
-        ImGui::Separator();
     }
+    if(ImGui::Button("reload shaders")) {
+        if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
+    }
+    if(app.failedToReloadShaders) {
+        ImGui::OpenPopup("failed to reload shaders!");
+        app.failedToReloadShaders = false;
+    }
+    ImGui::Separator();
 
     // ImGui::Checkbox("wireframe", &app.wireframe);
     // ImGui::Checkbox("skybox", &app.skybox);

@@ -5,15 +5,11 @@ layout(location = 2) in vec2 a_texCoords;
 
 out VS_OUT {
     vec2 texCoords;
-    vec3 viewPos;
 } vs_out;
-
-uniform vec3 u_viewPos;
 
 void main() {
     gl_Position = a_position;
     vs_out.texCoords = a_texCoords;
-    vs_out.viewPos = u_viewPos;
 }
 
 #shader fragment
@@ -66,7 +62,6 @@ struct DirectionalLight {
 
 in VS_OUT {
     vec2 texCoords;
-    vec3 viewPos;
 } fs_in;
 
 uniform Material u_material;
@@ -79,6 +74,8 @@ uniform int u_spotLightCount;
 uniform int u_dirLightCount;
 uniform int u_pointLightCount;
 
+uniform vec3 u_viewPos;
+
 out vec4 o_color;
 
 vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords, vec3 fragPosition);
@@ -87,7 +84,7 @@ void main() {
     vec2 texCoords = fs_in.texCoords;
 
     vec3 fragPosition = texture(u_material.position, texCoords).rgb;
-    vec3 viewDir = normalize(fs_in.viewPos - fragPosition);
+    vec3 viewDir = normalize(u_viewPos - fragPosition);
 
     vec3 normal = texture(u_material.normal, texCoords).rgb;
 
@@ -99,7 +96,7 @@ void main() {
     o_color = (
         lightColor
     ) * vec4(texture(u_material.albedoSpecular, texCoords).rgb, 1);
-
+o_color = vec4(fragPosition, 1);
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
     o_color.a = 1;
