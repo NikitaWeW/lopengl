@@ -96,7 +96,7 @@ void main() {
     o_color = (
         lightColor
     ) * vec4(texture(u_material.albedoSpecular, texCoords).rgb, 1);
-o_color = vec4(normal, 1);
+
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
     o_color.a = 1;
@@ -109,7 +109,7 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
     float attenuation = 1.0 / (light.attenuation * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.00125 * 0*
+        light.color * 0.00125 *
         attenuation;
     vec3 diffuse = 
         light.color * 

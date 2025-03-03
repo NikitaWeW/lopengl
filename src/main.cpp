@@ -85,7 +85,6 @@ int main(int argc, char **argv)
         {"shaders/defferred_lighting.glsl", SHOW_LOGS}, // 1
         {"shaders/defferred.glsl",          SHOW_LOGS}, // 2
         {"shaders/plain_color.glsl",        SHOW_LOGS}, // 3
-        {"shaders/post_process.glsl",       SHOW_LOGS}  // 4
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
@@ -207,7 +206,7 @@ int main(int argc, char **argv)
         PointLight light;
         light.position = { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) };
         light.color = { randRange(0.0f, 2.0f), randRange(0.0f, 2.0f), randRange(0.0f, 2.0f) };
-        light.attenuation = randRange(0.1f, 0.5f);
+        light.attenuation = randRange(0.07f, 0.09f);
         lights[i] = light; // keep them in the memory
         renderer.getLights().push_back(lights + i);
     }
@@ -293,6 +292,17 @@ int main(int argc, char **argv)
             glDrawElementsInstanced(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr, numModels);
         }
 
+
+// ====================== //
+//  draw the framebuffer
+// ====================== //
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, camera.width, camera.height);
+        renderer.clear();
+        quad.resetMatrix();
+        app.shaders[1].bind();
+
 // ================== //
         
         for(Light const *light : renderer.getLights()) {
@@ -311,23 +321,12 @@ int main(int argc, char **argv)
                 renderer.draw(app.cube);
             } 
         }
-
-// ====================== //
-//  draw the framebuffer
-// ====================== //
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, camera.width, camera.height);
-        renderer.clear();
-        quad.resetMatrix();
-        app.shaders[4].bind();
-
-        glUniform3fv(app.shaders[4].getUniform("u_viewPos"), 1, &camera.position.x);
-        renderer.setLightingUniforms(app.shaders[4]);
-        glUniform1i(app.shaders[4].getUniform("u_material.position"), 0);
-        glUniform1i(app.shaders[4].getUniform("u_material.normal"), 1);
-        glUniform1i(app.shaders[4].getUniform("u_material.albedoSpecular"), 2);
-        glUniform1i(app.shaders[4].getUniform("u_texture"), 2);
+        renderer.setLightingUniforms(app.shaders[1]);
+        glUniform3fv(app.shaders[1].getUniform("u_viewPos"), 1, &camera.position.x);
+        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
+        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);
+        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2);
+        glUniform1i(app.shaders[1].getUniform("u_texture"), 2);
         GbufferPositionTexture.bind(0);
         GbufferNormalTexture.bind(1);
         GbufferAlbedoSpecularTexture.bind(2);
