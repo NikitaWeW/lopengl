@@ -85,6 +85,7 @@ int main(int argc, char **argv)
         {"shaders/defferred_lighting.glsl", SHOW_LOGS}, // 1
         {"shaders/defferred.glsl",          SHOW_LOGS}, // 2
         {"shaders/plain_color.glsl",        SHOW_LOGS}, // 3
+        {"shaders/post_process.glsl",       SHOW_LOGS}  // 4
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
@@ -156,13 +157,13 @@ int main(int argc, char **argv)
     Gbuffer.attach(GbufferNormalTexture, GL_COLOR_ATTACHMENT1);
     
     Texture GbufferAlbedoSpecularTexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
-    Gbuffer.attach(GbufferAlbedoSpecularTexture, GL_COLOR_ATTACHMENT3);
+    Gbuffer.attach(GbufferAlbedoSpecularTexture, GL_COLOR_ATTACHMENT2);
 
     Renderbuffer GbufferRBO{GL_DEPTH24_STENCIL8, 1, 1};
     Gbuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
 
 
-    unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
     glDrawBuffers(sizeof(attachments) / sizeof(*attachments), attachments);
 
     assert(Gbuffer.isComplete());
@@ -223,11 +224,6 @@ int main(int argc, char **argv)
         glfwGetWindowSize(window, &camera.width, &camera.height);
 
         if(prevWidth != camera.width || prevHeight != camera.height) { // close your eyes here
-            HDRtexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            HDRrbo.bind();
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-            
             GbufferPositionTexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferNormalTexture.bind();
@@ -236,6 +232,11 @@ int main(int argc, char **argv)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferRBO.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+
+            HDRtexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            HDRrbo.bind();
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
 // ===================== //
@@ -243,7 +244,7 @@ int main(int argc, char **argv)
 // ===================== //
 
         glEnable(GL_CULL_FACE);
-        HDRframebuffer.bind();
+        Gbuffer.bind();
         glFrontFace(GL_CCW);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear(app.clearColor);
@@ -262,6 +263,9 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &sceneModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(sceneModel.getModelMat()))[0][0]);
         for(Mesh const &mesh : sceneModel.getMeshes()) {
+            bool specularSet = false;
+            bool normalSet = false;
+            bool heightSet = false;
             unsigned int textureCount = 0;
             for(Texture const &texture : mesh.textures) {
                 int location = app.shaders[2].getUniform("u_material." + texture.type);
@@ -270,7 +274,19 @@ int main(int argc, char **argv)
                     texture.bind(textureCount);
                     ++textureCount;
                 }
+                if(texture.type == "specular") {
+                    specularSet = true;
+                } else if(texture.type == "normal") {
+                    normalSet = true;
+                } else if(texture.type == "height") {
+                    heightSet = true;
+                }
             }
+
+            glUniform1i(app.shaders[2].getUniform("u_material.specularSet"), specularSet);
+            glUniform1i(app.shaders[2].getUniform("u_material.normalSet"), normalSet);
+            glUniform1i(app.shaders[2].getUniform("u_material.heightSet"), heightSet);
+         
             
             mesh.va.bind();
             mesh.ib.bind();
@@ -304,13 +320,17 @@ int main(int argc, char **argv)
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear();
         quad.resetMatrix();
-        app.shaders[1].bind();
+        app.shaders[4].bind();
 
-        glUniform3fv(app.shaders[1].getUniform("u_viewPos"), 1, &camera.position.x);
-        renderer.setLightingUniforms(app.shaders[1]);
-        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
-        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);
-        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2);
+        glUniform3fv(app.shaders[4].getUniform("u_viewPos"), 1, &camera.position.x);
+        renderer.setLightingUniforms(app.shaders[4]);
+        glUniform1i(app.shaders[4].getUniform("u_material.position"), 0);
+        glUniform1i(app.shaders[4].getUniform("u_material.normal"), 1);
+        glUniform1i(app.shaders[4].getUniform("u_material.albedoSpecular"), 2);
+        glUniform1i(app.shaders[4].getUniform("u_texture"), 2);
+        GbufferPositionTexture.bind(0);
+        GbufferNormalTexture.bind(1);
+        GbufferAlbedoSpecularTexture.bind(2);
         renderer.draw(quad);
 
 // ================== //

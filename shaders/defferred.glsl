@@ -33,8 +33,8 @@ void main() {
 
 #shader fragment
 #version 430 core
-layout(location = 0) out vec3 o_position;
-layout(location = 1) out vec3 o_normal;
+layout(location = 0) out vec4 o_position;
+layout(location = 1) out vec4 o_normal;
 layout(location = 2) out vec4 o_albedoSpecular;
 
 struct Material {
@@ -56,11 +56,11 @@ in VS_OUT {
 } fs_in;
 
 void main() {
-    o_position = fs_in.fragPosition;
+    o_position = vec4(fs_in.fragPosition, 1);
     if(u_material.normalSet) {
-        o_normal = normalize(fs_in.TBN * normalize(texture(u_material.normal, fs_in.texCoords).rgb * 2.0 - 1.0));
+        o_normal = vec4(normalize(fs_in.TBN * normalize(texture(u_material.normal, fs_in.texCoords).rgb)), 1);
     } else {
-        o_normal = fs_in.normal;
+        o_normal = vec4(fs_in.normal, 1);
     }
     o_albedoSpecular.rgb = texture(u_material.diffuse, fs_in.texCoords).rgb;
     o_albedoSpecular.a = u_material.specularSet ? texture(u_material.specular, fs_in.texCoords).r : 1;

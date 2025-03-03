@@ -96,7 +96,7 @@ void main() {
     o_color = (
         lightColor
     ) * vec4(texture(u_material.albedoSpecular, texCoords).rgb, 1);
-o_color = vec4(fragPosition, 1);
+o_color = vec4(normal, 1);
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
     o_color.a = 1;
