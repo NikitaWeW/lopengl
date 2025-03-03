@@ -12,12 +12,8 @@ void main() {
 
 #shader fragment
 #version 430 core
+out vec4 o_color;
 uniform vec3 u_color;
-
-layout(location = 0) out vec4 o_position;
-layout(location = 1) out vec4 o_normal;
-layout(location = 2) out vec4 o_albedoSpecular;
-
 void main() {
-    o_albedoSpecular = vec4(u_color, 1);
+    o_color = vec4(u_color, 1);
 }

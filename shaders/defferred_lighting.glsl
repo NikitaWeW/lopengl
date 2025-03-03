@@ -15,7 +15,7 @@ void main() {
 #shader fragment
 #version 430 core
 
-#define LIGHTS_CAPASITY 40
+#define LIGHTS_CAPASITY 50
 
 struct Material {
     sampler2D position;

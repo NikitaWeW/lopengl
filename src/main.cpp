@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 
 //  ----------------------------------
     // input here
-    constexpr unsigned numLights = 10;
+    constexpr unsigned numLights = 50;
     constexpr unsigned numModels = 1000;
     constexpr float radius = 50;
     Model sceneModel = app.models[0];
@@ -296,14 +296,28 @@ int main(int argc, char **argv)
 // ====================== //
 //  draw the framebuffer
 // ====================== //
-
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, Gbuffer.getRenderID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear();
         quad.resetMatrix();
         app.shaders[1].bind();
 
-// ================== //
+        renderer.setLightingUniforms(app.shaders[1]);
+        glUniform3fv(app.shaders[1].getUniform("u_viewPos"), 1, &camera.position.x);
+        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
+        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);
+        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2);
+        glUniform1i(app.shaders[1].getUniform("u_texture"), 2);
+        GbufferPositionTexture.bind(0);
+        GbufferNormalTexture.bind(1);
+        GbufferAlbedoSpecularTexture.bind(2);
+        glDepthMask(GL_FALSE);
+        renderer.draw(quad);
+        glDepthMask(GL_TRUE);
+
         
         for(Light const *light : renderer.getLights()) {
             if(light->enabled || light->type == POINT) {
@@ -318,25 +332,16 @@ int main(int argc, char **argv)
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                renderer.draw(app.cube);
+                renderer.draw(app.cube); // bad. need instancing, but idc
             } 
         }
-        renderer.setLightingUniforms(app.shaders[1]);
-        glUniform3fv(app.shaders[1].getUniform("u_viewPos"), 1, &camera.position.x);
-        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
-        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);
-        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2);
-        glUniform1i(app.shaders[1].getUniform("u_texture"), 2);
-        GbufferPositionTexture.bind(0);
-        GbufferNormalTexture.bind(1);
-        GbufferAlbedoSpecularTexture.bind(2);
-        renderer.draw(quad);
 
 // ================== //
 
 
-        imguistuff(app, camera);
+        // imguistuff(app, camera); // bad
 
+        if(app.frameCounter % 100 == 0) glfwSetWindowTitle(window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
         glfwSwapBuffers(window);
         glfwPollEvents();
         ++app.frameCounter;
