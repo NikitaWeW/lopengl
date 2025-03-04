@@ -326,7 +326,7 @@ int main(int argc, char **argv)
                 assert(plight);
                 app.cube.resetMatrix();
                 app.cube.translate(plight->position);
-                app.cube.scale(glm::vec3{0.03125});
+                app.cube.scale(glm::vec3{plight->getRadius()});
                 app.shaders[3].bind();
                 glUniform3fv(app.shaders[3].getUniform("u_color"), 1, &plight->color.x);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);

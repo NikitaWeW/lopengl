@@ -25,17 +25,15 @@ void PointLight::setUniforms(ShaderProgram const &shader, unsigned &pointLightCo
     glUniformMatrix4fv(shader.getUniform(element + ".viewMat"), 1, GL_FALSE, &getViewMatrix()[0][0]);
 }
 
-float PointLight::getRadius()
-{
+float PointLight::getRadius() const {
     if(attenuation != lastAttenuation || color != lastColor || firstGetRadius) {
         lastAttenuation = attenuation;
         lastColor = color;
         firstGetRadius = false;
         float lightMax = std::fmaxf(std::fmaxf(color.r, color.g), color.b);
         radius = glm::sqrt(lightMax * (256/5) / attenuation);
-    } else {
-        return radius;
     }
+    return radius;
 }
 
 DirectionalLight::DirectionalLight()

@@ -28,15 +28,15 @@ public:
 
 struct PointLight : public Light {
 private:
-    glm::vec3 lastColor;
-    float lastAttenuation;
-    float radius;
-    bool firstGetRadius = true;
+    mutable glm::vec3 lastColor;
+    mutable float lastAttenuation;
+    mutable float radius;
+    mutable bool firstGetRadius = true;
 public:
     PointLight();
     virtual glm::mat4 getViewMatrix() const;
     virtual void setUniforms(ShaderProgram const &shader, unsigned &pointLightCount, unsigned &dirLightCount, unsigned &spotLightCount) const;
-    float getRadius();
+    float getRadius() const;
 };
 
 struct DirectionalLight : public Light {
