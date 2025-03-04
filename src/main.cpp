@@ -332,7 +332,7 @@ int main(int argc, char **argv)
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                renderer.draw(app.cube); // bad. need instancing, but idc
+                renderer.draw(app.cube);
             } 
         }
 

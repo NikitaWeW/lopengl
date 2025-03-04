@@ -34,31 +34,6 @@ struct PointLight {
 
     // samplerCube depthMap;
 };
-struct SpotLight {
-    vec3 position;
-    vec3 direction;
-
-    float innerCutoff;
-    float outerCutoff;
-
-    vec3 color;
-
-    float attenuation;
-
-    mat4 projectionMat;
-    mat4 viewMat;
-    
-    // sampler2D depthMap;
-};
-struct DirectionalLight {
-    vec3 direction;
-    vec3 color;
-
-    mat4 projectionMat;
-    mat4 viewMat;
-    
-    // sampler2D depthMap;
-};
 
 in VS_OUT {
     vec2 texCoords;
@@ -66,12 +41,8 @@ in VS_OUT {
 
 uniform Material u_material;
 
-uniform SpotLight        u_spotLights [LIGHTS_CAPASITY];
-uniform DirectionalLight u_dirLights  [LIGHTS_CAPASITY];
-uniform PointLight       u_pointLights[LIGHTS_CAPASITY];
+uniform PointLight u_pointLights[LIGHTS_CAPASITY];
 
-uniform int u_spotLightCount;
-uniform int u_dirLightCount;
 uniform int u_pointLightCount;
 
 uniform vec3 u_viewPos;
