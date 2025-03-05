@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -250,7 +250,6 @@ int main(int argc, char **argv)
 //     draw the scene    //
 // ===================== //
 
-        glEnable(GL_CULL_FACE);
         Gbuffer.bind();
         glFrontFace(GL_CCW);
         glViewport(0, 0, camera.width, camera.height);
@@ -332,15 +331,15 @@ int main(int argc, char **argv)
                 // draw the light cube
                 PointLight const *plight = dynamic_cast<PointLight const *>(light);
                 assert(plight);
-                app.cube.resetMatrix();
-                app.cube.translate(plight->position);
-                app.cube.scale(glm::vec3{plight->getRadius()});
+                app.models[1].resetMatrix();
+                app.models[1].translate(plight->position);
+                app.models[1].scale(glm::vec3{plight->getRadius()});
                 app.shaders[3].bind();
                 glUniform3fv(app.shaders[3].getUniform("u_color"), 1, &plight->color.x);
-                glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
+                glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[1].getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                renderer.draw(app.cube);
+                renderer.draw(app.models[1]);
             } 
         }
 

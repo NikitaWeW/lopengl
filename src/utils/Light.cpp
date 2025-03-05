@@ -31,7 +31,8 @@ float PointLight::getRadius() const {
         lastColor = color;
         firstGetRadius = false;
         float lightMax = std::fmaxf(std::fmaxf(color.r, color.g), color.b);
-        radius = glm::sqrt(lightMax * (256/5) / attenuation);
+        assert(attenuation != 0);
+        radius = glm::sqrt((lightMax * 256) / (attenuation * 5));
     }
     return radius;
 }
