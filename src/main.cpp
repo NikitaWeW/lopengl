@@ -65,6 +65,7 @@ extern const bool debug = true;
 void imguistuff(Application &app, ControllableCamera &cam);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+float lerp(float a, float b, float x) { return a + x * (b - a); }
 
 int main(int argc, char **argv)
 {
@@ -134,16 +135,26 @@ int main(int argc, char **argv)
     glfwSetScrollCallback(window, scroll_callback);
 
 // =========================== //
+//  generate the SSAO kernel
+// =========================== //
+    constexpr size_t numSamples = 64;
+    glm::vec3 SSAOkernel[numSamples];
+    for(size_t i = 0; i < numSamples; ++i) {
+        glm::vec3 sample{
+            randRange(0.0f, 1.0f) * 2.0 - 1.0,
+            randRange(0.0f, 1.0f) * 2.0 - 1.0,
+            randRange(0.0f, 1.0f)
+        };
+        sample = glm::normalize(sample);
+        sample *= randRange(0.0f, 1.0f);
+        float scale = (float) i / numSamples;
+        scale = lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        SSAOkernel[i] = sample;
+    }
 
-    Texture HDRtexture{1, 1, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR};
-    Renderbuffer HDRrbo{GL_DEPTH24_STENCIL8, 1, 1};
-    Framebuffer HDRframebuffer;
-    HDRframebuffer.bind();
-    HDRframebuffer.attach(HDRtexture, GL_COLOR_ATTACHMENT0);
-    HDRframebuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
-    assert(HDRframebuffer.isComplete());
-    HDRframebuffer.unbind();
-
+// =========================== //
+//  generate the framebuffers
 // =========================== //
 
     Framebuffer Gbuffer;
@@ -159,7 +170,7 @@ int main(int argc, char **argv)
     Gbuffer.attach(GbufferAlbedoSpecularTexture, GL_COLOR_ATTACHMENT2);
 
     Renderbuffer GbufferRBO{GL_DEPTH24_STENCIL8, 1, 1};
-    Gbuffer.attach(HDRrbo, GL_DEPTH_STENCIL_ATTACHMENT);
+    Gbuffer.attach(GbufferRBO, GL_DEPTH_STENCIL_ATTACHMENT);
 
 
     unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
@@ -168,6 +179,8 @@ int main(int argc, char **argv)
     assert(Gbuffer.isComplete());
     Gbuffer.unbind();
 
+// =========================== //
+//  generate scene
 // =========================== //
     LOG_DEBUG("generating scene...");
 
@@ -231,11 +244,6 @@ int main(int argc, char **argv)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferRBO.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
-
-            HDRtexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            HDRrbo.bind();
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
 // ===================== //
@@ -296,9 +304,6 @@ int main(int argc, char **argv)
 // ====================== //
 //  draw the framebuffer
 // ====================== //
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, Gbuffer.getRenderID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
-        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
         renderer.clear();
@@ -318,6 +323,9 @@ int main(int argc, char **argv)
         renderer.draw(quad);
         glDepthMask(GL_TRUE);
 
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, Gbuffer.getRenderID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+        glBlitFramebuffer(0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         
         for(Light const *light : renderer.getLights()) {
             if(light->enabled || light->type == POINT) {
@@ -339,7 +347,7 @@ int main(int argc, char **argv)
 // ================== //
 
 
-        // imguistuff(app, camera); // bad
+        imguistuff(app, camera); // bad
 
         if(app.frameCounter % 100 == 0) glfwSetWindowTitle(window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
         glfwSwapBuffers(window);
