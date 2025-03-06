@@ -95,6 +95,7 @@ struct DirectionalLight {
     // sampler2D depthMap;
 };
 
+// https://www.youtube.com/watch?v=s2vGGAryxpM
 in VS_OUT {
     vec2 texCoords;
     vec3 fragPosition;

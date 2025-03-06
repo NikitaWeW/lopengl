@@ -86,6 +86,7 @@ int main(int argc, char **argv)
         {"shaders/defferred_lighting.glsl", SHOW_LOGS}, // 1
         {"shaders/defferred.glsl",          SHOW_LOGS}, // 2
         {"shaders/plain_color.glsl",        SHOW_LOGS}, // 3
+        {"shaders/ssao.glsl",               SHOW_LOGS}, // 4
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -135,11 +136,13 @@ int main(int argc, char **argv)
     glfwSetScrollCallback(window, scroll_callback);
 
 // =========================== //
-//  generate the SSAO kernel
+//  generate the SSAO stuff
 // =========================== //
-    constexpr size_t numSamples = 64;
-    glm::vec3 SSAOkernel[numSamples];
-    for(size_t i = 0; i < numSamples; ++i) {
+    constexpr size_t SSAOnumSamples = 64;
+    constexpr size_t SSAOnoiseSide = 4;
+//   ----------------------------------
+    glm::vec3 SSAOkernel[SSAOnumSamples];
+    for(size_t i = 0; i < SSAOnumSamples; ++i) {
         glm::vec3 sample{
             randRange(0.0f, 1.0f) * 2.0 - 1.0,
             randRange(0.0f, 1.0f) * 2.0 - 1.0,
@@ -147,15 +150,37 @@ int main(int argc, char **argv)
         };
         sample = glm::normalize(sample);
         sample *= randRange(0.0f, 1.0f);
-        float scale = (float) i / numSamples;
+        float scale = (float) i / SSAOnumSamples;
         scale = lerp(0.1f, 1.0f, scale * scale);
         sample *= scale;
         SSAOkernel[i] = sample;
     }
+    glm::vec3 SSAOnoise[SSAOnoiseSide*SSAOnoiseSide];
+    for(size_t i = 0; i < SSAOnoiseSide*SSAOnoiseSide; ++i) {
+        glm::vec3 noise{
+            randRange(-1.0f, 1.0f),
+            randRange(-1.0f, 1.0f),
+            0
+        };
+        SSAOnoise[i] = noise;
+    }
+    Texture SSAOnoiseTexture;
+    SSAOnoiseTexture.bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGBA, GL_FLOAT, SSAOnoise);
 
 // =========================== //
 //  generate the framebuffers
 // =========================== //
+    Framebuffer SSAOfbo;
+    SSAOfbo.bind();
+    Texture SSAOtexture{1, 1, GL_RED, GL_CLAMP_TO_EDGE, GL_NEAREST};
+    SSAOfbo.attach(SSAOtexture, GL_COLOR_ATTACHMENT0);
+    Renderbuffer SSAOrbo{GL_DEPTH24_STENCIL8, 1, 1};
+    SSAOfbo.attach(SSAOrbo, GL_DEPTH_STENCIL_ATTACHMENT);
 
     Framebuffer Gbuffer;
     Gbuffer.bind();
@@ -261,6 +286,8 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
 
 // ================== //
+//  geometry pass
+// ================== //
 
         sceneModel.resetMatrix();
         sceneModel.translate(app.currentModelPosition);
@@ -299,9 +326,25 @@ int main(int argc, char **argv)
             glDrawElementsInstanced(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr, numModels);
         }
 
+// ====================== //
+//  SSAO pass
+// ====================== //
+        SSAOfbo.bind();
+        renderer.clear();
+        app.shaders[4].bind();
+        
+        glUniform1i(app.shaders[4].getUniform("u_material.position"), 0); GbufferPositionTexture.bind(0);
+        glUniform1i(app.shaders[4].getUniform("u_material.normal"), 1);   GbufferNormalTexture.bind(1);
+        glUniform1i(app.shaders[4].getUniform("u_material.noise"), 2);    SSAOnoiseTexture.bind(2);
+        glUniform3fv(app.shaders[4].getUniform("u_samples"), SSAOnumSamples, &SSAOkernel->x);
+        glUniform2f(app.shaders[4].getUniform("u_noiseScale"), (GLfloat) camera.width / SSAOnoiseSide, (GLfloat) camera.height / SSAOnoiseSide);
+        glUniformMatrix4fv(app.shaders[4].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[4].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+
+        renderer.draw(quad);
 
 // ====================== //
-//  draw the framebuffer
+//  backbuffer pass
 // ====================== //
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, camera.width, camera.height);
@@ -331,15 +374,15 @@ int main(int argc, char **argv)
                 // draw the light cube
                 PointLight const *plight = dynamic_cast<PointLight const *>(light);
                 assert(plight);
-                app.models[1].resetMatrix();
-                app.models[1].translate(plight->position);
-                app.models[1].scale(glm::vec3{plight->getRadius()});
+                app.cube.resetMatrix();
+                app.cube.translate(plight->position);
+                app.cube.scale(glm::vec3{0.05f});
                 app.shaders[3].bind();
                 glUniform3fv(app.shaders[3].getUniform("u_color"), 1, &plight->color.x);
-                glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[1].getModelMat()[0][0]);
+                glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                renderer.draw(app.models[1]);
+                renderer.draw(app.cube);
             } 
         }
 

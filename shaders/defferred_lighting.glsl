@@ -28,11 +28,6 @@ struct PointLight {
     vec3 color;
 
     float attenuation;
-
-    mat4 projectionMat;
-    mat4 viewMat;
-
-    // samplerCube depthMap;
 };
 
 in VS_OUT {
@@ -42,7 +37,6 @@ in VS_OUT {
 uniform Material u_material;
 
 uniform PointLight u_pointLights[LIGHTS_CAPASITY];
-
 uniform int u_pointLightCount;
 
 uniform vec3 u_viewPos;
@@ -66,7 +60,7 @@ void main() {
 
     o_color = (
         lightColor
-    ) ;
+    ) * vec4(texture(u_material.albedoSpecular, texCoords).rgb, 1);
 
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
@@ -80,10 +74,10 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
     float attenuation = 1.0 / (light.attenuation * distanceLightFragment * distanceLightFragment);
 
     vec3 ambient = 
-        light.color * 0.125 * 0*
+        light.color * 0.01 *
         attenuation;
     vec3 diffuse = 
-        light.color *
+        light.color * 
         attenuation *
         vec3(max(dot(norm, lightDir), 0.0));
     vec3 specular = 
