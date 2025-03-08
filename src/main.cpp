@@ -87,6 +87,7 @@ int main(int argc, char **argv)
         {"shaders/defferred.glsl",          SHOW_LOGS}, // 2
         {"shaders/plain_color.glsl",        SHOW_LOGS}, // 3
         {"shaders/ssao.glsl",               SHOW_LOGS}, // 4
+        {"shaders/blur.glsl",               SHOW_LOGS}, // 5
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
@@ -139,7 +140,7 @@ int main(int argc, char **argv)
 //  generate the SSAO stuff
 // =========================== //
     constexpr size_t SSAOnumSamples = 64;
-    constexpr size_t SSAOnoiseSide = 4;
+    constexpr size_t SSAOnoiseSide = 16;
 //   ----------------------------------
     glm::vec3 SSAOkernel[SSAOnumSamples];
     for(size_t i = 0; i < SSAOnumSamples; ++i) {
@@ -170,7 +171,25 @@ int main(int argc, char **argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGBA, GL_FLOAT, SSAOnoise);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGB, GL_FLOAT, nullptr);
+    { // seems unnecessary, but whatever
+        Texture SSAOnoBlurNoiseTexture;
+        SSAOnoiseTexture.bind();
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGB, GL_FLOAT, SSAOnoise);
+
+        Framebuffer SSAOnoiseFBO;
+        SSAOnoiseFBO.bind();
+        SSAOnoiseFBO.attach(SSAOnoiseTexture, GL_COLOR_ATTACHMENT0);
+        glViewport(0, 0, SSAOnoiseSide, SSAOnoiseSide);
+        app.shaders[5].bind();
+        glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
+        SSAOnoBlurNoiseTexture.bind();
+        renderer.draw(quad);
+    }
 
 // =========================== //
 //  generate the framebuffers
@@ -205,7 +224,7 @@ int main(int argc, char **argv)
     Gbuffer.unbind();
 
 // =========================== //
-//  generate scene
+//  generate the scene
 // =========================== //
     LOG_DEBUG("generating scene...");
 
@@ -269,25 +288,27 @@ int main(int argc, char **argv)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferRBO.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            
+            SSAOtexture.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            SSAOrbo.bind();
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
         }
 
-// ===================== //
-//     draw the scene    //
-// ===================== //
+// ================== //
+//  geometry pass
+// ================== //
 
         Gbuffer.bind();
         glFrontFace(GL_CCW);
         glViewport(0, 0, camera.width, camera.height);
-        renderer.clear(app.clearColor);
+        glClearColor(app.clearColor.r, app.clearColor.g, app.clearColor.b, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         app.shaders[2].bind();
         // set uniforms
         glUniformMatrix4fv(app.shaders[2].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-
-// ================== //
-//  geometry pass
-// ================== //
 
         sceneModel.resetMatrix();
         sceneModel.translate(app.currentModelPosition);
@@ -330,6 +351,7 @@ int main(int argc, char **argv)
 //  SSAO pass
 // ====================== //
         SSAOfbo.bind();
+        glViewport(0, 0, camera.width, camera.height);
         renderer.clear();
         app.shaders[4].bind();
         
@@ -341,6 +363,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[4].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[4].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
 
+        quad.resetMatrix();
         renderer.draw(quad);
 
 // ====================== //
@@ -354,13 +377,13 @@ int main(int argc, char **argv)
 
         renderer.setLightingUniforms(app.shaders[1]);
         glUniform3fv(app.shaders[1].getUniform("u_viewPos"), 1, &camera.position.x);
-        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);
-        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);
-        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2);
+        glUniform1i(app.shaders[1].getUniform("u_material.position"), 0);       GbufferPositionTexture.bind(0);
+        glUniform1i(app.shaders[1].getUniform("u_material.normal"), 1);         GbufferNormalTexture.bind(1);
+        glUniform1i(app.shaders[1].getUniform("u_material.albedoSpecular"), 2); GbufferAlbedoSpecularTexture.bind(2);
+        glUniform1i(app.shaders[1].getUniform("u_material.ssao"), 3);           SSAOtexture.bind(3);
+        
         glUniform1i(app.shaders[1].getUniform("u_texture"), 2);
-        GbufferPositionTexture.bind(0);
-        GbufferNormalTexture.bind(1);
-        GbufferAlbedoSpecularTexture.bind(2);
+
         glDepthMask(GL_FALSE);
         renderer.draw(quad);
         glDepthMask(GL_TRUE);
@@ -382,7 +405,7 @@ int main(int argc, char **argv)
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                renderer.draw(app.cube);
+                // renderer.draw(app.cube);
             } 
         }
 

@@ -16,8 +16,6 @@ void main() {
 #version 430 core
 
 #define KERNEL_SIZE 64
-#define RADIUS 0.5
-#define BIAS 0.025
 
 struct Material {
     sampler2D position;
@@ -35,11 +33,15 @@ uniform vec2 u_noiseScale;
 uniform mat4 u_viewMat;
 uniform mat4 u_projectionMat;
 
-out float o_occlusion;
+out vec4 o_occlusion;
+
+const float radius = 0.5;
+const float bias = 0.025;
 
 void main() {
-    vec3 fragPositionView = u_viewMat * texture(u_material.position, fs_in.texCoords).rgb;
-    vec3 normal = texture(u_material.normal, fs_in.texCoords).rgb;
+    vec4 sampleFragPositionView = u_viewMat * texture(u_material.position, fs_in.texCoords);
+    vec3 fragPositionView = sampleFragPositionView.xyz * sampleFragPositionView.a;
+    vec3 normal = (u_viewMat * texture(u_material.normal, fs_in.texCoords)).rgb;
     vec3 randomVector = texture(u_material.noise, fs_in.texCoords * u_noiseScale).rgb;
 
     vec3 tangent = normalize(randomVector - normal * dot(randomVector, normal));
@@ -48,14 +50,14 @@ void main() {
 
     float occlusion = 0;
     for(int i = 0; i < KERNEL_SIZE; ++i) {
-        vec3 sample = fragPositionView + TBN * u_samples[i] * RADIUS;
-        vec4 offset = u_projectionMat * vec4(sample, 1);
+        vec3 samplePosition = fragPositionView + TBN * u_samples[i] * radius;
+        vec4 offset = u_projectionMat * vec4(samplePosition, 1);
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5 + 0.5;
         float sampleDepth = (u_viewMat * texture(u_material.position, offset.xy)).z;
-        float rangeCheck = smoothstep(0.0, 1.0, RADIUS / abs(fragPositionView.z - sampleDepth));
-        occlusion += (sampleDepth >= sample.z + BIAS ? 1.0 : 0.0) * rangeCheck;
+        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPositionView.z - sampleDepth));
+        occlusion += (sampleDepth >= samplePosition.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
-    occlusion = 1.0 - (occlusion / kernelSize);
-    o_occlusion = occlusion;
+    occlusion = 1.0 - (occlusion / KERNEL_SIZE);
+    o_occlusion = vec4(vec3(occlusion),1);
 }
