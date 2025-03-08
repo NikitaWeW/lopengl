@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     // glfwGetWindowSize(window, &camera.width, &camera.height);
 
     app.shaders = {
-        {"shaders/basic.glsl",              SHOW_LOGS}, // 0
+        {"shaders/basic.glsl",              SHOW_LOGS}, // 01
         {"shaders/defferred_lighting.glsl", SHOW_LOGS}, // 1
         {"shaders/defferred.glsl",          SHOW_LOGS}, // 2
         {"shaders/plain_color.glsl",        SHOW_LOGS}, // 3
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -169,25 +169,7 @@ int main(int argc, char **argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGB, GL_FLOAT, nullptr);
-    { // seems unnecessary, but whatever
-        Texture SSAOnoBlurNoiseTexture;
-        SSAOnoiseTexture.bind();
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGB, GL_FLOAT, SSAOnoise);
-
-        Framebuffer SSAOnoiseFBO;
-        SSAOnoiseFBO.bind();
-        SSAOnoiseFBO.attach(SSAOnoiseTexture, GL_COLOR_ATTACHMENT0);
-        glViewport(0, 0, SSAOnoiseSide, SSAOnoiseSide);
-        app.shaders[5].bind();
-        glUniform1i(app.shaders[5].getUniform("u_texture"), 0);
-        SSAOnoBlurNoiseTexture.bind();
-        renderer.draw(quad);
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SSAOnoiseSide, SSAOnoiseSide, 0, GL_RGB, GL_FLOAT, SSAOnoise);
 
 // =========================== //
 //  generate the framebuffers
@@ -285,12 +267,46 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
 
         app.models[2].resetMatrix();
-        app.models[2].translate(app.currentModelPosition);
-        app.models[2].rotate(app.currentModelRotation);
-        app.models[2].scale(app.currentModelScale);
+        app.models[2].translate({0, -4.5f, 0});
+        app.models[2].rotate({-90, 1, 35});
+        app.models[2].scale({1, 1, 1});
         glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[2].getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[2].getModelMat()))[0][0]);
         for(Mesh const &mesh : app.models[2].getMeshes()) {
+            bool specularSet = false;
+            bool normalSet = false;
+            bool heightSet = false;
+            unsigned int textureCount = 0;
+            for(Texture const &texture : mesh.textures) {
+                int location = app.shaders[2].getUniform("u_material." + texture.type);
+                if(location != -1) {
+                    glUniform1i(location, textureCount);
+                    texture.bind(textureCount);
+                    ++textureCount;
+                }
+                if(texture.type == "specular") {
+                    specularSet = true;
+                } else if(texture.type == "normal") {
+                    normalSet = true;
+                } else if(texture.type == "height") {
+                    heightSet = true;
+                }
+            }
+
+            glUniform1i(app.shaders[2].getUniform("u_material.specularSet"), specularSet);
+            glUniform1i(app.shaders[2].getUniform("u_material.normalSet"), normalSet);
+            glUniform1i(app.shaders[2].getUniform("u_material.heightSet"), heightSet);
+         
+            renderer.draw(mesh);
+        }
+        
+        app.models[0].resetMatrix();
+        app.models[0].translate({0, 0, 0});
+        app.models[0].rotate({0, 0, 0});
+        app.models[0].scale({-10, -10, -10});
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[0].getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[0].getModelMat()))[0][0]);
+        for(Mesh const &mesh : app.models[0].getMeshes()) {
             bool specularSet = false;
             bool normalSet = false;
             bool heightSet = false;

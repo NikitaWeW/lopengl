@@ -60,4 +60,5 @@ void main() {
     }
     occlusion = 1.0 - (occlusion / KERNEL_SIZE);
     o_occlusion = vec4(vec3(occlusion * sampleFragPositionView.a),1);
+    // o_occlusion = vec4(randomVector*0.5+0.5,1);
 }

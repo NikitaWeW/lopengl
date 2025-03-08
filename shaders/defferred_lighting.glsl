@@ -61,7 +61,7 @@ void main() {
     }
 
     o_color = vec4(lightColor * texture(u_material.albedoSpecular, texCoords).rgb, 1);
-// o_color = vec4(vec3(texture(u_material.ssao, texCoords).rgb),1);
+
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }
