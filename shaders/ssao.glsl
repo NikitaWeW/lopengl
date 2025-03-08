@@ -40,8 +40,8 @@ const float bias = 0.025;
 
 void main() {
     vec4 sampleFragPositionView = u_viewMat * texture(u_material.position, fs_in.texCoords);
-    vec3 fragPositionView = sampleFragPositionView.xyz * sampleFragPositionView.a;
-    vec3 normal = (u_viewMat * texture(u_material.normal, fs_in.texCoords)).rgb;
+    vec3 fragPositionView = sampleFragPositionView.xyz;
+    vec3 normal = (u_viewMat * vec4(texture(u_material.normal, fs_in.texCoords).rgb, 0)).rgb;
     vec3 randomVector = texture(u_material.noise, fs_in.texCoords * u_noiseScale).rgb;
 
     vec3 tangent = normalize(randomVector - normal * dot(randomVector, normal));
@@ -59,5 +59,5 @@ void main() {
         occlusion += (sampleDepth >= samplePosition.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
     occlusion = 1.0 - (occlusion / KERNEL_SIZE);
-    o_occlusion = vec4(vec3(occlusion),1);
+    o_occlusion = vec4(vec3(occlusion * sampleFragPositionView.a),1);
 }

@@ -44,33 +44,30 @@ uniform vec3 u_viewPos;
 
 out vec4 o_color;
 
-vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords, vec3 fragPosition, float ambientOcclusion);
+vec3 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords, vec3 fragPosition, float ambientOcclusion);
 
 void main() {
     vec2 texCoords = fs_in.texCoords;
 
-    vec3 fragPosition = texture(u_material.position, texCoords).rgb;
+    vec4 sampleFragPosition = texture(u_material.position, fs_in.texCoords);
+    vec3 fragPosition = sampleFragPosition.xyz;
     vec3 viewDir = normalize(u_viewPos - fragPosition);
     vec3 normal = texture(u_material.normal, texCoords).rgb;
     float ambientOcclusion = texture(u_material.ssao, texCoords).r;
 
-
-    vec4 lightColor = vec4(0);
+    vec3 lightColor = vec3(0,0,0);
     for(int i = 0; i < u_pointLightCount; ++i) {
         lightColor += calculateLight(u_pointLights[i], u_material, normal, viewDir, texCoords, fragPosition, ambientOcclusion);
     }
 
-    o_color = (
-        lightColor
-    ) * vec4(texture(u_material.albedoSpecular, texCoords).rgb, 1);
-
+    o_color = vec4(lightColor * texture(u_material.albedoSpecular, texCoords).rgb, 1);
+// o_color = vec4(vec3(texture(u_material.ssao, texCoords).rgb),1);
     // gamma correction moved to post process for now
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
-    o_color.a = 1;
 }
 
 
-vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords, vec3 fragPosition, float ambientOcclusion) {
+vec3 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir, vec2 texCoords, vec3 fragPosition, float ambientOcclusion) {
     vec3 lightDir = normalize(light.position - fragPosition);
     float distanceLightFragment = length(light.position - fragPosition);
     float attenuation = 1.0 / (light.attenuation * distanceLightFragment * distanceLightFragment);
@@ -90,5 +87,5 @@ vec4 calculateLight(PointLight light, Material material, vec3 norm, vec3 viewDir
         texture(material.albedoSpecular, texCoords).a;
     float shadow = 0;
 
-    return vec4(ambient + (1 - shadow) * (diffuse + specular), 1.0);
+    return ambient + (1 - shadow) * (diffuse + specular);
 }

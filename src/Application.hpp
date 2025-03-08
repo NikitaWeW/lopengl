@@ -38,6 +38,7 @@ public:
     ControllableCamera *camera;
 
     Model cube;
+    Model sphere;
 
     glm::vec3 outlineColor = glm::vec3{0.4, 0.4, 0.0};
     glm::vec3 clearColor = glm::vec3{0.0f};

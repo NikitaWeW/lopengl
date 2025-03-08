@@ -91,23 +91,20 @@ int main(int argc, char **argv)
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     app.cube = Model{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
+    app.sphere = Model{"res/models/sphere.obj", FLIP_TEXTURES };
     app.camera = &camera;
 
     Model quad{"res/models/quad.obj"};
 
 //   ==================================================================
     app.models = {
-        app.cube,                                                           // 0
-        {"res/models/sphere.obj",                          FLIP_TEXTURES }, // 1
-        {"res/models/lemon/lemon_4k.gltf",                 FLIP_TEXTURES }, // 2
-        {"res/models/wall/wall.obj",                       FLIP_TEXTURES }, // 3
-        // {"res/models/backpack/backpack.obj",              !FLIP_TEXTURES }, // 4
+        app.cube,                                              // 0
+        app.sphere,                                            // 1
+        {"res/models/backpack/backpack.obj", !FLIP_TEXTURES }, // 2
     };
     { // do model specific stuff
         // how to get segfault 101
         auto normalmap = "res/textures/normalMaps/rough_normal.jpg";
-        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
-        std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/wall/wall.obj"; })->getMeshes()[0].textures.push_back({"res/models/wall/height.jpg", !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "height"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/cube.obj"; })->getMeshes()[0].textures.push_back({normalmap, !FLIP_TEXTURES, !SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "normal"});
         std::find_if(app.models.begin(), app.models.end(), [](Model const &model){ return model.getFilepath() == "res/models/sphere.obj"; })->getMeshes()[0].textures.push_back({"res/textures/concrete.jpg", !FLIP_TEXTURES, SRGB, GL_CLAMP_TO_EDGE, GL_LINEAR, "diffuse"});
@@ -126,6 +123,7 @@ int main(int argc, char **argv)
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -224,39 +222,13 @@ int main(int argc, char **argv)
     Gbuffer.unbind();
 
 // =========================== //
-//  generate the scene
+//  generate the lights
 // =========================== //
-    LOG_DEBUG("generating scene...");
-
 //  ----------------------------------
     // input here
-    constexpr unsigned numLights = 50;
-    constexpr unsigned numModels = 1000;
-    constexpr float radius = 50;
-    Model sceneModel = app.models[0];
+    constexpr unsigned numLights = 4;
+    constexpr float radius = 5;
 //  ----------------------------------
-
-    glm::mat4 modelMatrices[numModels];
-    srand(static_cast<unsigned int>(glfwGetTime())); // initialize random seed
-    for(unsigned i = 0; i < numModels; ++i) {
-        glm::mat4 model{1.0f};
-        model = glm::translate(model, { randRange(-radius, radius), randRange(-radius, radius), randRange(-radius, radius) });
-        model = glm::scale(model, glm::vec3{ randRange(0.5f, 1.5f) });
-        model = glm::rotate(model, 1.0f, {randRange(0.0f, 360.0f), randRange(0.0f, 360.0f), randRange(0.0f, 360.0f)});
-        modelMatrices[i] = model;
-    }
-
-    VertexBuffer modelMatricesVB{modelMatrices, numModels * sizeof(glm::mat4)};
-    InstancedArrayLayout modelMatricesVBlayout{
-        {4, GL_FLOAT, 1},
-        {4, GL_FLOAT, 1},
-        {4, GL_FLOAT, 1},
-        {4, GL_FLOAT, 1}
-    };
-
-    for(Mesh &mesh : sceneModel.getMeshes()) {
-        mesh.va.addBuffer(modelMatricesVB, modelMatricesVBlayout);
-    }
 
     PointLight lights[numLights];
     for(unsigned i = 0; i < numLights; ++i) {
@@ -288,11 +260,13 @@ int main(int argc, char **argv)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             GbufferRBO.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            assert(Gbuffer.isComplete());
             
             SSAOtexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, camera.width, camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             SSAOrbo.bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width, camera.height);
+            assert(SSAOfbo.isComplete());
         }
 
 // ================== //
@@ -310,13 +284,13 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[2].getUniform("u_viewMat"),      1, GL_FALSE, &camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
 
-        sceneModel.resetMatrix();
-        sceneModel.translate(app.currentModelPosition);
-        sceneModel.rotate(app.currentModelRotation);
-        sceneModel.scale(app.currentModelScale);
-        glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &sceneModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(sceneModel.getModelMat()))[0][0]);
-        for(Mesh const &mesh : sceneModel.getMeshes()) {
+        app.models[2].resetMatrix();
+        app.models[2].translate(app.currentModelPosition);
+        app.models[2].rotate(app.currentModelRotation);
+        app.models[2].scale(app.currentModelScale);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &app.models[2].getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(app.models[2].getModelMat()))[0][0]);
+        for(Mesh const &mesh : app.models[2].getMeshes()) {
             bool specularSet = false;
             bool normalSet = false;
             bool heightSet = false;
@@ -341,10 +315,7 @@ int main(int argc, char **argv)
             glUniform1i(app.shaders[2].getUniform("u_material.normalSet"), normalSet);
             glUniform1i(app.shaders[2].getUniform("u_material.heightSet"), heightSet);
          
-            
-            mesh.va.bind();
-            mesh.ib.bind();
-            glDrawElementsInstanced(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr, numModels);
+            renderer.draw(mesh);
         }
 
 // ====================== //
@@ -405,7 +376,7 @@ int main(int argc, char **argv)
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_modelMat"), 1, GL_FALSE, &app.cube.getModelMat()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_viewMat"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
                 glUniformMatrix4fv(app.shaders[3].getUniform("u_projectionMat"),1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
-                // renderer.draw(app.cube);
+                renderer.draw(app.cube);
             } 
         }
 
