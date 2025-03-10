@@ -77,17 +77,12 @@ int main(int argc, char **argv)
     
     glClearColor(0, 0, 0, 1);
 
-    constexpr int numPerGroup = 10;
-    app.camera.width = 1000;
-    app.camera.height = 1000;
-
     while (!glfwWindowShouldClose(app.window))
     {
         auto start = std::chrono::high_resolution_clock::now();
         int prevWidth = -1, prevHeight = -1;
         app.camera.update(app.deltatime);
-        // glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
-        glfwSetWindowSize(app.window, app.camera.width, app.camera.height);
+        glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
         if(prevWidth != app.camera.width || prevHeight != app.camera.height) { // resize textures
             mainTexture.bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app.camera.width, app.camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -99,7 +94,7 @@ int main(int argc, char **argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glDispatchCompute(app.camera.width / numPerGroup, app.camera.height / numPerGroup, 1);
+        glDispatchCompute(app.camera.width, app.camera.height, 1);
 
         app.shaders[1].bind();
         glUniform1i(app.shaders[0].getUniform("u_texture"), 0);
