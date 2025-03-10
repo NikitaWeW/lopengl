@@ -5,17 +5,17 @@
 
 class Camera {
 private:
-    glm::vec3 right;
-    glm::vec3 up;
-    glm::vec3 front;
-    mutable glm::mat4 projectionMat;
+    glm::vec3 right = glm::vec3{1, 0, 0};
+    glm::vec3 up = glm::vec3{0, 1, 0};
+    glm::vec3 front = glm::vec3{0, 0, -1};
+    mutable glm::mat4 projectionMat = glm::mat4{1.0f};
     mutable std::tuple<int, int, float, float, float> lastparams = {-1, -1, -1, -1, -1};
 public:
-    glm::vec3 position;
-    glm::vec3 rotation;
+    glm::vec3 position = glm::vec3{0, 0, 0};
+    glm::vec3 rotation = glm::vec3{0, 0, 0};
     float far = 100;
     float near = 0.01f;
-    float fov;
+    float fov = 45;
     int width = 0; 
     int height = 0;
 public:

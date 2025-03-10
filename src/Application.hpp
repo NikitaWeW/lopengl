@@ -14,58 +14,27 @@ struct OpenGlError {
     std::string severity;
     std::string msg;
 };
+
 /*
-to organise loading ¯⁠\⁠_⁠(⁠ツ⁠)⁠_⁠/⁠¯
-*/
-struct LoadModelQuery {
-    bool flipTextures = false;
-    bool flipWindingOrder = false;
-};
-struct LoadTextureQuery {
-    bool flipTexture = false;
-};
-/*
-Application state + RAII initialisation / destruction + model / texture loading UI
-this is really bad code, that is only use to test features. fame frog.
-*/
+ * Application state + RAII initialisation / destruction
+ */
 struct Application {
 public:
     static OpenGlError openglError;
     std::string lastFailedShaderLog;
     std::string lastFailedShaderName;
     GLFWwindow *window;
+    ControllableCamera camera;
 
-    ControllableCamera *camera;
-
-    Model cube;
-    Model sphere;
-
-    glm::vec3 outlineColor = glm::vec3{0.4, 0.4, 0.0};
     glm::vec3 clearColor = glm::vec3{0.0f};
-
-    glm::vec3 currentModelPosition = glm::vec3{0.0f};
-    glm::vec3 currentModelRotation = glm::vec3{0.0f};
-    glm::vec3 currentModelScale    = glm::vec3{1.0f};
 
     double deltatime = 0;
     unsigned frameCounter = 0;
-    unsigned updateCounter = 0;
 
-    int currentModelIndex = 0; 
-    int currentShaderIndex = 0;
-    int currentSceneIndex = 0;
-
-    std::vector<Model> models;
-    std::vector<Texture> textures;
     std::vector<ShaderProgram> shaders;
     std::vector<unsigned> displayShaders;
 
-    char loadModelBuffer[1024];
-    char loadTextureBuffer[1024];
-
     bool failedToReloadShaders = false;
-
-    float exposure = 1;
 public:
     Application();
     ~Application();

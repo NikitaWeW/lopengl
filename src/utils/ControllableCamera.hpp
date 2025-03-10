@@ -4,7 +4,6 @@
 
 class ControllableCamera : public Camera {
 private:
-    bool roatationCallback;
     double prevx;
     double prevy;
 public:
@@ -15,6 +14,7 @@ public:
     GLFWwindow *window;
 
     ControllableCamera(GLFWwindow *window, glm::vec3 const &position = glm::vec3(0), glm::vec3 const &rotation = glm::vec3(0));
+    ControllableCamera();
     virtual ~ControllableCamera();
 
     virtual void update(double deltatime);

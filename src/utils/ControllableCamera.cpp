@@ -8,6 +8,10 @@ ControllableCamera::ControllableCamera(GLFWwindow *window, glm::vec3 const &posi
 {}
 ControllableCamera::~ControllableCamera() = default;
 
+ControllableCamera::ControllableCamera() : Camera{}
+{
+}
+
 void ControllableCamera::update(double deltatime) {
     Camera::update(deltatime);
     processPosition(deltatime);

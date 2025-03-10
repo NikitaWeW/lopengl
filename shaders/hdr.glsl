@@ -14,24 +14,10 @@ void main() {
 #version 430 core
 in vec2 v_texCoords;
 
-uniform float u_exposure;
+uniform float u_exposure = 1;
 uniform sampler2D u_texture;
 
 out vec4 o_color;
-
-vec4 textureMS(sampler2DMS sampler, vec2 coord, int samples)
-{
-    vec4 color = vec4(0.0);
-
-    ivec2 size = textureSize(sampler);
-
-    for (int i = 0; i < samples; i++)
-        color += texelFetch(sampler, ivec2(size * coord), i);
-
-    color /= float(samples);
-
-    return color;
-}
 
 void main() {
     vec3 hdrColor = texture(u_texture, v_texCoords).rgb;

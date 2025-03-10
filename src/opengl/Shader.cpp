@@ -60,6 +60,7 @@ std::string shaderTypeToString(unsigned type) {
     case GL_VERTEX_SHADER:   return "vertex";
     case GL_GEOMETRY_SHADER: return "geometry";
     case GL_FRAGMENT_SHADER: return "fragment";
+    case GL_COMPUTE_SHADER:  return "compute";
     default:                 return "unknown type";
     }
 }
@@ -113,7 +114,7 @@ bool ShaderProgram::ParceShaderFile(std::string const &filepath)
         m_log = "failed to open " + filepath;
         return false;
     }
-    std::array<std::stringstream, 4> shaderSourceStreams;
+    std::array<std::stringstream, 5> shaderSourceStreams;
     unsigned currentIndex = 0;
     std::string line;
     while (getline(fileStream, line))
@@ -128,6 +129,8 @@ bool ShaderProgram::ParceShaderFile(std::string const &filepath)
                 currentIndex = 2;
             } else if(line.find("geometry") != std::string::npos) {
                 currentIndex = 3;
+            } else if(line.find("compute") != std::string::npos) {
+                currentIndex = 4;
             } else {
                 LOG_WARN("unrecognised #shader statement:\n\t%s <-- here", line.substr(0, line.size() - 1).c_str());
                 currentIndex = 0;
@@ -138,10 +141,11 @@ bool ShaderProgram::ParceShaderFile(std::string const &filepath)
         }
     }
     m_shaders.erase(m_shaders.begin(), m_shaders.end());
-    m_shaders.push_back({0, GL_VERTEX_SHADER,   shaderSourceStreams[1].str()});
-    m_shaders.push_back({0, GL_FRAGMENT_SHADER, shaderSourceStreams[2].str()});
-    if(shaderSourceStreams[3].str().size() > 0) 
-        m_shaders.push_back({0, GL_GEOMETRY_SHADER, shaderSourceStreams[3].str()});
+    if(shaderSourceStreams[1].str().size() > 0) m_shaders.push_back({0, GL_VERTEX_SHADER,   shaderSourceStreams[1].str()});
+    if(shaderSourceStreams[2].str().size() > 0) m_shaders.push_back({0, GL_FRAGMENT_SHADER, shaderSourceStreams[2].str()});
+    if(shaderSourceStreams[3].str().size() > 0) m_shaders.push_back({0, GL_GEOMETRY_SHADER, shaderSourceStreams[3].str()});
+    if(shaderSourceStreams[4].str().size() > 0) 
+        m_shaders.push_back({0, GL_COMPUTE_SHADER,  shaderSourceStreams[4].str()});
 
     return true;
 }

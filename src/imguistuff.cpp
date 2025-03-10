@@ -17,23 +17,12 @@ void imguistuff(Application &app, ControllableCamera &cam)
 
 
     ImGui::Begin("properties");
-    if(app.deltatime <= 1/100) {
-        ImGui::Text("! delta time: %f", app.deltatime);
-        ImGui::Text("! FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
-    } else if(app.deltatime <= 1/30) {
-        ImGui::Text("!! delta time: %f", app.deltatime);
-        ImGui::Text("!! FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
-    } else {
-        ImGui::Text("delta time: %f", app.deltatime);
-        ImGui::Text("FPS: %f", app.deltatime ? 1 / app.deltatime : -1);
-    }
-    ImGui::Separator();
 
-    if(app.displayShaders.size() != 0) {
-        std::vector<const char *> shaderNames;
-        for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
-        ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
-    }
+    // if(app.displayShaders.size() != 0) {
+    //     std::vector<const char *> shaderNames;
+    //     for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
+    //     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
+    // }
     if(ImGui::Button("reload shaders")) {
         if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
     }

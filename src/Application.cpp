@@ -19,6 +19,42 @@ this is really bad code, that is only use to test features. fame frog.
 OpenGlError Application::openglError;
 extern const bool debug;
 
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    Application *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+    ControllableCamera &camera = app->camera;
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) camera.locked = !camera.locked;
+    if (key == GLFW_KEY_R && action == GLFW_PRESS) if(!app->reloadShaders()) app->failedToReloadShaders = true;
+    if (camera.locked) {
+        camera.firstCursorMove = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    } else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
+        // evaluate fov
+        if (camera.fov < 1.0f)
+            camera.fov = 1.0f;
+        if (camera.fov > 45.0f)
+            camera.fov = 45.0f;
+    } else {
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    }
+}
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    ControllableCamera cam = static_cast<Application *>(glfwGetWindowUserPointer(window))->camera;
+    if(cam.locked) {
+        cam.fov -= (float)yoffset * 4.0f;
+        if (cam.fov < 1.0f)
+            cam.fov = 1.0f;
+        if (cam.fov > 45.0f)
+            cam.fov = 45.0f;
+    } else {
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+    }
+}
+
 void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *data)
 {
     if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_OTHER)) return; // handled by ShaderProgram class 
@@ -117,8 +153,6 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
             Application::openglError.source.c_str(), 
             Application::openglError.msg.c_str());
 }
-void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
-}
 Application::Application()
 {
     logger_initConsoleLogger(stdout);
@@ -143,7 +177,6 @@ Application::Application()
         throw std::runtime_error("failed to initialize");
     }
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     if (!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) {
         LOG_FATAL("gladLoadGL: Failed to initialize GLAD!");
         throw std::runtime_error("failed to initialize");
@@ -162,13 +195,27 @@ Application::Application()
     ImGui::StyleColorsDark();
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(DebugCallback, nullptr);
-    strcpy(loadModelBuffer, "");
-    strcpy(loadTextureBuffer, "");
     LOG_DEBUG("running in debug mode!");
+
+    
+    glEnable(GL_STENCIL_TEST);
+    glEnable(GL_MULTISAMPLE);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glfwSwapInterval(0);
+    glfwSetWindowUserPointer(window, this);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, camera.locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 Application::~Application()
 {
-    LOG_INFO("cleaning up.");
     glfwDestroyWindow(window);
     glfwTerminate();
 }
@@ -192,46 +239,4 @@ bool Application::reloadShaders()
         }
     }
     return true;
-}
-
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    Application *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
-    ControllableCamera &camera = *app->camera;
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) camera.locked = !camera.locked;
-    if (key == GLFW_KEY_R && action == GLFW_PRESS) if(!app->reloadShaders()) app->failedToReloadShaders = true;
-    if (camera.locked) {
-        camera.firstCursorMove = true;
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    } else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
-        // evaluate fov
-        if (camera.fov < 1.0f)
-            camera.fov = 1.0f;
-        if (camera.fov > 45.0f)
-            camera.fov = 45.0f;
-    } else {
-        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    }
-}
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
-{
-    ControllableCamera *cam = static_cast<Application *>(glfwGetWindowUserPointer(window))->camera;
-    if(cam->locked) {
-        cam->fov -= (float)yoffset * 4.5f;
-        if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-            if (cam->fov < 0.01f)
-                cam->fov = 0.01f;
-            if (cam->fov > 60.0f)
-                cam->fov = 60.0f;
-        } else {
-            if (cam->fov < 1.0f)
-                cam->fov = 1.0f;
-            if (cam->fov > 45.0f)
-                cam->fov = 45.0f;
-        }
-    } else {
-        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-    }
 }
