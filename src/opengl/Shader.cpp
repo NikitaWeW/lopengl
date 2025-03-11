@@ -29,11 +29,11 @@ bool compileShader(ShaderProgram::Shader &shader, std::string &log) {
             log.resize(log_size);
             glGetShaderInfoLog(shader.renderID, log_size, nullptr, &log[0]);
 
-            static std::regex regex{R"(\d+:\d+\(\d+\))"};
+            static std::regex regex{R"(\d+:\d+\(\d+\)[^=])"};
             auto iterator = std::sregex_iterator{log.begin(), log.end(), regex};
             static auto endIterator = std::sregex_iterator{};
             for(; iterator != endIterator; ++iterator) {
-                log.insert(log.find(iterator->str()) + iterator->str().size(), "=" + std::to_string(std::stoi(iterator->str().substr(iterator->str().find_first_of(':') + 1, iterator->str().find_first_of('(') - 1)) + shader.fileLine)); 
+                log.insert(log.find(iterator->str()) + iterator->str().size() - 1, "=" + std::to_string(std::stoi(iterator->str().substr(iterator->str().find_first_of(':') + 1, iterator->str().find_first_of('(') - 1)) + shader.fileLine)); 
             }
         }
         return false;
