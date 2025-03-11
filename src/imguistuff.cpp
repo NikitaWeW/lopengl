@@ -8,7 +8,7 @@
 #include "utils/Light.hpp"
 #include "logger.h"
 
-void imguistuff(Application &app, ControllableCamera &cam)
+void imguistuff(Application &app)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
@@ -16,29 +16,25 @@ void imguistuff(Application &app, ControllableCamera &cam)
     ImGui::NewFrame();
 
 
-    ImGui::Begin("properties");
+    // ImGui::Begin("properties");
 
     // if(app.displayShaders.size() != 0) {
     //     std::vector<const char *> shaderNames;
     //     for(unsigned index : app.displayShaders) shaderNames.push_back(app.shaders[index].getFilePath().c_str());
     //     ImGui::ListBox("shaders", &app.currentShaderIndex, shaderNames.data(), shaderNames.size());
     // }
-    if(ImGui::Button("reload shaders")) {
-        if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
-    }
-    if(app.failedToReloadShaders) {
-        ImGui::OpenPopup("failed to reload shaders!");
-        app.failedToReloadShaders = false;
-    }
-    ImGui::Separator();
+    // if(ImGui::Button("reload shaders")) {
+    //     if(!app.reloadShaders()) ImGui::OpenPopup("failed to reload shaders!");
+    // }
+    // ImGui::Separator();
 
     // ImGui::Checkbox("wireframe", &app.wireframe);
     // ImGui::Checkbox("skybox", &app.skybox);
     // ImGui::Checkbox("show normals", &app.showNormals);
     // ImGui::Checkbox("face culling", &app.faceCulling);
     // ImGui::InputFloat("exposure", &app.exposure);
-    ImGui::ColorEdit3("clear color", &app.clearColor.x);
-    ImGui::Separator();
+    // ImGui::ColorEdit3("clear color", &app.clearColor.x);
+    // ImGui::Separator();
 
     // size_t triangles = 0;
     // for(size_t i = 0; i < app.models[app.currentModelIndex].getMeshes().size(); ++i) {
@@ -109,21 +105,27 @@ void imguistuff(Application &app, ControllableCamera &cam)
     //     }
     //     ImGui::Separator();
     // }
-    ImGui::DragFloat3("camera position", &cam.position.x, 0.01f);
-    ImGui::DragFloat3("camera rotation", &cam.rotation.x, 0.5f);
-    ImGui::DragFloat("camera near plane", &cam.near, 0.001f);
-    ImGui::DragFloat("camera far plane", &cam.far, 25.0f);
-    ImGui::InputFloat("camera speed (unit/s)", &cam.speed);
-    ImGui::InputFloat("camera sensitivity", &cam.sensitivity);
-    if (ImGui::Button("reset camera"))
-    {
-        cam.position = {0, 0, 5};
-        cam.rotation = {-90, 0, 0};
-        cam.fov = 45;
-        cam.near = 0.01f;
-        cam.far = 1000.0f;
-        cam.speed = 7.0f;
-        cam.sensitivity = 1.0f;
+    // ImGui::DragFloat3("camera position", &app.camera.position.x, 0.01f);
+    // ImGui::DragFloat3("camera rotation", &app.camera.rotation.x, 0.5f);
+    // ImGui::DragFloat("camera near plane", &app.camera.near, 0.001f);
+    // ImGui::DragFloat("camera far plane", &app.camera.far, 25.0f);
+    // ImGui::InputFloat("camera speed (unit/s)", &app.camera.speed);
+    // ImGui::InputFloat("camera sensitivity", &app.camera.sensitivity);
+    // if (ImGui::Button("reset camera"))
+    // {
+    //     app.camera.position = {0, 0, 5};
+    //     app.camera.rotation = {-90, 0, 0};
+    //     app.camera.fov = 45;
+    //     app.camera.near = 0.01f;
+    //     app.camera.far = 1000.0f;
+    //     app.camera.speed = 7.0f;
+    //     app.camera.sensitivity = 1.0f;
+    // }
+    // ImGui::End();
+
+    if(app.failedToReloadShaders) {
+        ImGui::OpenPopup("failed to reload shaders!");
+        app.failedToReloadShaders = false;
     }
     if(ImGui::BeginPopup("failed to reload shaders!")) {
         ImGui::Text("shader name: %s", app.lastFailedShaderName.c_str());
@@ -131,7 +133,6 @@ void imguistuff(Application &app, ControllableCamera &cam)
         ImGui::TextWrapped(app.lastFailedShaderLog.c_str());
         ImGui::EndPopup();
     }
-    ImGui::End();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

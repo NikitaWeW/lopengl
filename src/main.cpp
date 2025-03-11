@@ -56,6 +56,7 @@ extern const bool debug = false;
 extern const bool debug = true;
 #endif
 
+void imguistuff(Application &app);
 float lerp(float a, float b, float x) { return a + x * (b - a); }
 
 int main(int argc, char **argv)
@@ -94,7 +95,7 @@ int main(int argc, char **argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glDispatchCompute(app.camera.width, app.camera.height, 1);
+        glDispatchCompute(app.camera.width / 10, app.camera.height / 10, 1);
 
         app.shaders[1].bind();
         glUniform1i(app.shaders[0].getUniform("u_texture"), 0);
@@ -105,6 +106,7 @@ int main(int argc, char **argv)
         glDrawElements(GL_TRIANGLES, quad.getMeshes()[0].ib.getSize(), GL_UNSIGNED_INT, nullptr);
 
 //  =========================================== 
+        imguistuff(app);
         if(app.frameCounter % 100 == 0) glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
         glfwSwapBuffers(app.window);
         glfwPollEvents();

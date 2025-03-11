@@ -23,7 +23,7 @@ void main() {
     vec3 hdrColor = texture(u_texture, v_texCoords).rgb;
 
     vec3 mappedColor = 1 - exp(-hdrColor * u_exposure);
-
+    
     o_color = vec4(mappedColor, 1);
     o_color.rgb = pow(o_color.rgb, vec3(1/2.2)); // apply gamma correction
 }

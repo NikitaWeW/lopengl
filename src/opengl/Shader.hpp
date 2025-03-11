@@ -10,6 +10,7 @@ public:
         unsigned renderID;
         unsigned type;
         std::string source;
+        unsigned fileLine;
     };
 private:
     mutable std::map<std::string, int> m_UniformLocationCache;
