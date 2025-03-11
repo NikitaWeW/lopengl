@@ -77,6 +77,7 @@ int main(int argc, char **argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     glClearColor(0, 0, 0, 1);
+    constexpr unsigned numPerGroup = 10;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -95,7 +96,7 @@ int main(int argc, char **argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glDispatchCompute(app.camera.width / 10, app.camera.height / 10, 1);
+        glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 
         app.shaders[1].bind();
         glUniform1i(app.shaders[0].getUniform("u_texture"), 0);
