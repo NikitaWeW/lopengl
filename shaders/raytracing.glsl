@@ -6,7 +6,7 @@ layout(rgba16f) uniform image2D u_output;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-    vec2 texCoords = vec2(texelCoord) / gl_NumWorkGroups.xy;
+    vec2 texCoords = vec2(texelCoord) / (gl_NumWorkGroups.xy*gl_WorkGroupSize.xy);
 
     imageStore(u_output, texelCoord, vec4(texCoords.xy, 0, 1.0));
 }
