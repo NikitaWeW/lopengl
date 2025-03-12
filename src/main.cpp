@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     glClearColor(0, 0, 0, 1);
-    constexpr unsigned numPerGroup = 10;
+    constexpr unsigned numPerGroup = 20;
 
     while (!glfwWindowShouldClose(app.window))
     {
