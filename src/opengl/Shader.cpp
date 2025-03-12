@@ -115,6 +115,12 @@ int ShaderProgram::getUniformBlock(std::string const &name) const
     int location = glGetUniformBlockIndex(m_renderID, name.c_str());
     return location;
 }
+int ShaderProgram::getStorageBlock(std::string const &name) const
+{
+    bind();
+    int location = glGetProgramResourceIndex(m_renderID, GL_SHADER_STORAGE_BLOCK, name.c_str());
+    return location;
+}
 bool ShaderProgram::ParceShaderFile(std::string const &filepath)
 {
     std::ifstream fileStream(filepath, std::ios::in);
