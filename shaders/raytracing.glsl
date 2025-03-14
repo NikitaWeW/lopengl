@@ -20,12 +20,13 @@ struct Sphere {
     vec3 center;
     float radius;
 };
-struct Collision {
+struct ShpereRayCollision {
     bool isCollide;
+    vec3 location;
 };
 
 vec3 rayColor(Ray ray);
-Collision raySphere(Ray ray, Sphere sphere);
+ShpereRayCollision raySphere(Ray ray, Sphere sphere);
 
 Sphere testSphere = Sphere(vec3(0,0,-4), 1);
 
@@ -42,14 +43,19 @@ void main() {
 }
 
 vec3 rayColor(Ray ray) {
-    float collide = float(raySphere(ray, testSphere).isCollide);
-    return (1 - collide) * vec3(0.3, 0.5, 0.7) + collide * vec3(0.7, 0.3, 0.2);
+    ShpereRayCollision sphereCollision = raySphere(ray, testSphere);
+    if(sphereCollision.isCollide) {
+        return normalize(sphereCollision.location - testSphere.center);
+    } else {
+        return (1 - normalize(ray.direction).y) * vec3(0.3, 0.5, 0.7);
+    }
 }
-Collision raySphere(Ray ray, Sphere sphere) {
+ShpereRayCollision raySphere(Ray ray, Sphere sphere) {
     vec3 OC = sphere.center - ray.origin;
     float a = dot(ray.direction, ray.direction);
     float b = -2.0 * dot(ray.direction, OC);
     float c = dot(OC, OC) - sphere.radius * sphere.radius;
     float discriminant = b*b - 4*a*c;
-    return Collision(discriminant >= 0);
+    if(discriminant < 0) return ShpereRayCollision(false, vec3(0));
+    return ShpereRayCollision(true, ray.origin + ((-b - sqrt(discriminant)) / 2*a) * normalize(ray.direction));
 }
