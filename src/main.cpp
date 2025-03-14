@@ -94,8 +94,14 @@ int main(int argc, char **argv)
         app.shaders[0].bind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
+        glUniform1i(app.shaders[0].getUniform("u_output"), 0);
+        glUniform3fv(app.shaders[0].getUniform("u_camera.position"), 1, &app.camera.position.x);
+        glUniform3f(app.shaders[0].getUniform("u_camera.forward"), app.camera.getFront().x, app.camera.getFront().y, app.camera.getFront().z);
+        glUniform3f(app.shaders[0].getUniform("u_camera.right"), app.camera.getRight().x, app.camera.getRight().y, app.camera.getRight().z);
+        glUniform3f(app.shaders[0].getUniform("u_camera.up"), app.camera.getUp().x, app.camera.getUp().y, app.camera.getUp().z);
+        glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
+        glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 
         app.shaders[1].bind();
