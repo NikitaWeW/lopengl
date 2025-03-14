@@ -43,7 +43,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    ControllableCamera cam = static_cast<Application *>(glfwGetWindowUserPointer(window))->camera;
+    ControllableCamera &cam = static_cast<Application *>(glfwGetWindowUserPointer(window))->camera;
     if(cam.locked) {
         cam.fov -= (float)yoffset * 4.0f;
         if (cam.fov < 1.0f)

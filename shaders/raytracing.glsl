@@ -34,7 +34,7 @@ void main() {
     vec2 texCoords = vec2(texelCoord) / (gl_NumWorkGroups.xy*gl_WorkGroupSize.xy);
 
     vec2 texCoordsNDC = texCoords * 2 - 1;
-    float tangentFOV = tan(u_camera.fov * 0.5);
+    float tangentFOV = tan(radians(u_camera.fov) * 0.5);
     vec2 offset = vec2(texCoordsNDC.x * u_camera.aspect * tangentFOV, texCoordsNDC.y * tangentFOV);
     Ray ray = Ray(normalize(u_camera.forward + offset.x * u_camera.right + offset.y * u_camera.up), u_camera.position);
 

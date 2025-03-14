@@ -62,7 +62,7 @@ float lerp(float a, float b, float x) { return a + x * (b - a); }
 int main(int argc, char **argv)
 {
     Application app; // initialisation
-    app.camera = ControllableCamera{app.window, {0, 0, 0}, {0, -90, 0}};
+    app.camera = ControllableCamera{app.window, {0, 0, 0}, {-90, 0, 0}};
     app.shaders = {
         {"shaders/raytracing.glsl", true},
         {"shaders/hdr.glsl",        true}
