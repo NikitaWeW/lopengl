@@ -18,6 +18,7 @@ struct Ray {
 };
 struct Sphere {
     vec3 center;
+    vec3 color;
     float radius;
 };
 struct ShpereRayCollision {
@@ -25,11 +26,12 @@ struct ShpereRayCollision {
     vec3 location;
 };
 ShpereRayCollision raySphere(Ray ray, Sphere sphere);
+uniform float u_time;
 
 vec3 rayColor(Ray ray);
 Ray calculateRay(vec2 texCoords, Camera camera);
 
-Sphere testSphere = Sphere(vec3(0,0,-4), 1);
+Sphere testSphere = Sphere(vec3(0,0,-4), vec3(0.7, 0.4, 0.2), 1);
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -40,25 +42,25 @@ void main() {
 }
 
 vec3 rayColor(Ray ray) {
-    // return ray.origin;
     ShpereRayCollision sphereCollision = raySphere(ray, testSphere);
     if(sphereCollision.isCollide) {
         vec3 normal = normalize(sphereCollision.location - testSphere.center);
-        return sphereCollision.location;
+        vec3 lightpos = vec3(1, sin(u_time), sin(u_time) - 3);
+        return max(dot(normalize(lightpos - sphereCollision.location), normal), 0) * testSphere.color + 0.01;
     } else {
-        return (1 - normalize(ray.direction).y) * vec3(0.3, 0.5, 0.7);
+        return vec3(0.001);
     }
 }
 ShpereRayCollision raySphere(Ray ray, Sphere sphere) {
     const vec3 OC = sphere.center - ray.origin;
     const float a = dot(ray.direction, ray.direction);
-    const float b = -2.0 * dot(ray.direction, OC);
+    const float h = dot(ray.direction, OC);
     const float c = dot(OC, OC) - sphere.radius * sphere.radius;
-    const float discriminant = b*b - 4*a*c;
+    const float discriminant = h*h - a*c;
     if(discriminant < 0) return ShpereRayCollision(false, vec3(0));
     
     const float sqrtDiscriminant = sqrt(discriminant);
-    float t = min((-b - sqrtDiscriminant) / (2*a), (-b + sqrtDiscriminant) / (2*a));
+    float t = min((h - sqrtDiscriminant) / a, (h + sqrtDiscriminant) / a);
 
     if(t < 0) return ShpereRayCollision(false, vec3(0));
 

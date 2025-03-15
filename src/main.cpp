@@ -102,6 +102,7 @@ int main(int argc, char **argv)
         glUniform3f(app.shaders[0].getUniform("u_camera.up"), app.camera.getUp().x, app.camera.getUp().y, app.camera.getUp().z);
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
+        glUniform1f(app.shaders[0].getUniform("u_time"), glfwGetTime());
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 
         app.shaders[1].bind();
