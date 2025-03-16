@@ -23,11 +23,6 @@ struct PointIntersection {
 struct BoolIntersection {
     bool exists;
 };
-struct Sphere {
-    vec3 center;
-    vec3 color;
-    float radius;
-};
 struct Triangle {
     vec3 A;
     vec3 B;
@@ -38,7 +33,6 @@ struct AABB {
     vec3 max;
 };
 
-PointIntersection raySphere(Ray ray, Sphere sphere);
 PointIntersection rayTriangle(Ray ray, Triangle triangle);
 PointIntersection rayAABB(Ray ray, AABB aabb);
 vec3 getBarycentric(vec3 p, vec3 a, vec3 b, vec3 c);
@@ -70,21 +64,6 @@ vec3 rayColor(Ray ray) {
     PointIntersection intersection = rayAABB(ray, testAABB);
     float exists = float(intersection.exists);
     return exists * intersection.location + (1 - exists) * vec3(0.2, 0.3, 0.7) * normalize(1 - ray.direction).y;
-}
-PointIntersection raySphere(Ray ray, Sphere sphere) {
-    const vec3 OC = sphere.center - ray.origin;
-    const float a = dot(ray.direction, ray.direction);
-    const float h = dot(ray.direction, OC);
-    const float c = dot(OC, OC) - sphere.radius * sphere.radius;
-    const float discriminant = h*h - a*c;
-    if(discriminant < 0) return PointIntersection(false, vec3(0));
-    
-    const float sqrtDiscriminant = sqrt(discriminant);
-    float t = min((h - sqrtDiscriminant) / a, (h + sqrtDiscriminant) / a);
-
-    if(t < 0) return PointIntersection(false, vec3(0));
-
-    return PointIntersection(true, ray.origin + t * normalize(ray.direction));
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
     vec2 NDCcoords = texCoords * 2.0 - 1.0;
@@ -137,5 +116,6 @@ PointIntersection rayAABB(Ray ray, AABB aabb) {
     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
     // if tmin > tmax, ray doesn't intersect AABB
     if (tmax < 0 || tmin > tmax) return PointIntersection(false, vec3(0));
+    if(tmin < 0) return PointIntersection(true, ray.origin + tmax * normalize(ray.direction));
     return PointIntersection(true, ray.origin + tmin * normalize(ray.direction));
 }
