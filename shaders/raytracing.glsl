@@ -37,6 +37,7 @@ struct RayTriangleIntersection {
     vec3 location;
 };
 RayTriangleIntersection rayTriangle(Ray ray, Triangle triangle);
+vec3 getBarycentric(vec3 p, vec3 a, vec3 b, vec3 c);
 
 uniform float u_time;
 
@@ -108,13 +109,24 @@ RayTriangleIntersection rayTriangle(Ray ray, Triangle triangle) {
     const float t = dot(normal, triangle.A - ray.origin) / denominator;
     if(t < 0) return RayTriangleIntersection(false, vec3(0));
     const vec3 planePoint = ray.origin + ray.direction * t;
-    const vec3 Atestvec = cross(triangle.B - triangle.A, planePoint - triangle.A);
-    const vec3 Btestvec = cross(triangle.C - triangle.B, planePoint - triangle.B);
-    const vec3 Ctestvec = cross(triangle.A - triangle.C, planePoint - triangle.C);
+
+    vec3 barycentric = getBarycentric(planePoint, triangle.A, triangle.B, triangle.C);
+
     if (
-        dot(Atestvec, normal) > 0 && 
-        dot(Btestvec, normal) > 0 && 
-        dot(Ctestvec, normal) > 0
+        0 <= barycentric.x && barycentric.x <= 1 && 
+        0 <= barycentric.y && barycentric.y <= 1 &&
+        0 <= barycentric.z && barycentric.z <= 1
     ) return RayTriangleIntersection(true, planePoint);
     return RayTriangleIntersection(false, vec3(0));
+}
+
+vec3 getBarycentric(vec3 p, vec3 a, vec3 b, vec3 c) {
+    const vec3 v0 = b - a;
+    const vec3 v1 = c - a;
+    const vec3 v2 = p - a;
+    const float denominator = v0.x * v1.y - v1.x * v0.y;
+    const float v = (v2.x * v1.y - v1.x * v2.y) / denominator;
+    const float w = (v0.x * v2.y - v2.x * v0.y) / denominator;
+    const float u = 1.0f - v - w;
+    return vec3(v, w, u);
 }
