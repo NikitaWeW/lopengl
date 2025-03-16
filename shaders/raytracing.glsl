@@ -21,17 +21,38 @@ struct Sphere {
     vec3 color;
     float radius;
 };
-struct ShpereRayCollision {
-    bool isCollide;
+struct SphereRayCollision {
+    bool exists;
     vec3 location;
 };
-ShpereRayCollision raySphere(Ray ray, Sphere sphere);
+SphereRayCollision raySphere(Ray ray, Sphere sphere);
+
+struct Triangle {
+    vec3 A;
+    vec3 B;
+    vec3 C;
+};
+struct RayTriangleIntersection {
+    bool exists;
+    vec3 location;
+};
+RayTriangleIntersection rayTriangle(Ray ray, Triangle triangle);
+
 uniform float u_time;
 
 vec3 rayColor(Ray ray);
 Ray calculateRay(vec2 texCoords, Camera camera);
 
-Sphere testSphere = Sphere(vec3(0,0,-4), vec3(0.7, 0.4, 0.2), 1);
+Sphere testSphere = Sphere(
+    vec3(0,0,-4), 
+    vec3(0.7, 0.4, 0.2), 
+    1
+);
+Triangle testTriangle = Triangle(
+    vec3(-3,  1, -4),
+    vec3( 1,  5, -3),
+    vec3( 4, -1, -5)
+);
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -42,29 +63,27 @@ void main() {
 }
 
 vec3 rayColor(Ray ray) {
-    ShpereRayCollision sphereCollision = raySphere(ray, testSphere);
-    if(sphereCollision.isCollide) {
-        vec3 normal = normalize(sphereCollision.location - testSphere.center);
-        vec3 lightpos = vec3(1, sin(u_time), sin(u_time) - 3);
-        return max(dot(normalize(lightpos - sphereCollision.location), normal), 0) * testSphere.color + 0.01;
+    RayTriangleIntersection triangleIntersection = rayTriangle(ray, testTriangle);
+    if(triangleIntersection.exists) {
+        return normalize(triangleIntersection.location);
     } else {
-        return vec3(0.001);
+        return vec3(0.2, 0.3, 0.7) * normalize(1 - ray.direction).y;
     }
 }
-ShpereRayCollision raySphere(Ray ray, Sphere sphere) {
+SphereRayCollision raySphere(Ray ray, Sphere sphere) {
     const vec3 OC = sphere.center - ray.origin;
     const float a = dot(ray.direction, ray.direction);
     const float h = dot(ray.direction, OC);
     const float c = dot(OC, OC) - sphere.radius * sphere.radius;
     const float discriminant = h*h - a*c;
-    if(discriminant < 0) return ShpereRayCollision(false, vec3(0));
+    if(discriminant < 0) return SphereRayCollision(false, vec3(0));
     
     const float sqrtDiscriminant = sqrt(discriminant);
     float t = min((h - sqrtDiscriminant) / a, (h + sqrtDiscriminant) / a);
 
-    if(t < 0) return ShpereRayCollision(false, vec3(0));
+    if(t < 0) return SphereRayCollision(false, vec3(0));
 
-    return ShpereRayCollision(true, ray.origin + t * normalize(ray.direction));
+    return SphereRayCollision(true, ray.origin + t * normalize(ray.direction));
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
     vec2 NDCcoords = texCoords * 2.0 - 1.0;
@@ -74,4 +93,28 @@ Ray calculateRay(vec2 texCoords, Camera camera) {
     const vec3 rayDir = camera.forward + viewPortCoords.x * camera.right + viewPortCoords.y * camera.up;
 
     return Ray(normalize(rayDir), camera.position);
+}
+/*
+plane equation: n * (a - p) = 0
+ray equation: o + d * t
+n * (o + d * t - p) = 0
+solve for t:
+t = (n * (p - o)) / (n*d)
+*/
+RayTriangleIntersection rayTriangle(Ray ray, Triangle triangle) {
+    const vec3 normal = normalize(cross(triangle.B - triangle.A, triangle.C - triangle.A)); // change
+    const float denominator = dot(normal, ray.direction);
+    if(denominator == 0) return RayTriangleIntersection(false, vec3(0));
+    const float t = dot(normal, triangle.A - ray.origin) / denominator;
+    if(t < 0) return RayTriangleIntersection(false, vec3(0));
+    const vec3 planePoint = ray.origin + ray.direction * t;
+    const vec3 Atestvec = cross(triangle.B - triangle.A, planePoint - triangle.A);
+    const vec3 Btestvec = cross(triangle.C - triangle.B, planePoint - triangle.B);
+    const vec3 Ctestvec = cross(triangle.A - triangle.C, planePoint - triangle.C);
+    if (
+        dot(Atestvec, normal) > 0 && 
+        dot(Btestvec, normal) > 0 && 
+        dot(Ctestvec, normal) > 0
+    ) return RayTriangleIntersection(true, planePoint);
+    return RayTriangleIntersection(false, vec3(0));
 }
