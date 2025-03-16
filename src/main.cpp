@@ -79,6 +79,8 @@ int main(int argc, char **argv)
     glClearColor(0, 0, 0, 1);
     constexpr unsigned numPerGroup = 20;
 
+    std::thread showFps([&app](){ while(!glfwWindowShouldClose(app.window)) { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str()); }});
+
     while (!glfwWindowShouldClose(app.window))
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -115,12 +117,12 @@ int main(int argc, char **argv)
 
 //  =========================================== 
         imguistuff(app);
-        if(app.frameCounter % 100 == 0) glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
         glfwSwapBuffers(app.window);
         glfwPollEvents();
         ++app.frameCounter;
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
+    showFps.join();
 }
 /*
 c++ be like:
