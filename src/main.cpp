@@ -97,7 +97,7 @@ int main(int argc, char **argv)
         -1.0, -1.0, 0.0,    0.0, 0.0,
          1.0, -1.0, 0.0,    1.0, 0.0,
          1.0,  1.0, 0.0,    1.0, 1.0,
-        -1.0,  1.0, 0.0,    0.0, 1.0
+        -1.0,  1.0, 0.0,    0.0, 1.0 
     };
     ShaderProgram HDRshader = ShaderProgram{"shaders/hdr.glsl", true};
     VertexBuffer quadVB = VertexBuffer{vertices, sizeof(vertices)};
@@ -109,10 +109,10 @@ int main(int argc, char **argv)
         0, 
         testModel.getMeshes()[0].indices.size() * sizeof(unsigned), 
         testModel.getMeshes()[0].indices.data());
-    SSBO positionsSSBO{testModel.getMeshes()[0].positions.size() * sizeof(glm::vec3)};
+    SSBO positionsSSBO{testModel.getMeshes()[0].positions.size() * sizeof(glm::vec4)};
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
         0,
-        testModel.getMeshes()[0].positions.size() * sizeof(glm::vec3), 
+        testModel.getMeshes()[0].positions.size() * sizeof(glm::vec4), 
         testModel.getMeshes()[0].positions.data());
     glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
     glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     while (!glfwWindowShouldClose(app.window))
     {
         auto start = std::chrono::high_resolution_clock::now();
-        int prevWidth = -1, prevHeight = -1;
+        int prevWidth = app.camera.width, prevHeight = app.camera.height;
         app.camera.update(app.deltatime);
         glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
         if(prevWidth != app.camera.width || prevHeight != app.camera.height) { // resize textures
@@ -144,7 +144,6 @@ int main(int argc, char **argv)
 //  =========================================== 
         glViewport(0, 0, app.camera.width, app.camera.height);
         app.shaders[0].bind();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
@@ -155,7 +154,6 @@ int main(int argc, char **argv)
         glUniform3f(app.shaders[0].getUniform("u_camera.up"), app.camera.getUp().x, app.camera.getUp().y, app.camera.getUp().z);
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
-        glUniform1f(app.shaders[0].getUniform("u_time"), glfwGetTime());
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);

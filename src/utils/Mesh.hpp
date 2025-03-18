@@ -10,8 +10,8 @@
 struct Mesh {
     std::vector<Texture> textures;
     std::vector<unsigned>  indices;
-    std::vector<glm::vec3> positions;
-    std::vector<glm::vec3> normals;
-    std::vector<glm::vec3> tangents;
+    std::vector<glm::vec4> positions;
+    std::vector<glm::vec4> normals;
+    std::vector<glm::vec4> tangents;
     std::vector<glm::vec2> textureCoords;
 };

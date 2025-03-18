@@ -49,9 +49,9 @@ Mesh Model::processMesh(aiMesh *aimesh, bool flipTextures) {
     Mesh mesh;
     
     for(unsigned i = 0; i < aimesh->mNumVertices; ++i) {
-        mesh.positions.push_back({ aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z });
-        mesh.normals.push_back({ aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z });
-        mesh.tangents.push_back({ aimesh->mTangents[i].x, aimesh->mTangents[i].y, aimesh->mTangents[i].z });
+        mesh.positions.push_back({ aimesh->mVertices[i].x, aimesh->mVertices[i].y, aimesh->mVertices[i].z, 1 });
+        mesh.normals.push_back({ aimesh->mNormals[i].x, aimesh->mNormals[i].y, aimesh->mNormals[i].z, 0 });
+        mesh.tangents.push_back({ aimesh->mTangents[i].x, aimesh->mTangents[i].y, aimesh->mTangents[i].z, 0 });
         // bitangents.push_back({ aimesh->mBitangents[i].x, aimesh->mBitangents[i].y, aimesh->mBitangents[i].z });
         if(aimesh->mTextureCoords[0]) {
             mesh.textureCoords.push_back({ aimesh->mTextureCoords[0][i].x, aimesh->mTextureCoords[0][i].y }); // but what if there are no texture coords?
