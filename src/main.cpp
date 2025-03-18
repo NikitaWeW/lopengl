@@ -38,7 +38,6 @@ cmake --build build && build/main
 
 #include "Application.hpp"
 #include "random.hpp"
-#include "opengl/Renderer.hpp"
 #include "utils/ControllableCamera.hpp"
 #include "opengl/Framebuffer.hpp"
 #include "opengl/UniformBuffer.hpp"
@@ -58,17 +57,68 @@ extern const bool debug = true;
 
 void imguistuff(Application &app);
 float lerp(float a, float b, float x) { return a + x * (b - a); }
+void drawScreenQuad(Texture &texture) {
+    static bool init = true;
+    static ShaderProgram shader;
+    static VertexBuffer vb;
+    static VertexArray va;
+    if(init) {
+        init = false;
+        float vertices[] = {
+            // positions        tex coords
+            -1.0, -1.0, 0.0,    0.0, 0.0,
+             1.0, -1.0, 0.0,    1.0, 0.0,
+             1.0,  1.0, 0.0,    1.0, 1.0,
+            -1.0,  1.0, 0.0,    0.0, 1.0
+        };
+        shader = ShaderProgram{"shaders/hdr.glsl", true};
+        vb = VertexBuffer{vertices, sizeof(vertices)};
+        va = VertexArray{vb, InterleavedVertexBufferLayout{{3, GL_FLOAT}, {2, GL_FLOAT}}};
+    }
+    shader.bind();
+    glUniform1i(shader.getUniform("u_texture"), 0);
+    texture.bind(0);
+    va.bind();
+    vb.bind();
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
 
 int main(int argc, char **argv)
 {
     Application app; // initialisation
     app.camera = ControllableCamera{app.window, {0, 0, 0}, {-90, 0, 0}};
     app.shaders = {
-        {"shaders/raytracing.glsl", true},
-        {"shaders/hdr.glsl",        true}
+        {"shaders/raytracing.glsl", true}
     };
 
-    Model quad{"res/models/quad.obj", false, false};
+    float vertices[] = {
+        // positions        tex coords
+        -1.0, -1.0, 0.0,    0.0, 0.0,
+         1.0, -1.0, 0.0,    1.0, 0.0,
+         1.0,  1.0, 0.0,    1.0, 1.0,
+        -1.0,  1.0, 0.0,    0.0, 1.0
+    };
+    ShaderProgram HDRshader = ShaderProgram{"shaders/hdr.glsl", true};
+    VertexBuffer quadVB = VertexBuffer{vertices, sizeof(vertices)};
+    VertexArray quadVA = VertexArray{quadVB, InterleavedVertexBufferLayout{{3, GL_FLOAT}, {2, GL_FLOAT}}};
+    
+    Model testModel{"res/models/sphere_low_poly.glb"};
+    SSBO indicesSSBO{testModel.getMeshes()[0].indices.size() * sizeof(unsigned)};
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
+        0, 
+        testModel.getMeshes()[0].indices.size() * sizeof(unsigned), 
+        testModel.getMeshes()[0].indices.data());
+    SSBO positionsSSBO{testModel.getMeshes()[0].positions.size() * sizeof(glm::vec3)};
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
+        0,
+        testModel.getMeshes()[0].positions.size() * sizeof(glm::vec3), 
+        testModel.getMeshes()[0].positions.data());
+    glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
+    glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
+    indicesSSBO.bind(0);
+    positionsSSBO.bind(1);
+
     Texture mainTexture;
     mainTexture.bind();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -96,7 +146,8 @@ int main(int argc, char **argv)
         app.shaders[0].bind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
+        glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glUniform3fv(app.shaders[0].getUniform("u_camera.position"), 1, &app.camera.position.x);
         glUniform3f(app.shaders[0].getUniform("u_camera.forward"), app.camera.getFront().x, app.camera.getFront().y, app.camera.getFront().z);
@@ -105,15 +156,19 @@ int main(int argc, char **argv)
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
         glUniform1f(app.shaders[0].getUniform("u_time"), glfwGetTime());
+        glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
+        glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 1);
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 
-        app.shaders[1].bind();
-        glUniform1i(app.shaders[0].getUniform("u_texture"), 0);
+        HDRshader.bind();
+        glUniform1i(HDRshader.getUniform("u_texture"), 0);
         mainTexture.bind(0);
-        quad.getMeshes()[0].va.bind();
-        quad.getMeshes()[0].ib.bind();
+        quadVA.bind();
+        quadVB.bind();
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        glDrawElements(GL_TRIANGLES, quad.getMeshes()[0].ib.getSize(), GL_UNSIGNED_INT, nullptr);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 //  =========================================== 
         imguistuff(app);

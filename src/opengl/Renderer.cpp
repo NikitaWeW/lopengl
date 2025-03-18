@@ -10,6 +10,7 @@ Renderer::Renderer() {
 
 void Renderer::clear(glm::vec3 clearColor) const
 {
+    assert(false);
     glClearColor(clearColor.r, clearColor.g, clearColor.b, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
@@ -50,9 +51,10 @@ void Renderer::setLightingUniforms(ShaderProgram const &shader) const
 
 void Renderer::draw(Mesh const &mesh) const
 {
-    mesh.va.bind();
-    mesh.ib.bind();
-    glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
+    assert(false);
+    // mesh.va.bind();
+    // mesh.ib.bind();
+    // glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
 }
 
 
