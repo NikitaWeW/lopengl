@@ -159,6 +159,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[0].material.color"), 0.6, 0.5, 0.1);
         
         testModel.resetMatrix();
         testModel.translate({0, -9, -4});
@@ -170,6 +171,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[1].material.color"), 0.2, 0.7, 0.4);
 
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 

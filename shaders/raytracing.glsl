@@ -36,6 +36,9 @@ struct AABB {
     vec3 max;
 };
 
+struct Material {
+    vec3 color;
+};
 struct Model {
     uint indexOffset;
     uint vertexOffset;
@@ -43,6 +46,13 @@ struct Model {
     mat4 modelMat; // local to world space
     mat4 normalMat;
     AABB aabb;
+    Material material;
+};
+struct Hitinfo {
+    bool exists;
+    vec3 normal;
+    vec3 position;
+    Material material;
 };
 uniform Model u_models[10];
 uniform uint u_modelCount;
@@ -53,7 +63,7 @@ uniform Camera u_camera;
 float rayTriangle(Ray ray, Triangle triangle);
 float rayAABB(Ray ray, AABB aabb);
 bool rayAABBb(Ray ray, AABB aabb);
-vec3 getBarycentric(vec3 p, vec3 a, vec3 b, vec3 c);
+Hitinfo rayScene(Ray ray);
 vec3 rayColor(Ray ray);
 Ray calculateRay(vec2 texCoords, Camera camera);
 
@@ -69,13 +79,18 @@ void main() {
 }
 
 vec3 rayColor(Ray ray) {
+    Hitinfo info = rayScene(ray);
+    vec3 lightpos = vec3(1, 1, -2);
+    return info.exists ? max(dot(normalize(lightpos - info.position), info.normal), 0) * info.material.color * (1 / length(lightpos - info.position)) + 0.01 : vec3(0);
+}
+Hitinfo rayScene(Ray ray) {
+    Hitinfo info;
     float closestIntersection = 1.0/0.0;
-    vec3 intersectionNormal;
     for(uint modelIndex = 0; modelIndex < u_modelCount; ++modelIndex) {
+        if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
+            continue;
+        }
         for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
-            if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
-                continue;
-            }
             Triangle triangle = Triangle(
                 (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset])).xyz, 
                 (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset])).xyz, 
@@ -84,15 +99,14 @@ vec3 rayColor(Ray ray) {
             float intersection = rayTriangle(ray, triangle);
             if(intersection != -1 && intersection < closestIntersection) {
                 closestIntersection = intersection;
-                intersectionNormal = (u_models[modelIndex].normalMat * vec4(normals[indices[indexIndex] + u_models[modelIndex].vertexOffset])).xyz;
+                info.normal = (u_models[modelIndex].normalMat * vec4(normals[indices[indexIndex] + u_models[modelIndex].vertexOffset])).xyz;
+                info.material = u_models[modelIndex].material;
             }
         }
     }
-    if(closestIntersection == 1.0/0.0) return vec3(0); // miss
-    vec3 intersectionLocation = ray.origin + closestIntersection * normalize(ray.direction);
-    vec3 lightpos = vec3(1, 1, -2);
-    vec3 modelColor = vec3(0.7, 0.5, 0.2);
-    return max(dot(normalize(lightpos - intersectionLocation), intersectionNormal), 0) * modelColor * (1 / length(lightpos - intersectionLocation)) + 0.01;
+    info.exists = closestIntersection != 1.0/0.0;
+    info.position = ray.origin + closestIntersection * normalize(ray.direction);
+    return info;
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
     vec2 NDCcoords = texCoords * 2.0 - 1.0;
@@ -104,76 +118,46 @@ Ray calculateRay(vec2 texCoords, Camera camera) {
     return Ray(normalize(rayDir), camera.position);
 }
 float rayTriangle(Ray ray, Triangle triangle) {
-    // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm#C++_implementation translated to glsl
-    const float epsilon = 1e-10;
+    // https://stackoverflow.com/a/42752998
+    vec3 edgeAB = triangle.B - triangle.A;
+    vec3 edgeAC = triangle.C - triangle.A;
+    vec3 normalVector = cross(edgeAB, edgeAC);
+    vec3 ao = ray.origin - triangle.A;
+    vec3 dao = cross(ao, ray.direction);
 
-    vec3 edge1 = triangle.B - triangle.A;
-    vec3 edge2 = triangle.C - triangle.A;
-    vec3 ray_cross_e2 = cross(normalize(ray.direction), edge2);
-    float det = dot(edge1, ray_cross_e2);
+    float determinant = -dot(ray.direction, normalVector);
+    float invDet = 1 / determinant;
 
-    if (det > -epsilon && det < epsilon)
-        return -1;    // This ray is parallel to this triangle.
+    // Calculate dst to triangle & barycentric coordinates of intersection point
+    float dst = dot(ao, normalVector) * invDet;
+    float u = dot(edgeAC, dao) * invDet;
+    float v = -dot(edgeAB, dao) * invDet;
+    float w = 1 - u - v;
 
-    float inv_det = 1.0 / det;
-    vec3 s = ray.origin - triangle.A;
-    float u = inv_det * dot(s, ray_cross_e2);
-
-    if ((u < 0 && abs(u) > epsilon) || (u > 1 && abs(u-1) > epsilon))
-        return -1;
-
-    vec3 s_cross_e1 = cross(s, edge1);
-    float v = inv_det * dot(normalize(ray.direction), s_cross_e1);
-
-    if ((v < 0 && abs(v) > epsilon) || (u + v > 1 && abs(u + v - 1) > epsilon))
-        return -1;
-
-    // At this stage we can compute t to find out where the intersection point is on the line.
-    float t = inv_det * dot(edge2, s_cross_e1);
-
-    // t > epsilon: ray intersection
-    // else: This means that there is a line intersection but not a ray intersection.
-    return float(t > epsilon) * t + float(t <= epsilon) * -1;
-}
-vec3 getBarycentric(vec3 p, vec3 a, vec3 b, vec3 c) {
-    const vec3 v0 = b - a;
-    const vec3 v1 = c - a;
-    const vec3 v2 = p - a;
-    const float denominator = v0.x * v1.y - v1.x * v0.y;
-    const float v = (v2.x * v1.y - v1.x * v2.y) / denominator;
-    const float w = (v0.x * v2.y - v2.x * v0.y) / denominator;
-    const float u = 1.0f - v - w;
-    return vec3(v, w, u);
+    // Initialize hit info
+    return determinant >= 1E-8 && dst >= 0 && u >= 0 && v >= 0 && w >= 0 ? dst : -1;
 }
 float rayAABB(Ray ray, AABB aabb) {
-    vec3 dirfrac = 1.0f / ray.direction;
-    float t1 = (aabb.min.x - ray.origin.x)*dirfrac.x;
-    float t2 = (aabb.max.x - ray.origin.x)*dirfrac.x;
-    float t3 = (aabb.min.y - ray.origin.y)*dirfrac.y;
-    float t4 = (aabb.max.y - ray.origin.y)*dirfrac.y;
-    float t5 = (aabb.min.z - ray.origin.z)*dirfrac.z;
-    float t6 = (aabb.max.z - ray.origin.z)*dirfrac.z;
+    vec3 rayInvDir = 1 / ray.direction;
+    vec3 tMin = (aabb.min - ray.origin) * rayInvDir;
+    vec3 tMax = (aabb.max - ray.origin) * rayInvDir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
 
-    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-    // if tmin > tmax, ray doesn't intersect AABB
-    if (tmax < 0 || tmin > tmax) return -1;
-    if(tmin < 0) return tmax;
-    return tmin;
+    bool hit = tFar >= tNear && tFar > 0;
+    float dst = hit ? tNear > 0 ? tNear : 0 : -1;
+    return dst;
 }
 bool rayAABBb(Ray ray, AABB aabb) {
-    vec3 dirfrac = 1.0f / ray.direction;
-    float t1 = (aabb.min.x - ray.origin.x)*dirfrac.x;
-    float t2 = (aabb.max.x - ray.origin.x)*dirfrac.x;
-    float t3 = (aabb.min.y - ray.origin.y)*dirfrac.y;
-    float t4 = (aabb.max.y - ray.origin.y)*dirfrac.y;
-    float t5 = (aabb.min.z - ray.origin.z)*dirfrac.z;
-    float t6 = (aabb.max.z - ray.origin.z)*dirfrac.z;
+    vec3 rayInvDir = 1 / ray.direction;
+    vec3 tMin = (aabb.min - ray.origin) * rayInvDir;
+    vec3 tMax = (aabb.max - ray.origin) * rayInvDir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
 
-    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-    return tmax > 0 && tmin < tmax;
+    return tFar >= tNear && tFar > 0;
 }
