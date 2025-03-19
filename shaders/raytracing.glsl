@@ -80,8 +80,7 @@ void main() {
 
 vec3 rayColor(Ray ray) {
     Hitinfo info = rayScene(ray);
-    vec3 lightpos = vec3(1, 1, -2);
-    return info.exists ? max(dot(normalize(lightpos - info.position), info.normal), 0) * info.material.color * (1 / length(lightpos - info.position)) + 0.01 : vec3(0);
+    return info.exists ? info.material.color : vec3(0);
 }
 Hitinfo rayScene(Ray ray) {
     Hitinfo info;

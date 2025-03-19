@@ -103,6 +103,12 @@ int main(int argc, char **argv)
     for(unsigned index : testModel.getMeshes()[0].indices) {
         testModelAABB.growToInclude(testModel.getMeshes()[0].positions[index]);
     }
+    Material testModelMaterial0{
+        glm::vec3(0.1, 0.7, 0.3)
+    };
+    Material testModelMaterial1{
+        glm::vec3(0.4, 0.5, 0.1)
+    };
 
 //  =========================================== 
 
@@ -151,7 +157,7 @@ int main(int argc, char **argv)
         glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 2);
         
         testModel.resetMatrix();
-        testModel.translate({0, sin(glfwGetTime()), -4});
+        testModel.translate({0, 0, -4});
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
@@ -159,11 +165,11 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[0].material.color"), 0.6, 0.5, 0.1);
+        glUniform3fv(app.shaders[0].getUniform("u_models[0].material.color"), 1, &testModelMaterial0.color.x);
         
         testModel.resetMatrix();
-        testModel.translate({0, -9, -4});
-        testModel.scale({7, 7, 7});
+        testModel.translate({0, -10.5, -4});
+        testModel.scale({10, 10, 10});
         glUniform1ui(app.shaders[0].getUniform("u_models[1].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[1].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[1].vertexOffset"), 0);
@@ -171,7 +177,7 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[1].material.color"), 0.2, 0.7, 0.4);
+        glUniform3fv(app.shaders[0].getUniform("u_models[1].material.color"), 1, &testModelMaterial1.color.x);
 
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 
@@ -186,7 +192,37 @@ int main(int argc, char **argv)
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 //  =========================================== 
-        imguistuff(app);
+    ImGuiIO &io = ImGui::GetIO();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+
+    ImGui::ColorEdit3("material 1 color", &testModelMaterial0.color.r);
+    ImGui::ColorEdit3("material 2 color", &testModelMaterial1.color.r);
+
+    if(app.failedToReloadShaders) {
+        ImGui::OpenPopup("failed to reload shaders!");
+        app.failedToReloadShaders = false;
+    }
+    if(ImGui::BeginPopup("failed to reload shaders!")) {
+        ImGui::Text("shader name: %s", app.lastFailedShaderName.c_str());
+        ImGui::Separator();
+        ImGui::TextWrapped(app.lastFailedShaderLog.c_str());
+        ImGui::EndPopup();
+    }
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        GLFWwindow *backup_current_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_current_context);
+    }
+        
+//  =========================================== 
         glfwSwapBuffers(app.window);
         glfwPollEvents();
         ++app.frameCounter;
