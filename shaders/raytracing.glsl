@@ -92,7 +92,7 @@ vec3 rayColor(Ray ray) {
     vec3 intersectionLocation = ray.origin + closestIntersection * normalize(ray.direction);
     vec3 lightpos = vec3(1, 1, -2);
     vec3 modelColor = vec3(0.7, 0.5, 0.2);
-    return max(dot(normalize(lightpos - intersectionLocation), intersectionNormal), 0) * modelColor + 0.01;
+    return max(dot(normalize(lightpos - intersectionLocation), intersectionNormal), 0) * modelColor * (1 / length(lightpos - intersectionLocation)) + 0.01;
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
     vec2 NDCcoords = texCoords * 2.0 - 1.0;

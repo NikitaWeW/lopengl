@@ -137,9 +137,7 @@ int main(int argc, char **argv)
         positionsSSBO.bind(1);
         normalsSSBO.bind(2);
 
-        testModel.resetMatrix();
-        testModel.translate({1, sin(glfwGetTime()), -4});
-
+        
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
@@ -150,6 +148,10 @@ int main(int argc, char **argv)
         glUniform3f(app.shaders[0].getUniform("u_camera.up"), app.camera.getUp().x, app.camera.getUp().y, app.camera.getUp().z);
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
+        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 2);
+        
+        testModel.resetMatrix();
+        testModel.translate({0, sin(glfwGetTime()), -4});
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
@@ -157,7 +159,17 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 1);
+        
+        testModel.resetMatrix();
+        testModel.translate({0, -9, -4});
+        testModel.scale({7, 7, 7});
+        glUniform1ui(app.shaders[0].getUniform("u_models[1].indicesCount"), testModel.getMeshes()[0].indices.size());
+        glUniform1ui(app.shaders[0].getUniform("u_models[1].indexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_models[1].vertexOffset"), 0);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
+        glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
 
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
 
