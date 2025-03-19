@@ -42,6 +42,7 @@ cmake --build build && build/main
 #include "opengl/Framebuffer.hpp"
 #include "opengl/UniformBuffer.hpp"
 #include "opengl/Cubemap.hpp"
+#include "utils/AABB.hpp"
 
 #include <chrono>
 #include <memory>
@@ -57,32 +58,6 @@ extern const bool debug = true;
 
 void imguistuff(Application &app);
 float lerp(float a, float b, float x) { return a + x * (b - a); }
-void drawScreenQuad(Texture &texture) {
-    static bool init = true;
-    static ShaderProgram shader;
-    static VertexBuffer vb;
-    static VertexArray va;
-    if(init) {
-        init = false;
-        float vertices[] = {
-            // positions        tex coords
-            -1.0, -1.0, 0.0,    0.0, 0.0,
-             1.0, -1.0, 0.0,    1.0, 0.0,
-             1.0,  1.0, 0.0,    1.0, 1.0,
-            -1.0,  1.0, 0.0,    0.0, 1.0
-        };
-        shader = ShaderProgram{"shaders/hdr.glsl", true};
-        vb = VertexBuffer{vertices, sizeof(vertices)};
-        va = VertexArray{vb, InterleavedVertexBufferLayout{{3, GL_FLOAT}, {2, GL_FLOAT}}};
-    }
-    shader.bind();
-    glUniform1i(shader.getUniform("u_texture"), 0);
-    texture.bind(0);
-    va.bind();
-    vb.bind();
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-}
 
 int main(int argc, char **argv)
 {
@@ -91,6 +66,8 @@ int main(int argc, char **argv)
     app.shaders = {
         {"shaders/raytracing.glsl", true}
     };
+
+//  =========================================== 
 
     float vertices[] = {
         // positions        tex coords
@@ -103,7 +80,9 @@ int main(int argc, char **argv)
     VertexBuffer quadVB = VertexBuffer{vertices, sizeof(vertices)};
     VertexArray quadVA = VertexArray{quadVB, InterleavedVertexBufferLayout{{3, GL_FLOAT}, {2, GL_FLOAT}}};
     
-    Model testModel{"res/models/sphere_low_poly.glb"};
+//  =========================================== 
+
+    Model testModel{"res/models/sphere_low_poly.glb"}; // assuming only one mesh
     SSBO indicesSSBO{testModel.getMeshes()[0].indices.size() * sizeof(testModel.getMeshes()[0].indices[0])};
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
         0, 
@@ -114,10 +93,13 @@ int main(int argc, char **argv)
         0,
         testModel.getMeshes()[0].positions.size() * sizeof(testModel.getMeshes()[0].positions[0]), 
         testModel.getMeshes()[0].positions.data());
-    glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
-    glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
-    indicesSSBO.bind(0);
-    positionsSSBO.bind(1);
+
+    AABB testModelAABB;
+    for(unsigned index : testModel.getMeshes()[0].indices) {
+        testModelAABB.growToInclude(testModel.getMeshes()[0].positions[index]);
+    }
+
+//  =========================================== 
 
     Texture mainTexture;
     mainTexture.bind();
@@ -146,7 +128,14 @@ int main(int argc, char **argv)
         app.shaders[0].bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+        indicesSSBO.bind(0);
+        positionsSSBO.bind(1);
 
+        testModel.resetMatrix();
+        testModel.translate({1, sin(glfwGetTime()), -4});
+
+        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
+        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glUniform3fv(app.shaders[0].getUniform("u_camera.position"), 1, &app.camera.position.x);
         glUniform3f(app.shaders[0].getUniform("u_camera.forward"), app.camera.getFront().x, app.camera.getFront().y, app.camera.getFront().z);
@@ -157,8 +146,14 @@ int main(int argc, char **argv)
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
+        glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
         glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 1);
+
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
+
+//  =========================================== 
 
         HDRshader.bind();
         glUniform1i(HDRshader.getUniform("u_texture"), 0);
@@ -175,7 +170,7 @@ int main(int argc, char **argv)
         ++app.frameCounter;
         app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
-    showFps.join();
+    showFps.detach();
 }
 /*
 c++ be like:

@@ -10,14 +10,6 @@ layout(std430) readonly buffer positionsSSBO {
     vec4 positions[];
 };
 
-struct Model {
-    uint indexOffset;
-    uint vertexOffset;
-    uint indicesCount;
-};
-uniform Model u_models[10];
-uniform uint u_modelCount;
-
 #define debugColor ?vec3(0,1,0):vec3(1,0,0) // output bool values as color
 struct Camera {
     float fov;
@@ -40,6 +32,16 @@ struct AABB {
     vec3 min;
     vec3 max;
 };
+
+struct Model {
+    uint indexOffset;
+    uint vertexOffset;
+    uint indicesCount;
+    mat4 modelMat; // local to world space
+    AABB aabb;
+};
+uniform Model u_models[10];
+uniform uint u_modelCount;
 
 uniform float u_time;
 uniform Camera u_camera;
@@ -66,10 +68,13 @@ vec3 rayColor(Ray ray) {
     float closestIntersection = 1.0/0.0;
     for(uint modelIndex = 0; modelIndex < u_modelCount; ++modelIndex) {
         for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
+            if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
+                continue;
+            }
             Triangle triangle = Triangle(
-                positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset].xyz, 
-                positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset].xyz, 
-                positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset].xyz
+                (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset])).xyz, 
+                (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset])).xyz, 
+                (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset])).xyz
             );
             float intersection = rayTriangle(ray, triangle);
             if(intersection != -1) {
@@ -77,7 +82,7 @@ vec3 rayColor(Ray ray) {
             }
         }
     }
-    if(closestIntersection == 1.0/0.0) return vec3(0.3, 0.5, 0.7); // miss
+    if(closestIntersection == 1.0/0.0) return normalize(1 - ray.direction).y * vec3(0.3, 0.5, 0.7); // miss
     return vec3(ray.origin + closestIntersection * ray.direction);
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
@@ -161,5 +166,5 @@ bool rayAABBb(Ray ray, AABB aabb) {
     float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
     float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
-    return tmin < tmax;
+    return tmax > 0 && tmin < tmax;
 }
