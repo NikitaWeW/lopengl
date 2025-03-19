@@ -104,15 +104,15 @@ int main(int argc, char **argv)
     VertexArray quadVA = VertexArray{quadVB, InterleavedVertexBufferLayout{{3, GL_FLOAT}, {2, GL_FLOAT}}};
     
     Model testModel{"res/models/sphere_low_poly.glb"};
-    SSBO indicesSSBO{testModel.getMeshes()[0].indices.size() * sizeof(unsigned)};
+    SSBO indicesSSBO{testModel.getMeshes()[0].indices.size() * sizeof(testModel.getMeshes()[0].indices[0])};
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
         0, 
-        testModel.getMeshes()[0].indices.size() * sizeof(unsigned), 
+        testModel.getMeshes()[0].indices.size() * sizeof(testModel.getMeshes()[0].indices[0]), 
         testModel.getMeshes()[0].indices.data());
-    SSBO positionsSSBO{testModel.getMeshes()[0].positions.size() * sizeof(glm::vec4)};
+    SSBO positionsSSBO{testModel.getMeshes()[0].positions.size() * sizeof(testModel.getMeshes()[0].positions[0])};
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
         0,
-        testModel.getMeshes()[0].positions.size() * sizeof(glm::vec4), 
+        testModel.getMeshes()[0].positions.size() * sizeof(testModel.getMeshes()[0].positions[0]), 
         testModel.getMeshes()[0].positions.data());
     glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
     glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);

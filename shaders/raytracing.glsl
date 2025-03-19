@@ -65,7 +65,7 @@ void main() {
 vec3 rayColor(Ray ray) {
     float closestIntersection = 1.0/0.0;
     for(uint modelIndex = 0; modelIndex < u_modelCount; ++modelIndex) {
-        for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount; indexIndex+=3) {
+        for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
             Triangle triangle = Triangle(
                 positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset].xyz, 
                 positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset].xyz, 
@@ -90,21 +90,36 @@ Ray calculateRay(vec2 texCoords, Camera camera) {
     return Ray(normalize(rayDir), camera.position);
 }
 float rayTriangle(Ray ray, Triangle triangle) {
-    const vec3 normal = normalize(cross(triangle.B - triangle.A, triangle.C - triangle.A)); // change
-    const float denominator = dot(normal, ray.direction);
-    if(denominator == 0) return -1;
-    const float t = dot(normal, triangle.A - ray.origin) / denominator;
-    if(t < 0) return -1;
-    const vec3 planePoint = ray.origin + ray.direction * t;
+    // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm#C++_implementation translated to glsl
+    const float epsilon = 1e-10;
 
-    vec3 barycentric = getBarycentric(planePoint, triangle.A, triangle.B, triangle.C);
+    vec3 edge1 = triangle.B - triangle.A;
+    vec3 edge2 = triangle.C - triangle.A;
+    vec3 ray_cross_e2 = cross(normalize(ray.direction), edge2);
+    float det = dot(edge1, ray_cross_e2);
 
-    if (
-        0 <= barycentric.x && barycentric.x <= 1 && 
-        0 <= barycentric.y && barycentric.y <= 1 &&
-        0 <= barycentric.z && barycentric.z <= 1
-    ) return t;
-    return -1;
+    if (det > -epsilon && det < epsilon)
+        return -1;    // This ray is parallel to this triangle.
+
+    float inv_det = 1.0 / det;
+    vec3 s = ray.origin - triangle.A;
+    float u = inv_det * dot(s, ray_cross_e2);
+
+    if ((u < 0 && abs(u) > epsilon) || (u > 1 && abs(u-1) > epsilon))
+        return -1;
+
+    vec3 s_cross_e1 = cross(s, edge1);
+    float v = inv_det * dot(normalize(ray.direction), s_cross_e1);
+
+    if ((v < 0 && abs(v) > epsilon) || (u + v > 1 && abs(u + v - 1) > epsilon))
+        return -1;
+
+    // At this stage we can compute t to find out where the intersection point is on the line.
+    float t = inv_det * dot(edge2, s_cross_e1);
+
+    // t > epsilon: ray intersection
+    // else: This means that there is a line intersection but not a ray intersection.
+    return float(t > epsilon) * t + float(t <= epsilon) * -1;
 }
 vec3 getBarycentric(vec3 p, vec3 a, vec3 b, vec3 c) {
     const vec3 v0 = b - a;
