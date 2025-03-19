@@ -9,6 +9,9 @@ layout(std430) readonly buffer indicesSSBO {
 layout(std430) readonly buffer positionsSSBO {
     vec4 positions[];
 };
+layout(std430) readonly buffer normalsSSBO {
+    vec4 normals[];
+};
 
 #define debugColor ?vec3(0,1,0):vec3(1,0,0) // output bool values as color
 struct Camera {
@@ -38,6 +41,7 @@ struct Model {
     uint vertexOffset;
     uint indicesCount;
     mat4 modelMat; // local to world space
+    mat4 normalMat;
     AABB aabb;
 };
 uniform Model u_models[10];
@@ -66,6 +70,7 @@ void main() {
 
 vec3 rayColor(Ray ray) {
     float closestIntersection = 1.0/0.0;
+    vec3 intersectionNormal;
     for(uint modelIndex = 0; modelIndex < u_modelCount; ++modelIndex) {
         for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
             if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
@@ -77,13 +82,17 @@ vec3 rayColor(Ray ray) {
                 (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset])).xyz
             );
             float intersection = rayTriangle(ray, triangle);
-            if(intersection != -1) {
-                closestIntersection = min(intersection, closestIntersection);
+            if(intersection != -1 && intersection < closestIntersection) {
+                closestIntersection = intersection;
+                intersectionNormal = (u_models[modelIndex].normalMat * vec4(normals[indices[indexIndex] + u_models[modelIndex].vertexOffset])).xyz;
             }
         }
     }
-    if(closestIntersection == 1.0/0.0) return normalize(1 - ray.direction).y * vec3(0.3, 0.5, 0.7); // miss
-    return vec3(ray.origin + closestIntersection * ray.direction);
+    if(closestIntersection == 1.0/0.0) return vec3(0); // miss
+    vec3 intersectionLocation = ray.origin + closestIntersection * normalize(ray.direction);
+    vec3 lightpos = vec3(1, 1, -2);
+    vec3 modelColor = vec3(0.7, 0.5, 0.2);
+    return max(dot(normalize(lightpos - intersectionLocation), intersectionNormal), 0) * modelColor + 0.01;
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
     vec2 NDCcoords = texCoords * 2.0 - 1.0;

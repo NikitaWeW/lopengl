@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     app.camera = ControllableCamera{app.window, {0, 0, 0}, {-90, 0, 0}};
     app.shaders = {
         {"shaders/raytracing.glsl", true}
-    };
+    }; // on shader reload contents will be recompiled, if a shader fails it will be restored.
 
 //  =========================================== 
 
@@ -93,6 +93,11 @@ int main(int argc, char **argv)
         0,
         testModel.getMeshes()[0].positions.size() * sizeof(testModel.getMeshes()[0].positions[0]), 
         testModel.getMeshes()[0].positions.data());
+    SSBO normalsSSBO{testModel.getMeshes()[0].normals.size() * sizeof(testModel.getMeshes()[0].normals[0])};
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
+        0,
+        testModel.getMeshes()[0].normals.size() * sizeof(testModel.getMeshes()[0].normals[0]), 
+        testModel.getMeshes()[0].normals.data());
 
     AABB testModelAABB;
     for(unsigned index : testModel.getMeshes()[0].indices) {
@@ -130,12 +135,14 @@ int main(int argc, char **argv)
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
         indicesSSBO.bind(0);
         positionsSSBO.bind(1);
+        normalsSSBO.bind(2);
 
         testModel.resetMatrix();
         testModel.translate({1, sin(glfwGetTime()), -4});
 
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
+        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glUniform3fv(app.shaders[0].getUniform("u_camera.position"), 1, &app.camera.position.x);
         glUniform3f(app.shaders[0].getUniform("u_camera.forward"), app.camera.getFront().x, app.camera.getFront().y, app.camera.getFront().z);
@@ -147,6 +154,7 @@ int main(int argc, char **argv)
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
         glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 1);
