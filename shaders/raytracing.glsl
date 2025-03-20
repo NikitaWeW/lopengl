@@ -42,7 +42,7 @@ struct Sphere {
 
 struct Material {
     vec3 color;
-    vec3 emmission;
+    vec3 emission;
     float roughness;
 };
 struct Model {
@@ -89,7 +89,7 @@ vec3 lerp(vec3 a, vec3 b, float x) { return a + x * (b - a); }
 
 uint seed = 0;
 const uint maxBounceCount = 5;
-const uint raysPerPixel = 1;
+const uint raysPerPixel = 4;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -121,7 +121,7 @@ vec3 rayColor(Ray ray) {
             vec3 diffuseDir = info.normal + randUnitSphere(seed);
             vec3 specularDir = reflect(ray.direction, info.normal);
             ray.direction = lerp(specularDir, diffuseDir, info.material.roughness);
-            incominglight += info.material.emmission * raycolor;
+            incominglight += info.material.emission * raycolor;
             raycolor *= info.material.color;
         } else {
             break;

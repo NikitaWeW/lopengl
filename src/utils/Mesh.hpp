@@ -14,4 +14,5 @@ struct Mesh {
     std::vector<glm::vec4> normals;
     std::vector<glm::vec4> tangents;
     std::vector<glm::vec2> textureCoords;
+    Material material;
 };

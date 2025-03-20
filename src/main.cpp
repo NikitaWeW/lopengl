@@ -43,6 +43,7 @@ cmake --build build && build/main
 #include "opengl/UniformBuffer.hpp"
 #include "opengl/Cubemap.hpp"
 #include "utils/AABB.hpp"
+#include "utils/Scene.hpp"
 
 #include <chrono>
 #include <memory>
@@ -82,27 +83,38 @@ int main(int argc, char **argv)
     
 //  =========================================== 
 
-    Model testModel{"res/models/sphere_low_poly.glb"}; // assuming only one mesh
-    SSBO indicesSSBO{testModel.getMeshes()[0].indices.size() * sizeof(testModel.getMeshes()[0].indices[0])};
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
-        0, 
-        testModel.getMeshes()[0].indices.size() * sizeof(testModel.getMeshes()[0].indices[0]), 
-        testModel.getMeshes()[0].indices.data());
-    SSBO positionsSSBO{testModel.getMeshes()[0].positions.size() * sizeof(testModel.getMeshes()[0].positions[0])};
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
-        0,
-        testModel.getMeshes()[0].positions.size() * sizeof(testModel.getMeshes()[0].positions[0]), 
-        testModel.getMeshes()[0].positions.data());
-    SSBO normalsSSBO{testModel.getMeshes()[0].normals.size() * sizeof(testModel.getMeshes()[0].normals[0])};
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
-        0,
-        testModel.getMeshes()[0].normals.size() * sizeof(testModel.getMeshes()[0].normals[0]), 
-        testModel.getMeshes()[0].normals.data());
+    Scene scene;
+    scene.addModel("sphere", {"res/models/sphere_low_poly.glb"});
+    // scene.addModel("quad", {"res/models/quad.obj"});
+    scene.generateData();
 
-    AABB testModelAABB;
-    for(unsigned index : testModel.getMeshes()[0].indices) {
-        testModelAABB.growToInclude(testModel.getMeshes()[0].positions[index]);
-    }
+    Material materials[] = {
+        {
+            {0, 0, 0},
+            {30, 30, 30},
+            1
+        },
+        {
+            {0.5, 0.9, 0.2},
+            {0, 0, 0},
+            1
+        },
+        {
+            {0.8, 0.5, 0.4},
+            {0, 0, 0},
+            1
+        },
+        {
+            {0.7, 0.6, 0.6},
+            {0, 0, 0},
+            1
+        },
+        {
+            {0.8, 0.5, 0.4},
+            {0, 0, 0},
+            1
+        },
+    };
 
 //  =========================================== 
 
@@ -136,9 +148,9 @@ int main(int argc, char **argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
         
-        indicesSSBO.bind(0);
-        positionsSSBO.bind(1);
-        normalsSSBO.bind(2);
+        scene.getIndicesSSBO().bind(0);
+        scene.getPositionsSSBO().bind(1);
+        scene.getNormalsSSBO().bind(2);
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
         glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
@@ -151,77 +163,40 @@ int main(int argc, char **argv)
         glUniform3f(app.shaders[0].getUniform("u_camera.up"), app.camera.getUp().x, app.camera.getUp().y, app.camera.getUp().z);
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
-        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 5);
         glUniform1f(app.shaders[0].getUniform("u_time"), glfwGetTime());
+
+        unsigned numModels = 0;
         
-        testModel.resetMatrix();
-        testModel.translate({0, 1, -30});
-        testModel.scale({5, 5, 5});
-        glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
-        glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
-        glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
-        glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[0].material.color"), 0, 0, 0);
-        glUniform3f(app.shaders[0].getUniform("u_models[0].material.emmission"), 20, 20, 20);
-        glUniform1f(app.shaders[0].getUniform("u_models[0].material.roughness"), 1);
+        scene.getModels().at("sphere").resetMatrix();
+        scene.getModels().at("sphere").translate({0, 1, -30});
+        scene.getModels().at("sphere").scale({5, 5, 5});
+        scene.getModels().at("sphere").getMeshes()[0].material = materials[0];
+        scene.setUniforms("sphere", "u_models[0]", app.shaders[0], &numModels);
         
-        testModel.resetMatrix();
-        testModel.translate({0, -20, 0});
-        testModel.scale({20, 20, 20});
-        glUniform1ui(app.shaders[0].getUniform("u_models[1].indicesCount"), testModel.getMeshes()[0].indices.size());
-        glUniform1ui(app.shaders[0].getUniform("u_models[1].indexOffset"), 0);
-        glUniform1ui(app.shaders[0].getUniform("u_models[1].vertexOffset"), 0);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
-        glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[1].material.color"), 0.3, 0.8, 0.3);
-        glUniform3f(app.shaders[0].getUniform("u_models[1].material.emmission"), 0, 0, 0);
-        glUniform1f(app.shaders[0].getUniform("u_models[1].material.roughness"), 1);
+        scene.getModels().at("sphere").resetMatrix();
+        scene.getModels().at("sphere").translate({0, -20, 0});
+        scene.getModels().at("sphere").scale({20, 20, 20});
+        scene.getModels().at("sphere").getMeshes()[0].material = materials[1];
+        scene.setUniforms("sphere", "u_models[1]", app.shaders[0], &numModels);
         
-        testModel.resetMatrix();
-        testModel.translate({0, 1, 0});
-        glUniform1ui(app.shaders[0].getUniform("u_models[2].indicesCount"), testModel.getMeshes()[0].indices.size());
-        glUniform1ui(app.shaders[0].getUniform("u_models[2].indexOffset"), 0);
-        glUniform1ui(app.shaders[0].getUniform("u_models[2].vertexOffset"), 0);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[2].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[2].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
-        glUniform3fv(app.shaders[0].getUniform("u_models[2].aabb.min"), 1, &testModelAABB.min.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[2].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[2].material.color"), 0.1, 0.6, 0.7);
-        glUniform3f(app.shaders[0].getUniform("u_models[2].material.emmission"), 0, 0, 0);
-        glUniform1f(app.shaders[0].getUniform("u_models[2].material.roughness"), 0);
+        scene.getModels().at("sphere").resetMatrix();
+        scene.getModels().at("sphere").translate({0, 1, 0});
+        scene.getModels().at("sphere").getMeshes()[0].material = materials[2];
+        scene.setUniforms("sphere", "u_models[2]", app.shaders[0], &numModels);
         
-        testModel.resetMatrix();
-        testModel.translate({3, 1, 1});
-        testModel.scale({1.5, 1.5, 1.5});
-        glUniform1ui(app.shaders[0].getUniform("u_models[3].indicesCount"), testModel.getMeshes()[0].indices.size());
-        glUniform1ui(app.shaders[0].getUniform("u_models[3].indexOffset"), 0);
-        glUniform1ui(app.shaders[0].getUniform("u_models[3].vertexOffset"), 0);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[3].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[3].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
-        glUniform3fv(app.shaders[0].getUniform("u_models[3].aabb.min"), 1, &testModelAABB.min.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[3].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[3].material.color"), 0.2, 0.6, 0.4);
-        glUniform3f(app.shaders[0].getUniform("u_models[3].material.emmission"), 0, 0, 0);
-        glUniform1f(app.shaders[0].getUniform("u_models[3].material.roughness"), 0);
-        
-        testModel.resetMatrix();
-        testModel.translate({-1, 0.45, -1});
-        testModel.scale({0.5, 0.5, 0.5});
-        glUniform1ui(app.shaders[0].getUniform("u_models[4].indicesCount"), testModel.getMeshes()[0].indices.size());
-        glUniform1ui(app.shaders[0].getUniform("u_models[4].indexOffset"), 0);
-        glUniform1ui(app.shaders[0].getUniform("u_models[4].vertexOffset"), 0);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[4].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[4].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
-        glUniform3fv(app.shaders[0].getUniform("u_models[4].aabb.min"), 1, &testModelAABB.min.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[4].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3f(app.shaders[0].getUniform("u_models[4].material.color"), 0.1, 0.8, 0.6);
-        glUniform3f(app.shaders[0].getUniform("u_models[4].material.emmission"), 0, 0, 0);
-        glUniform1f(app.shaders[0].getUniform("u_models[4].material.roughness"), 0);
+        scene.getModels().at("sphere").resetMatrix();
+        scene.getModels().at("sphere").translate({3, 1, 1});
+        scene.getModels().at("sphere").scale({1.5, 1.5, 1.5});
+        scene.getModels().at("sphere").getMeshes()[0].material = materials[3];
+        scene.setUniforms("sphere", "u_models[3]", app.shaders[0], &numModels);
+
+        scene.getModels().at("sphere").resetMatrix();
+        scene.getModels().at("sphere").translate({-1, 0.45, -1});
+        scene.getModels().at("sphere").scale({0.5, 0.5, 0.5});
+        scene.getModels().at("sphere").getMeshes()[0].material = materials[4];
+        scene.setUniforms("sphere", "u_models[4]", app.shaders[0], &numModels);
+
+        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), numModels);
 
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
         ++app.numAccumFrames;

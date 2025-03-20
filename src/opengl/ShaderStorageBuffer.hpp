@@ -9,6 +9,7 @@ public:
     SSBO();
     SSBO(size_t size);
 
-    void bind(unsigned slot = 0);
-    void unbind(unsigned slot = 0);
+
+    void bind(unsigned slot = 0) const;
+    void unbind(unsigned slot = 0) const;
 };
