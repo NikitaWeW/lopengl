@@ -62,7 +62,7 @@ float lerp(float a, float b, float x) { return a + x * (b - a); }
 int main(int argc, char **argv)
 {
     Application app; // initialisation
-    app.camera = ControllableCamera{app.window, {0, 0, 0}, {-90, 0, 0}};
+    app.camera = ControllableCamera{app.window, {0, 0, 4}, {-90, 0, 0}};
     app.shaders = {
         {"shaders/raytracing.glsl", true}
     }; // on shader reload contents will be recompiled, if a shader fails it will be restored.
@@ -103,14 +103,6 @@ int main(int argc, char **argv)
     for(unsigned index : testModel.getMeshes()[0].indices) {
         testModelAABB.growToInclude(testModel.getMeshes()[0].positions[index]);
     }
-    Material testModelMaterial0{
-        {0, 0, 0},
-        {10, 10, 10}
-    };
-    Material testModelMaterial1{
-        {0.4, 0.5, 0.1},
-        {0, 0, 0}
-    };
 
 //  =========================================== 
 
@@ -147,9 +139,9 @@ int main(int argc, char **argv)
         indicesSSBO.bind(0);
         positionsSSBO.bind(1);
         normalsSSBO.bind(2);
-        // glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
-        // glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
-        // glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
+        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
+        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
+        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
         
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_numAccumFrames"), app.numAccumFrames);
@@ -159,11 +151,12 @@ int main(int argc, char **argv)
         glUniform3f(app.shaders[0].getUniform("u_camera.up"), app.camera.getUp().x, app.camera.getUp().y, app.camera.getUp().z);
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
-        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 2);
+        glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 5);
         glUniform1f(app.shaders[0].getUniform("u_time"), glfwGetTime());
         
         testModel.resetMatrix();
-        testModel.translate({0, 0, -4});
+        testModel.translate({0, 1, -30});
+        testModel.scale({5, 5, 5});
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[0].indexOffset"), 0);
         glUniform1ui(app.shaders[0].getUniform("u_models[0].vertexOffset"), 0);
@@ -171,21 +164,52 @@ int main(int argc, char **argv)
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[0].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[0].material.color"), 1, &testModelMaterial0.color.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[0].material.emmission"), 1, &testModelMaterial0.emmission.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[0].material.color"), 0, 0, 0);
+        glUniform3f(app.shaders[0].getUniform("u_models[0].material.emmission"), 20, 20, 20);
+        glUniform1f(app.shaders[0].getUniform("u_models[0].material.roughness"), 1);
         
         testModel.resetMatrix();
-        testModel.translate({0, -11, -4});
-        testModel.scale({10, 10, 10});
-        glUniform1ui(app.shaders[0].getUniform("u_models[1].indicesCount"), testModel.getMeshes()[0].indices.size());
-        glUniform1ui(app.shaders[0].getUniform("u_models[1].indexOffset"), 0);
-        glUniform1ui(app.shaders[0].getUniform("u_models[1].vertexOffset"), 0);
+        testModel.translate({0, -20, 0});
+        testModel.scale({20, 20, 20});
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[1].material.color"), 1, &testModelMaterial1.color.x);
-        glUniform3fv(app.shaders[0].getUniform("u_models[1].material.emmission"), 1, &testModelMaterial1.emmission.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[1].material.color"), 0.3, 0.8, 0.3);
+        glUniform3f(app.shaders[0].getUniform("u_models[1].material.emmission"), 0, 0, 0);
+        glUniform1f(app.shaders[0].getUniform("u_models[1].material.roughness"), 1);
+        
+        testModel.resetMatrix();
+        testModel.translate({0, 1, 0});
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[2].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[2].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
+        glUniform3fv(app.shaders[0].getUniform("u_models[2].aabb.min"), 1, &testModelAABB.min.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[2].aabb.max"), 1, &testModelAABB.max.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[2].material.color"), 0.1, 0.6, 0.7);
+        glUniform3f(app.shaders[0].getUniform("u_models[2].material.emmission"), 0, 0, 0);
+        glUniform1f(app.shaders[0].getUniform("u_models[2].material.roughness"), 0);
+        
+        testModel.resetMatrix();
+        testModel.translate({3, 1, 1});
+        testModel.scale({1.5, 1.5, 1.5});
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[3].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[3].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
+        glUniform3fv(app.shaders[0].getUniform("u_models[3].aabb.min"), 1, &testModelAABB.min.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[3].aabb.max"), 1, &testModelAABB.max.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[3].material.color"), 0.2, 0.6, 0.4);
+        glUniform3f(app.shaders[0].getUniform("u_models[3].material.emmission"), 0, 0, 0);
+        glUniform1f(app.shaders[0].getUniform("u_models[3].material.roughness"), 0);
+        
+        testModel.resetMatrix();
+        testModel.translate({-1, 0.45, -1});
+        testModel.scale({0.5, 0.5, 0.5});
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[4].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_models[4].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
+        glUniform3fv(app.shaders[0].getUniform("u_models[4].aabb.min"), 1, &testModelAABB.min.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[4].aabb.max"), 1, &testModelAABB.max.x);
+        glUniform3f(app.shaders[0].getUniform("u_models[4].material.color"), 0.1, 0.8, 0.6);
+        glUniform3f(app.shaders[0].getUniform("u_models[4].material.emmission"), 0, 0, 0);
+        glUniform1f(app.shaders[0].getUniform("u_models[4].material.roughness"), 0);
 
         glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
         ++app.numAccumFrames;
@@ -206,11 +230,6 @@ int main(int argc, char **argv)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-
-    ImGui::ColorEdit3("material 1 color", &testModelMaterial0.color.r);
-    ImGui::ColorEdit3("material 1 emmission", &testModelMaterial0.emmission.r);
-    ImGui::ColorEdit3("material 2 color", &testModelMaterial1.color.r);
-    ImGui::ColorEdit3("material 2 emmission", &testModelMaterial1.emmission.r);
     ImGui::Separator();
     if(ImGui::Button("reset accumulation")) app.numAccumFrames = 0;
     if(ImGui::Button("reload shaders")) app.reloadShaders();

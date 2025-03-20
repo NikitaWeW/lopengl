@@ -2,17 +2,16 @@
 #version 430 core
 layout(local_size_x = 20, local_size_y = 20, local_size_z = 1) in;
 layout(rgba16f) uniform image2D u_output;
-// layout(rgba16f) uniform image2D u_prevFrame;
 
-// layout(std430) readonly buffer indicesSSBO {
-//     uint indices[];
-// };
-// layout(std430) readonly buffer positionsSSBO {
-//     vec4 positions[];
-// };
-// layout(std430) readonly buffer normalsSSBO {
-//     vec4 normals[];
-// };
+layout(std430) readonly buffer indicesSSBO {
+    uint indices[];
+};
+layout(std430) readonly buffer positionsSSBO {
+    vec4 positions[];
+};
+layout(std430) readonly buffer normalsSSBO {
+    vec4 normals[];
+};
 
 #define debugColor ?vec3(0,1,0):vec3(1,0,0) // output bool values as color
 struct Camera {
@@ -44,6 +43,7 @@ struct Sphere {
 struct Material {
     vec3 color;
     vec3 emmission;
+    float roughness;
 };
 struct Model {
     uint indexOffset;
@@ -89,7 +89,7 @@ vec3 lerp(vec3 a, vec3 b, float x) { return a + x * (b - a); }
 
 uint seed = 0;
 const uint maxBounceCount = 5;
-const uint raysPerPixel = 16;
+const uint raysPerPixel = 1;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -116,10 +116,13 @@ vec3 rayColor(Ray ray) {
     for(uint i = 0; i < maxBounceCount; ++i) {
         Hitinfo info = rayScene(ray);
         if(info.exists) {
+            // return info.material.color;
             ray.origin = info.position;
-            ray.direction =  randHemisphere(seed, info.normal);
+            vec3 diffuseDir = info.normal + randUnitSphere(seed);
+            vec3 specularDir = reflect(ray.direction, info.normal);
+            ray.direction = lerp(specularDir, diffuseDir, info.material.roughness);
             incominglight += info.material.emmission * raycolor;
-            raycolor *= info.material.color * dot(info.normal, ray.direction);
+            raycolor *= info.material.color;
         } else {
             break;
         }
@@ -147,7 +150,6 @@ Hitinfo rayScene(Ray ray) {
         //     }
         // }
 
-        // pretend like every object is a sphere for now
         Sphere sphere = Sphere(vec3(u_models[modelIndex].modelMat[3][0], u_models[modelIndex].modelMat[3][1], u_models[modelIndex].modelMat[3][2]), u_models[modelIndex].modelMat[0][0]);
         float intersection = raySphere(ray, sphere);
         if(intersection != -1 && intersection < closestIntersection) {
