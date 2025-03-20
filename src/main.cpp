@@ -104,10 +104,12 @@ int main(int argc, char **argv)
         testModelAABB.growToInclude(testModel.getMeshes()[0].positions[index]);
     }
     Material testModelMaterial0{
-        glm::vec3(0.1, 0.7, 0.3)
+        {0, 0, 0},
+        {10, 10, 10}
     };
     Material testModelMaterial1{
-        glm::vec3(0.4, 0.5, 0.1)
+        {0.4, 0.5, 0.1},
+        {0, 0, 0}
     };
 
 //  =========================================== 
@@ -118,37 +120,39 @@ int main(int argc, char **argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
+
     glClearColor(0, 0, 0, 1);
     constexpr unsigned numPerGroup = 20;
-    constexpr float resolutionMultiplier = 0.5f;
 
     std::thread showFps([&app](){ while(!glfwWindowShouldClose(app.window)) { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str()); }});
-
     while (!glfwWindowShouldClose(app.window))
     {
         auto start = std::chrono::high_resolution_clock::now();
         int prevWidth = app.camera.width, prevHeight = app.camera.height;
+        glm::vec3 prevCamPos = app.camera.position, prevCamRotation = app.camera.rotation;
+        float prevFOV = app.camera.fov;
         app.camera.update(app.deltatime);
         glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
-        if(prevWidth != app.camera.width || prevHeight != app.camera.height) { // resize textures
+        if(prevWidth != app.camera.width || prevHeight != app.camera.height || prevCamPos != app.camera.position || prevCamRotation != app.camera.rotation || prevFOV != app.camera.fov) { // resize textures
             mainTexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app.camera.width * resolutionMultiplier, app.camera.height * resolutionMultiplier, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app.camera.width, app.camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            app.numAccumFrames = 0;
         }
 //  =========================================== 
         glViewport(0, 0, app.camera.width, app.camera.height);
         app.shaders[0].bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+        glBindImageTexture(0, mainTexture.getRenderID(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
+        
         indicesSSBO.bind(0);
         positionsSSBO.bind(1);
         normalsSSBO.bind(2);
-
+        // glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
+        // glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
+        // glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
         
-        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("indicesSSBO"), 0);
-        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("positionsSSBO"), 1);
-        glShaderStorageBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getStorageBlock("normalsSSBO"), 2);
         glUniform1i(app.shaders[0].getUniform("u_output"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_numAccumFrames"), app.numAccumFrames);
         glUniform3fv(app.shaders[0].getUniform("u_camera.position"), 1, &app.camera.position.x);
         glUniform3f(app.shaders[0].getUniform("u_camera.forward"), app.camera.getFront().x, app.camera.getFront().y, app.camera.getFront().z);
         glUniform3f(app.shaders[0].getUniform("u_camera.right"), app.camera.getRight().x, app.camera.getRight().y, app.camera.getRight().z);
@@ -168,9 +172,10 @@ int main(int argc, char **argv)
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].aabb.max"), 1, &testModelAABB.max.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[0].material.color"), 1, &testModelMaterial0.color.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[0].material.emmission"), 1, &testModelMaterial0.emmission.x);
         
         testModel.resetMatrix();
-        testModel.translate({0, -10.5, -4});
+        testModel.translate({0, -11, -4});
         testModel.scale({10, 10, 10});
         glUniform1ui(app.shaders[0].getUniform("u_models[1].indicesCount"), testModel.getMeshes()[0].indices.size());
         glUniform1ui(app.shaders[0].getUniform("u_models[1].indexOffset"), 0);
@@ -180,8 +185,10 @@ int main(int argc, char **argv)
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].material.color"), 1, &testModelMaterial1.color.x);
+        glUniform3fv(app.shaders[0].getUniform("u_models[1].material.emmission"), 1, &testModelMaterial1.emmission.x);
 
-        glDispatchCompute(app.camera.width / numPerGroup * resolutionMultiplier + 1, app.camera.height / numPerGroup * resolutionMultiplier + 1, 1);
+        glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
+        ++app.numAccumFrames;
 
 //  =========================================== 
 
@@ -201,8 +208,12 @@ int main(int argc, char **argv)
 
 
     ImGui::ColorEdit3("material 1 color", &testModelMaterial0.color.r);
+    ImGui::ColorEdit3("material 1 emmission", &testModelMaterial0.emmission.r);
     ImGui::ColorEdit3("material 2 color", &testModelMaterial1.color.r);
+    ImGui::ColorEdit3("material 2 emmission", &testModelMaterial1.emmission.r);
     ImGui::Separator();
+    if(ImGui::Button("reset accumulation")) app.numAccumFrames = 0;
+    if(ImGui::Button("reload shaders")) app.reloadShaders();
 
     if(app.failedToReloadShaders) {
         ImGui::OpenPopup("failed to reload shaders!");

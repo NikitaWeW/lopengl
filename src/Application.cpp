@@ -222,6 +222,7 @@ Application::~Application()
 
 bool Application::reloadShaders()
 {
+    numAccumFrames = 0;
     for(ShaderProgram &shader : shaders) {
         // LOG_DEBUG("reloading shader: \"%s\"", shader.getFilePath().c_str());
         ShaderProgram copy = shader;

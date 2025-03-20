@@ -1,6 +1,9 @@
 # me learning opengl
 this is repository with my opengl expirience. there are some bad / messy classes, but everything else is ok. Oh yeah, its missing some gui.
 
+# raytracing
+my first raytracer
+
 to move camera you could press escape to lock the mouse and control it with wasd qe (up / down) mouse (look around) and scroll (zoom).
 
 # building
@@ -8,7 +11,7 @@ uses cmake:
 ``` shell
 cmake -S . -B build
 cmake --build build
-build/main.exe
+build/main
 ```
 
 # really important note

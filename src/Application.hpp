@@ -30,6 +30,7 @@ public:
 
     double deltatime = 0;
     unsigned frameCounter = 0;
+    unsigned numAccumFrames = 0;
 
     std::vector<ShaderProgram> shaders;
     std::vector<unsigned> displayShaders;

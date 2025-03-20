@@ -2,16 +2,17 @@
 #version 430 core
 layout(local_size_x = 20, local_size_y = 20, local_size_z = 1) in;
 layout(rgba16f) uniform image2D u_output;
+// layout(rgba16f) uniform image2D u_prevFrame;
 
-layout(std430) readonly buffer indicesSSBO {
-    uint indices[];
-};
-layout(std430) readonly buffer positionsSSBO {
-    vec4 positions[];
-};
-layout(std430) readonly buffer normalsSSBO {
-    vec4 normals[];
-};
+// layout(std430) readonly buffer indicesSSBO {
+//     uint indices[];
+// };
+// layout(std430) readonly buffer positionsSSBO {
+//     vec4 positions[];
+// };
+// layout(std430) readonly buffer normalsSSBO {
+//     vec4 normals[];
+// };
 
 #define debugColor ?vec3(0,1,0):vec3(1,0,0) // output bool values as color
 struct Camera {
@@ -35,9 +36,14 @@ struct AABB {
     vec3 min;
     vec3 max;
 };
+struct Sphere {
+    vec3 center;
+    float radius;
+};
 
 struct Material {
     vec3 color;
+    vec3 emmission;
 };
 struct Model {
     uint indexOffset;
@@ -58,23 +64,32 @@ uniform Model u_models[10];
 uniform uint u_modelCount;
 
 uniform float u_time;
+uniform uint u_numAccumFrames;
 uniform Camera u_camera;
 
 // intersection tests
 float rayTriangle(Ray ray, Triangle triangle);
 float rayAABB(Ray ray, AABB aabb);
 bool rayAABBb(Ray ray, AABB aabb);
+float raySphere(Ray ray, Sphere sphere);
 Hitinfo rayScene(Ray ray);
 
 // random functions
 uint rand(inout uint state); // return random uint in [0; 0xffffffffu]
+float randNormalDistribution(inout uint state);
 float randZeroOne(inout uint state); // return random float in [0; 1]
 float randNegOneOne(inout uint state); // return random float in [-1; 1]
+vec3 randUnitSphere(inout uint state);
+vec3 randHemisphere(inout uint state, vec3 normal);
 
 vec3 rayColor(Ray ray);
 Ray calculateRay(vec2 texCoords, Camera camera);
+float lerp(float a, float b, float x) { return a + x * (b - a); }
+vec3 lerp(vec3 a, vec3 b, float x) { return a + x * (b - a); }
 
 uint seed = 0;
+const uint maxBounceCount = 5;
+const uint raysPerPixel = 16;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -83,14 +98,33 @@ void main() {
     float pixelIndex = texelCoord.y + (numTexels.x + numTexels.y) * texelCoord.x;
     seed = uint(u_time * pixelIndex);
 
-    Ray ray = calculateRay(texCoords, u_camera);
-    vec3 color = rayColor(ray);
+    vec3 color = vec3(0);
+    for(uint i = 0; i < raysPerPixel; ++i) {
+        color += rayColor(calculateRay(texCoords, u_camera));
+    }
+    color /= raysPerPixel;
+    if(u_numAccumFrames > 0) {
+        float weight = 1.0 / (u_numAccumFrames + 1);
+        color = (1 - weight) * imageLoad(u_output, texelCoord).xyz + weight * color;
+    }
     imageStore(u_output, texelCoord, vec4(color, 1.0));
 }
 
 vec3 rayColor(Ray ray) {
-    Hitinfo info = rayScene(ray);
-    return info.exists ? info.material.color : vec3(0);
+    vec3 raycolor = vec3(1);
+    vec3 incominglight = vec3(0);
+    for(uint i = 0; i < maxBounceCount; ++i) {
+        Hitinfo info = rayScene(ray);
+        if(info.exists) {
+            ray.origin = info.position;
+            ray.direction =  randHemisphere(seed, info.normal);
+            incominglight += info.material.emmission * raycolor;
+            raycolor *= info.material.color * dot(info.normal, ray.direction);
+        } else {
+            break;
+        }
+    }
+    return vec3(incominglight);
 }
 Hitinfo rayScene(Ray ray) {
     Hitinfo info;
@@ -99,22 +133,32 @@ Hitinfo rayScene(Ray ray) {
         if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
             continue;
         }
-        for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
-            Triangle triangle = Triangle(
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
-            );
-            float intersection = rayTriangle(ray, triangle);
-            if(intersection != -1 && intersection < closestIntersection) {
-                closestIntersection = intersection;
-                info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
-                info.material = u_models[modelIndex].material;
-            }
+        // for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
+        //     Triangle triangle = Triangle(
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
+        //     );
+        //     float intersection = rayTriangle(ray, triangle);
+        //     if(intersection != -1 && intersection < closestIntersection) {
+        //         closestIntersection = intersection;
+        //         info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
+        //         info.material = u_models[modelIndex].material;
+        //     }
+        // }
+
+        // pretend like every object is a sphere for now
+        Sphere sphere = Sphere(vec3(u_models[modelIndex].modelMat[3][0], u_models[modelIndex].modelMat[3][1], u_models[modelIndex].modelMat[3][2]), u_models[modelIndex].modelMat[0][0]);
+        float intersection = raySphere(ray, sphere);
+        if(intersection != -1 && intersection < closestIntersection) {
+            closestIntersection = intersection;
+            info.position = ray.origin + closestIntersection * normalize(ray.direction);
+            info.normal = normalize(info.position - sphere.center);
+            info.material = u_models[modelIndex].material;
         }
+
     }
     info.exists = closestIntersection != 1.0/0.0;
-    info.position = ray.origin + closestIntersection * normalize(ray.direction);
     return info;
 }
 Ray calculateRay(vec2 texCoords, Camera camera) {
@@ -124,7 +168,7 @@ Ray calculateRay(vec2 texCoords, Camera camera) {
 
     const vec3 rayDir = camera.forward + viewPortCoords.x * camera.right + viewPortCoords.y * camera.up;
 
-    return Ray(normalize(rayDir + vec3(0, 0, 0)), camera.position);
+    return Ray(normalize(rayDir + randUnitSphere(seed) * 0.0001), camera.position);
 }
 float rayTriangle(Ray ray, Triangle triangle) {
     // https://stackoverflow.com/a/42752998
@@ -171,6 +215,21 @@ bool rayAABBb(Ray ray, AABB aabb) {
 
     return tFar >= tNear && tFar > 0;
 }
+float raySphere(Ray ray, Sphere sphere) {
+    const vec3 OC = sphere.center - ray.origin;
+    const float a = dot(ray.direction, ray.direction);
+    const float b = -2.0 * dot(ray.direction, OC);
+    const float c = dot(OC, OC) - sphere.radius * sphere.radius;
+    const float discriminant = b*b - 4*a*c;
+    if(discriminant < 0) return -1;
+    
+    const float sqrtDiscriminant = sqrt(discriminant);
+    float t = min((-b - sqrtDiscriminant) / (2*a), (-b + sqrtDiscriminant) / (2*a));
+
+    if(t < 0) return -1;
+
+    return t;
+}
 
 uint rand(inout uint state) {
 	state = state * 747796405u + 2891336453u;
@@ -182,4 +241,19 @@ float randZeroOne(inout uint state) {
 }
 float randNegOneOne(inout uint state) {
     return randZeroOne(state) * 2.0 - 1.0;
+}
+vec3 randUnitSphere(inout uint state) {
+    return normalize(vec3(randNormalDistribution(state) * 2 - 1, randNormalDistribution(state) * 2 - 1, randNormalDistribution(state))) * 2 - 1;
+}
+vec3 randHemisphere(inout uint state, vec3 normal) {
+    vec3 randSphere = randUnitSphere(state);
+
+    if(dot(normal, randSphere) < 0) return -randSphere;
+    return randSphere;
+}
+float randNormalDistribution(inout uint state) {
+    // Thanks to https://stackoverflow.com/a/6178290
+    float theta = 2 * 3.1415926 * randZeroOne(state);
+    float rho = sqrt(-2 * log(randZeroOne(state)));
+    return rho * cos(theta);
 }
