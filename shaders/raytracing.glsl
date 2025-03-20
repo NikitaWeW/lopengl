@@ -136,28 +136,28 @@ Hitinfo rayScene(Ray ray) {
         if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
             continue;
         }
-        for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
-            Triangle triangle = Triangle(
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
-            );
-            float intersection = rayTriangle(ray, triangle);
-            if(intersection != -1 && intersection < closestIntersection) {
-                closestIntersection = intersection;
-                info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
-                info.material = u_models[modelIndex].material;
-            }
-        }
-
-        // Sphere sphere = Sphere(vec3(u_models[modelIndex].modelMat[3][0], u_models[modelIndex].modelMat[3][1], u_models[modelIndex].modelMat[3][2]), u_models[modelIndex].modelMat[0][0]);
-        // float intersection = raySphere(ray, sphere);
-        // if(intersection != -1 && intersection < closestIntersection) {
-        //     closestIntersection = intersection;
-        //     info.position = ray.origin + closestIntersection * normalize(ray.direction);
-        //     info.normal = normalize(info.position - sphere.center);
-        //     info.material = u_models[modelIndex].material;
+        // for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
+        //     Triangle triangle = Triangle(
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
+        //     );
+        //     float intersection = rayTriangle(ray, triangle);
+        //     if(intersection != -1 && intersection < closestIntersection) {
+        //         closestIntersection = intersection;
+        //         info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
+        //         info.material = u_models[modelIndex].material;
+        //     }
         // }
+
+        Sphere sphere = Sphere(vec3(u_models[modelIndex].modelMat[3][0], u_models[modelIndex].modelMat[3][1], u_models[modelIndex].modelMat[3][2]), u_models[modelIndex].modelMat[0][0]);
+        float intersection = raySphere(ray, sphere);
+        if(intersection != -1 && intersection < closestIntersection) {
+            closestIntersection = intersection;
+            info.position = ray.origin + closestIntersection * normalize(ray.direction);
+            info.normal = normalize(info.position - sphere.center);
+            info.material = u_models[modelIndex].material;
+        }
 
     }
     info.exists = closestIntersection != 1.0/0.0;
