@@ -60,18 +60,28 @@ uniform uint u_modelCount;
 uniform float u_time;
 uniform Camera u_camera;
 
+// intersection tests
 float rayTriangle(Ray ray, Triangle triangle);
 float rayAABB(Ray ray, AABB aabb);
 bool rayAABBb(Ray ray, AABB aabb);
 Hitinfo rayScene(Ray ray);
+
+// random functions
+uint rand(inout uint state); // return random uint in [0; 0xffffffffu]
+float randZeroOne(inout uint state); // return random float in [0; 1]
+float randNegOneOne(inout uint state); // return random float in [-1; 1]
+
 vec3 rayColor(Ray ray);
 Ray calculateRay(vec2 texCoords, Camera camera);
+
+uint seed = 0;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
     vec2 numTexels = gl_NumWorkGroups.xy*gl_WorkGroupSize.xy;
     vec2 texCoords = vec2(texelCoord) / numTexels;
     float pixelIndex = texelCoord.y + (numTexels.x + numTexels.y) * texelCoord.x;
+    seed = uint(u_time * pixelIndex);
 
     Ray ray = calculateRay(texCoords, u_camera);
     vec3 color = rayColor(ray);
@@ -91,14 +101,14 @@ Hitinfo rayScene(Ray ray) {
         }
         for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
             Triangle triangle = Triangle(
-                (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset])).xyz, 
-                (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset])).xyz, 
-                (u_models[modelIndex].modelMat * vec4(positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset])).xyz
+                (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
+                (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
+                (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
             );
             float intersection = rayTriangle(ray, triangle);
             if(intersection != -1 && intersection < closestIntersection) {
                 closestIntersection = intersection;
-                info.normal = (u_models[modelIndex].normalMat * vec4(normals[indices[indexIndex] + u_models[modelIndex].vertexOffset])).xyz;
+                info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
                 info.material = u_models[modelIndex].material;
             }
         }
@@ -114,7 +124,7 @@ Ray calculateRay(vec2 texCoords, Camera camera) {
 
     const vec3 rayDir = camera.forward + viewPortCoords.x * camera.right + viewPortCoords.y * camera.up;
 
-    return Ray(normalize(rayDir), camera.position);
+    return Ray(normalize(rayDir + vec3(0, 0, 0)), camera.position);
 }
 float rayTriangle(Ray ray, Triangle triangle) {
     // https://stackoverflow.com/a/42752998
@@ -134,7 +144,8 @@ float rayTriangle(Ray ray, Triangle triangle) {
     float w = 1 - u - v;
 
     // Initialize hit info
-    return determinant >= 1E-8 && dst >= 0 && u >= 0 && v >= 0 && w >= 0 ? dst : -1;
+    float expr = float(determinant >= 1E-8 && dst >= 0 && u >= 0 && v >= 0 && w >= 0);
+    return expr * dst + (1 - expr) * -1;
 }
 float rayAABB(Ray ray, AABB aabb) {
     vec3 rayInvDir = 1 / ray.direction;
@@ -159,4 +170,16 @@ bool rayAABBb(Ray ray, AABB aabb) {
     float tFar = min(min(t2.x, t2.y), t2.z);
 
     return tFar >= tNear && tFar > 0;
+}
+
+uint rand(inout uint state) {
+	state = state * 747796405u + 2891336453u;
+	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
+}
+float randZeroOne(inout uint state) {
+    return float(rand(state)) * (1.0 / float(0xffffffffu));
+}
+float randNegOneOne(inout uint state) {
+    return randZeroOne(state) * 2.0 - 1.0;
 }

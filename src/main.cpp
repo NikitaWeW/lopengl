@@ -114,13 +114,14 @@ int main(int argc, char **argv)
 
     Texture mainTexture;
     mainTexture.bind();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     glClearColor(0, 0, 0, 1);
     constexpr unsigned numPerGroup = 20;
+    constexpr float resolutionMultiplier = 0.5f;
 
     std::thread showFps([&app](){ while(!glfwWindowShouldClose(app.window)) { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str()); }});
 
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
         glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
         if(prevWidth != app.camera.width || prevHeight != app.camera.height) { // resize textures
             mainTexture.bind();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app.camera.width, app.camera.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app.camera.width * resolutionMultiplier, app.camera.height * resolutionMultiplier, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         }
 //  =========================================== 
         glViewport(0, 0, app.camera.width, app.camera.height);
@@ -155,6 +156,7 @@ int main(int argc, char **argv)
         glUniform1f(app.shaders[0].getUniform("u_camera.fov"), app.camera.fov);
         glUniform1f(app.shaders[0].getUniform("u_camera.aspect"), (float) app.camera.width / app.camera.height);
         glUniform1ui(app.shaders[0].getUniform("u_modelCount"), 2);
+        glUniform1f(app.shaders[0].getUniform("u_time"), glfwGetTime());
         
         testModel.resetMatrix();
         testModel.translate({0, 0, -4});
@@ -179,7 +181,7 @@ int main(int argc, char **argv)
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.max"), 1, &testModelAABB.max.x);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].material.color"), 1, &testModelMaterial1.color.x);
 
-        glDispatchCompute(app.camera.width / numPerGroup + 1, app.camera.height / numPerGroup + 1, 1);
+        glDispatchCompute(app.camera.width / numPerGroup * resolutionMultiplier + 1, app.camera.height / numPerGroup * resolutionMultiplier + 1, 1);
 
 //  =========================================== 
 
@@ -200,6 +202,7 @@ int main(int argc, char **argv)
 
     ImGui::ColorEdit3("material 1 color", &testModelMaterial0.color.r);
     ImGui::ColorEdit3("material 2 color", &testModelMaterial1.color.r);
+    ImGui::Separator();
 
     if(app.failedToReloadShaders) {
         ImGui::OpenPopup("failed to reload shaders!");
