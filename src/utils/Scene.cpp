@@ -23,32 +23,32 @@ void Scene::generateData()
             meshInfo.parentModel = modelIterator->first;
             meshInfo.material = &meshIterator->material;
 
-            m_meshInfo.push_back(meshInfo);
+            m_meshInfos.push_back(meshInfo);
 
             numIndices += meshInfo.indicesCount;
-            numVertices += meshIterator->positions.size();
+            numVertices += meshInfo.verticesCount;
         }
     }
 
     m_indicesSSBO = SSBO{numIndices * sizeof(unsigned)};
     m_positionsSSBO = SSBO{numVertices * sizeof(glm::vec4)};
     m_normalsSSBO = SSBO{numVertices * sizeof(glm::vec4)};
-    for(auto infoIterator = m_meshInfo.begin(); infoIterator != m_meshInfo.end(); ++infoIterator) {
+    for(auto infoIterator = m_meshInfos.begin(); infoIterator != m_meshInfos.end(); ++infoIterator) {
         m_indicesSSBO.bind();
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
-            infoIterator->indexOffset, 
+            infoIterator->indexOffset * sizeof(unsigned), 
             infoIterator->indicesCount * sizeof(unsigned), 
             infoIterator->indexData
         );
         m_positionsSSBO.bind();
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
-            infoIterator->vertexOffset, 
+            infoIterator->vertexOffset * sizeof(glm::vec4), 
             infoIterator->verticesCount * sizeof(glm::vec4), 
             infoIterator->positionData
         );
         m_normalsSSBO.bind();
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 
-            infoIterator->vertexOffset, 
+            infoIterator->vertexOffset * sizeof(glm::vec4), 
             infoIterator->verticesCount * sizeof(glm::vec4), 
             infoIterator->normalData
         );
@@ -57,7 +57,7 @@ void Scene::generateData()
 
 void Scene::setUniforms(std::string const &modelName, std::string const &uniformName, ShaderProgram const &shader, unsigned *numMeshesSet, std::map<std::string, std::string> const &uniformStructLayout) const
 { // TODO: uniform buffer
-    for(MeshInfo const &info : m_meshInfo) {
+    for(MeshInfo const &info : m_meshInfos) {
         if(info.parentModel != modelName) continue;
         glUniform1ui(shader.getUniform(uniformName + "." + uniformStructLayout.at("indicesCount")), info.indicesCount);
         glUniform1ui(shader.getUniform(uniformName + "." + uniformStructLayout.at("indexOffset")), info.indexOffset);

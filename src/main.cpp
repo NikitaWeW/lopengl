@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
     Scene scene;
     scene.addModel("sphere", {"res/models/sphere_low_poly.glb"});
-    // scene.addModel("quad", {"res/models/quad.obj"});
+    scene.addModel("quad", {"res/models/quad.obj"});
     scene.generateData();
 
     Material materials[] = {

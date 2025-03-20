@@ -25,7 +25,7 @@ private:
         glm::vec4 *normalData;
     };
     std::map<std::string, Model> m_models;
-    std::vector<MeshInfo> m_meshInfo;
+    std::vector<MeshInfo> m_meshInfos;
     SSBO m_indicesSSBO;
     SSBO m_positionsSSBO;
     SSBO m_normalsSSBO;
@@ -35,7 +35,7 @@ public:
     inline void removeModel(std::string const &name) { m_models.erase(name); }
     inline std::map<std::string, Model> const &getModels() const { return m_models; }
     inline std::map<std::string, Model> &getModels() { return m_models; }
-    inline std::vector<MeshInfo> const &getMeshInfo() const { return m_meshInfo; }
+    inline std::vector<MeshInfo> const &getMeshInfo() const { return m_meshInfos; }
     inline SSBO const &getIndicesSSBO() const { return m_indicesSSBO; }
     inline SSBO const &getPositionsSSBO() const { return m_positionsSSBO; }
     inline SSBO const &getNormalsSSBO() const { return m_normalsSSBO; }
