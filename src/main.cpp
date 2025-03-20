@@ -171,6 +171,9 @@ int main(int argc, char **argv)
         testModel.resetMatrix();
         testModel.translate({0, -20, 0});
         testModel.scale({20, 20, 20});
+        glUniform1ui(app.shaders[0].getUniform("u_models[1].indicesCount"), testModel.getMeshes()[0].indices.size());
+        glUniform1ui(app.shaders[0].getUniform("u_models[1].indexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_models[1].vertexOffset"), 0);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[1].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[1].aabb.min"), 1, &testModelAABB.min.x);
@@ -181,6 +184,9 @@ int main(int argc, char **argv)
         
         testModel.resetMatrix();
         testModel.translate({0, 1, 0});
+        glUniform1ui(app.shaders[0].getUniform("u_models[2].indicesCount"), testModel.getMeshes()[0].indices.size());
+        glUniform1ui(app.shaders[0].getUniform("u_models[2].indexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_models[2].vertexOffset"), 0);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[2].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[2].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[2].aabb.min"), 1, &testModelAABB.min.x);
@@ -192,6 +198,9 @@ int main(int argc, char **argv)
         testModel.resetMatrix();
         testModel.translate({3, 1, 1});
         testModel.scale({1.5, 1.5, 1.5});
+        glUniform1ui(app.shaders[0].getUniform("u_models[3].indicesCount"), testModel.getMeshes()[0].indices.size());
+        glUniform1ui(app.shaders[0].getUniform("u_models[3].indexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_models[3].vertexOffset"), 0);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[3].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[3].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[3].aabb.min"), 1, &testModelAABB.min.x);
@@ -203,6 +212,9 @@ int main(int argc, char **argv)
         testModel.resetMatrix();
         testModel.translate({-1, 0.45, -1});
         testModel.scale({0.5, 0.5, 0.5});
+        glUniform1ui(app.shaders[0].getUniform("u_models[4].indicesCount"), testModel.getMeshes()[0].indices.size());
+        glUniform1ui(app.shaders[0].getUniform("u_models[4].indexOffset"), 0);
+        glUniform1ui(app.shaders[0].getUniform("u_models[4].vertexOffset"), 0);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[4].modelMat"), 1, GL_FALSE, &testModel.getModelMat()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_models[4].normalMat"), 1, GL_FALSE, &glm::transpose(glm::inverse(testModel.getModelMat()))[0][0]);
         glUniform3fv(app.shaders[0].getUniform("u_models[4].aabb.min"), 1, &testModelAABB.min.x);
