@@ -78,7 +78,21 @@ int main(int argc, char **argv)
     Model cube{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
     Model sphere{"res/models/sphere.obj", FLIP_TEXTURES };
 
-    UniformBuffer ubo{sizeof(float)};
+    // glm::vec4 *data = new glm::vec4[count];
+    // for(unsigned i = 0; i < count; ++i) {
+    //     data[i] = {randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), 1};
+    // }
+    unsigned count = 3;
+    float data[] = {
+        0, 1, 0, 1,
+        1, 1, 0, 1, 
+        1, 1, 1, 1
+    };
+    UniformBuffer ubo{sizeof(GLfloat) + sizeof(glm::vec4) * 200 };
+    ubo.bind();
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4) * count, data);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 200, sizeof(GLfloat), &count);
+    ubo.bindingPoint(0);
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -94,6 +108,7 @@ int main(int argc, char **argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         app.shaders[0].bind();
+        glUniformBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getUniformBlock("vectors"), 0);
         cube.resetMatrix();
         glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);

@@ -20,6 +20,12 @@ out vec4 o_color;
 
 in vec2 v_texCoord;
 
+layout (std140) uniform vectors {
+    vec4 values[200];
+    uint count;
+};
+
 void main() {
-    o_color = vec4(1);
+    o_color = vec4(vec3(values[1].x,values[1].z, float(count) / 3.0), 1.0);
+    // o_color = vec4(values[1]);
 }
