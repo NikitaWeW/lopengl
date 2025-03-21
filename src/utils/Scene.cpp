@@ -65,8 +65,10 @@ void Scene::setUniforms(std::string const &modelName, std::string const &uniform
         glUniform3fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("aabb.min")), 1, &info.aabb.min.x);
         glUniform3fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("aabb.max")), 1, &info.aabb.max.x);
         glUniform3fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("material.color")), 1, &info.material->color.r);
+        glUniform3fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("material.specularColor")), 1, &info.material->specularColor.r);
         glUniform3fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("material.emission")), 1, &info.material->emission.r);
-        glUniform1f (shader.getUniform(uniformName + "." + uniformStructLayout.at("material.roughness")), info.material->roughness);
+        glUniform1f (shader.getUniform(uniformName + "." + uniformStructLayout.at("material.smoothness")), info.material->smoothness);
+        glUniform1f (shader.getUniform(uniformName + "." + uniformStructLayout.at("material.specularProbability")), info.material->specularProbability);
         glUniformMatrix4fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("modelMat")), 1, GL_FALSE, &m_models.at(modelName).getModelMat()[0][0]);
         glUniformMatrix4fv(shader.getUniform(uniformName + "." + uniformStructLayout.at("normalMat")), 1, GL_FALSE, &glm::transpose(glm::inverse(m_models.at(modelName).getModelMat()))[0][0]);
         if(numMeshesSet) ++(*numMeshesSet);

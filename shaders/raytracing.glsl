@@ -42,8 +42,10 @@ struct Sphere {
 
 struct Material {
     vec3 color;
+    vec3 specularColor;
     vec3 emission;
-    float roughness;
+    float smoothness;
+    float specularProbability;
 };
 struct Model {
     uint indexOffset;
@@ -88,7 +90,7 @@ float lerp(float a, float b, float x) { return a + x * (b - a); }
 vec3 lerp(vec3 a, vec3 b, float x) { return a + x * (b - a); }
 
 uint seed = 0;
-const uint maxBounceCount = 2;
+const uint maxBounceCount = 10;
 const uint raysPerPixel = 1;
 
 void main() {
@@ -119,9 +121,10 @@ vec3 rayColor(Ray ray) {
             ray.origin = info.position;
             vec3 diffuseDir = info.normal + randUnitSphere(seed);
             vec3 specularDir = reflect(ray.direction, info.normal);
-            ray.direction = lerp(specularDir, diffuseDir, info.material.roughness);
+            bool isSpecular = info.material.specularProbability >= randZeroOne(seed);
+            ray.direction = lerp(diffuseDir, specularDir, info.material.smoothness * float(isSpecular));
             incominglight += info.material.emission * raycolor;
-            raycolor *= info.material.color;
+            raycolor *= lerp(info.material.color, info.material.specularColor, float(isSpecular));
         } else {
             break;
         }
@@ -135,28 +138,28 @@ Hitinfo rayScene(Ray ray) {
         if(!rayAABBb(ray, AABB(vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.min, 1)), vec3(u_models[modelIndex].modelMat * vec4(u_models[modelIndex].aabb.max, 1))))) {
             continue;
         }
-        for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
-            Triangle triangle = Triangle(
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
-                (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
-            );
-            float intersection = rayTriangle(ray, triangle);
-            if(intersection != -1 && intersection < closestIntersection) {
-                closestIntersection = intersection;
-                info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
-                info.material = u_models[modelIndex].material;
-            }
-        }
-
-        // Sphere sphere = Sphere(vec3(u_models[modelIndex].modelMat[3][0], u_models[modelIndex].modelMat[3][1], u_models[modelIndex].modelMat[3][2]), u_models[modelIndex].modelMat[0][0]);
-        // float intersection = raySphere(ray, sphere);
-        // if(intersection != -1 && intersection < closestIntersection) {
-        //     closestIntersection = intersection;
-        //     info.position = ray.origin + closestIntersection * normalize(ray.direction);
-        //     info.normal = normalize(info.position - sphere.center);
-        //     info.material = u_models[modelIndex].material;
+        // for(uint indexIndex = u_models[modelIndex].indexOffset; indexIndex < u_models[modelIndex].indicesCount + u_models[modelIndex].indexOffset; indexIndex+=3) {
+        //     Triangle triangle = Triangle(
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+0] + u_models[modelIndex].vertexOffset]).xyz, 
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+1] + u_models[modelIndex].vertexOffset]).xyz, 
+        //         (u_models[modelIndex].modelMat * positions[indices[indexIndex+2] + u_models[modelIndex].vertexOffset]).xyz
+        //     );
+        //     float intersection = rayTriangle(ray, triangle);
+        //     if(intersection != -1 && intersection < closestIntersection) {
+        //         closestIntersection = intersection;
+        //         info.normal = (u_models[modelIndex].normalMat * normals[indices[indexIndex] + u_models[modelIndex].vertexOffset]).xyz;
+        //         info.material = u_models[modelIndex].material;
+        //     }
         // }
+
+        Sphere sphere = Sphere(vec3(u_models[modelIndex].modelMat[3][0], u_models[modelIndex].modelMat[3][1], u_models[modelIndex].modelMat[3][2]), u_models[modelIndex].modelMat[0][0]);
+        float intersection = raySphere(ray, sphere);
+        if(intersection != -1 && intersection < closestIntersection) {
+            closestIntersection = intersection;
+            info.position = ray.origin + closestIntersection * normalize(ray.direction);
+            info.normal = normalize(info.position - sphere.center);
+            info.material = u_models[modelIndex].material;
+        }
 
     }
     info.exists = closestIntersection != 1.0/0.0;

@@ -51,8 +51,10 @@ public:
         {"normalMat", "normalMat"},
         {"aabb.min", "aabb.min"},
         {"aabb.max", "aabb.max"},
-        {"material.roughness", "material.roughness"},
+        {"material.smoothness", "material.smoothness"},
         {"material.color", "material.color"},
-        {"material.emission", "material.emission"}
+        {"material.emission", "material.emission"},
+        {"material.specularProbability", "material.specularProbability"},
+        {"material.specularColor", "material.specularColor"}
     }) const;
 };

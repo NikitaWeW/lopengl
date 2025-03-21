@@ -92,27 +92,34 @@ int main(int argc, char **argv)
         {
             {0, 0, 0},
             {30, 30, 30},
-            1
         },
         {
             {0.5, 0.9, 0.2},
-            {0, 0, 0},
-            1
         },
         {
-            {0.8, 0.5, 0.4},
+            {0.2, 0.8, 0.9},
             {0, 0, 0},
-            0
+            1,
+            1,
+            {1, 1, 0}
         },
         {
-            {0.7, 0.6, 0.6},
+            {0.2, 0.2, 0.8},
             {0, 0, 0},
-            0.5
+            1,
+            0.4
         },
         {
-            {0.8, 0.5, 0.4},
+            {0.8, 0.1, 0.1},
             {0, 0, 0},
-            1
+            1,
+            0.15
+        },
+        {
+            {0.8, 0.7, 0.5},
+            {0, 0, 0},
+            1,
+            0.02
         },
     };
 
@@ -195,6 +202,12 @@ int main(int argc, char **argv)
         scene.getModels().at("sphere").scale({0.5, 0.5, 0.5});
         scene.getModels().at("sphere").getMeshes()[0].material = materials[4];
         scene.setUniforms("sphere", "u_models[4]", app.shaders[0], &numModels);
+
+        scene.getModels().at("sphere").resetMatrix();
+        scene.getModels().at("sphere").translate({1, 0.5, -2});
+        scene.getModels().at("sphere").scale({0.75, 0.75, 0.75});
+        scene.getModels().at("sphere").getMeshes()[0].material = materials[5];
+        scene.setUniforms("sphere", "u_models[5]", app.shaders[0], &numModels);
 
         glUniform1ui(app.shaders[0].getUniform("u_modelCount"), numModels);
 
