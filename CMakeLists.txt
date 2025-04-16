@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 project(learning-opengl C CXX)
 set(GLAD_API "gl:compatibility=4.3")
 set(IMGUI_BACKEND_SOURCES imgui_impl_opengl3.cpp imgui_impl_glfw.cpp)
-set(DEPS OpenGL GLFW Logger GLM imgui STB assimp)
+set(DEPS OpenGL GLFW GLM imgui STB assimp)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")

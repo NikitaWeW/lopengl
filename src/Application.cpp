@@ -155,8 +155,6 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 }
 Application::Application()
 {
-    logger_initConsoleLogger(stdout);
-    logger_setLevel(debug ? LogLevel_DEBUG : LogLevel_INFO);
     if (!glfwInit()) {
         LOG_FATAL("failed to initialize glfw!");
         throw std::runtime_error("failed to initialize");
