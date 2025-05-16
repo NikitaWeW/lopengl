@@ -70,49 +70,81 @@ float lerp(float a, float b, float x) { return a + x * (b - a); }
 int main(int argc, char **argv)
 {
     Application app; // initialisation
-    app.camera = ControllableCamera{app.window, {0, 0, 4}, {-90, 0, 0}};
+    app.camera = ControllableCamera{app.window, {0, 0, 15}, {-90, 0, 0}};
+    app.camera.far = 1300;
+    app.camera.speed = 10;
     app.shaders = {
         {"shaders/basic.glsl",              SHOW_LOGS}, // 0
+        {"shaders/atmosphere.glsl",         SHOW_LOGS}, // 1
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
-    Model cube{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
-    Model sphere{"res/models/sphere.obj", FLIP_TEXTURES };
+    Model cube{"res/models/cube.obj", FLIP_TEXTURES, FLIP_WINING_ORDER};
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
 
-    // glm::vec4 *data = new glm::vec4[count];
-    // for(unsigned i = 0; i < count; ++i) {
-    //     data[i] = {randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), 1};
-    // }
-    unsigned count = 3;
-    float data[] = {
-        0, 1, 0, 1,
-        1, 1, 0, 1, 
-        1, 1, 1, 1
-    };
-    UniformBuffer ubo{sizeof(GLfloat) + sizeof(glm::vec4) * 200 };
-    ubo.bind();
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4) * count, data);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 200, sizeof(GLfloat), &count);
-    ubo.bindingPoint(0);
+    glm::vec3 sunPos{1000, 500, 100};
+    float planetSize = 10;
+    float atmosphereSize = 10;
 
     while (!glfwWindowShouldClose(app.window))
     {
         auto start = std::chrono::high_resolution_clock::now();
+        unsigned prevWidth = app.camera.width, prevHeight = app.camera.height;
         app.camera.update(app.deltatime);
         glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
-// ================== //
-//  geometry pass
-// ================== //
-
+// std::cout << app.camera.getFront().x << ' ' << app.camera.getFront().y << ' ' << app.camera.getFront().z << '\n';
         glViewport(0, 0, app.camera.width, app.camera.height);
         glClearColor(app.clearColor.r, app.clearColor.g, app.clearColor.b, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
 
-        app.shaders[0].bind();
-        glUniformBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getUniformBlock("vectors"), 0);
+        // planet
+        app.shaders[0].bind(); 
         cube.resetMatrix();
+        cube.rotate({45, 15, 35});
+        cube.scale(glm::vec3{planetSize});
+        glUniform4f(app.shaders[0].getUniform("u_color"), 0.2, 0.43, 0.15, 1);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
+        for(Mesh const &mesh : cube.getMeshes()) {
+            mesh.va.bind();
+            mesh.ib.bind();
+            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
+        }
+        
+        // sun
+        app.shaders[0].bind(); 
+        cube.resetMatrix();
+        cube.translate(sunPos);
+        cube.scale(glm::vec3{50});
+        glUniform4f(app.shaders[0].getUniform("u_color"), 0.9, 0.8, 0.6, 1);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
+        for(Mesh const &mesh : cube.getMeshes()) {
+            mesh.va.bind();
+            mesh.ib.bind();
+            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
+        }
+        
+        // atmosphere
+        glCullFace(GL_FRONT);
+        glDisable(GL_DEPTH_TEST);
+        app.shaders[1].bind(); 
+        cube.resetMatrix();
+        cube.rotate({45, 15, 35});
+        cube.scale(glm::vec3{planetSize + atmosphereSize});
+        glUniform3fv(app.shaders[1].getUniform("u_camPos"), 1, &app.camera.position.x);
+        glUniform3fv(app.shaders[1].getUniform("u_sunPos"), 1, &sunPos.x);
+        glUniform1f(app.shaders[1].getUniform("u_sunIntensity"), 100);
+        glUniform1f(app.shaders[1].getUniform("u_planetSize"), planetSize + 1e-4f);
+        glUniform1f(app.shaders[1].getUniform("u_atmosphereSize"), atmosphereSize);
+        glUniform2f(app.shaders[1].getUniform("u_resolution"), app.camera.width, app.camera.height);
+        glUniformMatrix4fv(app.shaders[1].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[1].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[1].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
         for(Mesh const &mesh : cube.getMeshes()) {
             mesh.va.bind();
             mesh.ib.bind();

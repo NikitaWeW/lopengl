@@ -19,13 +19,9 @@ void main() {
 out vec4 o_color;
 
 in vec2 v_texCoord;
-
-layout (std140) uniform vectors {
-    vec4 values[200];
-    uint count;
-};
+uniform vec4 u_color;
 
 void main() {
-    o_color = vec4(vec3(values[1].x,values[1].z, float(count) / 3.0), 1.0);
-    // o_color = vec4(values[1]);
+    o_color = u_color;
+    o_color.rgb = pow(o_color.rgb, vec3(1/2.2));
 }

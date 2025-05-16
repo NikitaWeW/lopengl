@@ -219,7 +219,7 @@ Application::~Application()
     glfwDestroyWindow(window);
     glfwTerminate();
 }
-
+#include <iostream>
 bool Application::reloadShaders()
 {
     numAccumFrames = 0;
@@ -229,12 +229,14 @@ bool Application::reloadShaders()
         if(!shader.ParceShaderFile(shader.getFilePath())) {
             lastFailedShaderLog = shader.getLog();
             lastFailedShaderName = shader.getFilePath();
+            std::cout << lastFailedShaderName << ":\n\t" << lastFailedShaderLog << "\n";
             std::swap(shader, copy);
             return false;
         };
         if(!shader.CompileShaders()) {
             lastFailedShaderLog = shader.getLog();
             lastFailedShaderName = shader.getFilePath();
+            std::cout << lastFailedShaderName << ":\n\t" << lastFailedShaderLog << "\n";
             std::swap(shader, copy);
             return false;
         }
