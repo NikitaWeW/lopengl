@@ -86,32 +86,18 @@ float getHeight(vec3 point, float planetRadius)
     float sd = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
     return max(sd, 0);
 }
-vec3 getNormal(vec3 p)
-{
-    // cube
-    vec3 ap = abs(p);
-    if(ap.x >= ap.y && ap.x >= ap.z) {
-        return vec3(sign(p.x), 0, 0);
-    } else if(ap.y >= ap.x && ap.y >= ap.z) {
-        return vec3(0, sign(p.y), 0);
-    } else {
-        return vec3(0, 0, sign(p.z));
-    }
-}
 
 // thanks to https://github.com/wwwtyro/glsl-atmosphere
 // constants
 // =========
 const float PI = 3.14159265;
-const float numLightSamples = 10;
-const float numViewSamples = 5;
-const float scaleHeight_R = 0.25; // the average density is found 25 percent of the way up from the ground to the sky dome.
-const float scaleHeight_M = 0.25;
+const float numLightSamples = 2;
+const float numViewSamples = 2;
+const float scaleHeight_R = 0.8;
+const float scaleHeight_M = 0.1;
 const float g = 0.88;
-const vec3 beta_R = vec3(5.8e-3f, 13.5e-3f, 33.1e-3f);
-const float beta_M = 2e-3f;
-const float shadowHalfSide = 2; // pcf for shadow
-const float shadowStepSize = 1e-4;
+const vec3 beta_R = vec3(0.055, 0.13, 0.3);
+const float beta_M = 0.021;
 // =========
 // viewRay and sunDir are in local space!
 vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, float atmosphereSize, float meshRadius) {
@@ -136,6 +122,13 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
     viewRayAtmosphereIntersection.y = viewRayPlanetIntersection.x < 0 ? viewRayAtmosphereIntersection.y : viewRayPlanetIntersection.x;
 
     float viewRayStepSize = (viewRayAtmosphereIntersection.y - viewRayAtmosphereIntersection.x) / float(numViewSamples);
+
+    // Calculate shadow
+    // maybe shadow mapping?
+    Ray viewRayLightRay = Ray(at(viewRay, viewRayAtmosphereIntersection.y - 1e-4), sunDir);
+    vec2 viewRayLightRayPlanetIntersection = rayAABB(viewRayLightRay, planetBox);
+    float shadow_R = clamp(1 - dot(normalize(viewRayLightRay.origin), sunDir) - 0.9, 0, 0.9);
+    float shadow_M = float(viewRayLightRayPlanetIntersection.x >= 0);
 
     // Initialize accumulators for Rayleigh and Mie scattering.
     vec3 total_R = vec3(0);
@@ -175,26 +168,6 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
         vec2 lightRayAtmosphereIntersection = rayAABB(lightRay, atmosphereBox);
         float lightRayStepSize = (lightRayAtmosphereIntersection.y - lightRayAtmosphereIntersection.x) / float(numLightSamples);
 
-        // Calculate shadow
-        // maybe shadow mapping?
-        vec2 lightRayPlanetIntersection = rayAABB(lightRay, planetBox);
-        float shadow_M = float(lightRayPlanetIntersection.x >= 0);
-        float shadow_R = 0;
-        for(float pcfX = -shadowHalfSide; pcfX < shadowHalfSide; ++pcfX) {
-            for(float pcfY = -shadowHalfSide; pcfY < shadowHalfSide; ++pcfY) {
-                for(float pcfZ = -shadowHalfSide; pcfZ < shadowHalfSide; ++pcfZ) {
-                    vec3 pcfSample = viewRaySample + vec3(pcfX, pcfY, pcfZ) * shadowStepSize;
-                    Ray pcfLightRay;
-                    pcfLightRay.origin = pcfSample;
-                    pcfLightRay.direction = sunDir;
-                    vec2 pcfLightRayPlanetIntersection = rayAABB(pcfLightRay, planetBox);
-                    shadow_R += float(pcfLightRayPlanetIntersection.x >= 0);
-                }
-            }
-        }
-        shadow_R /= pow(2 * shadowHalfSide, 3.0);
-        shadow_R = min(shadow_R, 0.9);
-
         // Initialize optical depth accumulators for the secondary ray.
         float lightRayOpticalDepth_R = 0.0;
         float lightRayOpticalDepth_M = 0.0;
@@ -208,23 +181,29 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
             float lightRaySampleHeight = getHeight(lightRaySample, planetRadius);
 
             // Accumulate the optical depth.
-            lightRayOpticalDepth_R += exp(-lightRaySampleHeight / scaleHeight_R) * lightRayStepSize * (1 - shadow_R);
-            lightRayOpticalDepth_M += exp(-lightRaySampleHeight / scaleHeight_M) * lightRayStepSize * (1 - shadow_M);
+            lightRayOpticalDepth_R += exp(-lightRaySampleHeight / scaleHeight_R) * lightRayStepSize;
+            lightRayOpticalDepth_M += exp(-lightRaySampleHeight / scaleHeight_M) * lightRayStepSize;
         }
 
         // Calculate attenuation.
         vec3 attenuation = exp(-(beta_M * (viewRayOpticalDepth_M + lightRayOpticalDepth_M) + beta_R * (viewRayOpticalDepth_R + lightRayOpticalDepth_R)));
 
         // Accumulate scattering.
-        total_R += viewRaySampleOpticalDepth_R * attenuation * (1 - shadow_R);
-        total_M += viewRaySampleOpticalDepth_M * attenuation * (1 - shadow_M);
+        total_R += viewRaySampleOpticalDepth_R * attenuation ;
+        total_M += viewRaySampleOpticalDepth_M * attenuation ;
     }
-
     // Calculate and return the final color.
-    return vec4(
-        sunIntensity * (phase_R * beta_R * total_R + phase_M * beta_M * total_M),
-        mix(0.8, 1.0 - exp(-viewRayOpticalDepth_R - viewRayOpticalDepth_M), min(viewRayAtmosphereIntersection.x, 1)) // transition between some constant value when the camera is inside and smooth edges when the camera is outside of the atmosphere
-    );
+    if(viewRayAtmosphereIntersection.x < 1e-3) { // in the atmosphere
+        return vec4(
+            sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M)),
+            0.9
+        );
+    } else {
+        return vec4(
+            normalize(sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M))),
+            (1.0 - shadow_R) * (1.0 - exp(-(viewRayAtmosphereIntersection.y - viewRayAtmosphereIntersection.x)))
+        );
+    }
 }
 
 void main()

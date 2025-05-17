@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     glm::vec3 sunPos{1000, 500, 100};
     float planetSize = 10;
     float atmosphereSize = 3;
-    float sunIntensity = 1000;
+    float sunIntensity = 22;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
         app.shaders[0].bind(); 
         cube.resetMatrix();
         cube.translate(sunPos);
-        cube.scale(glm::vec3{50});
+        cube.scale(glm::vec3{10});
         glUniform4f(app.shaders[0].getUniform("u_color"), 0.9, 0.8, 0.6, 1);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
