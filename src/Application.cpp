@@ -166,7 +166,7 @@ Application::Application()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 16);
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
     GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());

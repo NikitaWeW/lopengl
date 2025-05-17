@@ -76,6 +76,7 @@ int main(int argc, char **argv)
     app.shaders = {
         {"shaders/basic.glsl",              SHOW_LOGS}, // 0
         {"shaders/atmosphere.glsl",         SHOW_LOGS}, // 1
+        {"shaders/planet.glsl",         SHOW_LOGS}, // 2
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     Model cube{"res/models/cube.obj", FLIP_TEXTURES, FLIP_WINING_ORDER};
@@ -84,7 +85,8 @@ int main(int argc, char **argv)
 
     glm::vec3 sunPos{1000, 500, 100};
     float planetSize = 10;
-    float atmosphereSize = 10;
+    float atmosphereSize = 3;
+    float sunIntensity = 1000;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -98,16 +100,19 @@ int main(int argc, char **argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
         // planet
-        app.shaders[0].bind(); 
+        app.shaders[2].bind(); 
         cube.resetMatrix();
         cube.rotate({45, 15, 35});
         cube.scale(glm::vec3{planetSize});
-        glUniform4f(app.shaders[0].getUniform("u_color"), 0.2, 0.43, 0.15, 1);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
+        glUniform3fv(app.shaders[2].getUniform("u_camPos"), 1, &app.camera.position.x);
+        glUniform3fv(app.shaders[2].getUniform("u_sunPos"), 1, &sunPos.x);
+        glUniform4f(app.shaders[2].getUniform("u_color"), 0.2, 0.43, 0.15, 1);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
+        glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
         for(Mesh const &mesh : cube.getMeshes()) {
             mesh.va.bind();
             mesh.ib.bind();
@@ -138,7 +143,7 @@ int main(int argc, char **argv)
         cube.scale(glm::vec3{planetSize + atmosphereSize});
         glUniform3fv(app.shaders[1].getUniform("u_camPos"), 1, &app.camera.position.x);
         glUniform3fv(app.shaders[1].getUniform("u_sunPos"), 1, &sunPos.x);
-        glUniform1f(app.shaders[1].getUniform("u_sunIntensity"), 100);
+        glUniform1f(app.shaders[1].getUniform("u_sunIntensity"), sunIntensity);
         glUniform1f(app.shaders[1].getUniform("u_planetSize"), planetSize + 1e-4f);
         glUniform1f(app.shaders[1].getUniform("u_atmosphereSize"), atmosphereSize);
         glUniform2f(app.shaders[1].getUniform("u_resolution"), app.camera.width, app.camera.height);
