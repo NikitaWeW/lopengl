@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
     glm::vec3 sunPos{1000, 500, 100};
     float planetSize = 10;
-    float atmosphereSize = 3;
+    float atmosphereSize = 4;
     float sunIntensity = 22;
 
     while (!glfwWindowShouldClose(app.window))

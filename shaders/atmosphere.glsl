@@ -86,6 +86,10 @@ float getHeight(vec3 point, float planetRadius)
     float sd = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
     return max(sd, 0);
 }
+float dencityAtHeight(float height, float scaleHeight)
+{
+    return exp(-height / scaleHeight) * 0.1;
+}
 
 // thanks to https://github.com/wwwtyro/glsl-atmosphere
 // constants
@@ -154,8 +158,8 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
         float viewRaySampleHeight = getHeight(viewRaySample, planetRadius);
 
         // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
-        float viewRaySampleOpticalDepth_R = exp(-viewRaySampleHeight / scaleHeight_R) * viewRayStepSize;
-        float viewRaySampleOpticalDepth_M = exp(-viewRaySampleHeight / scaleHeight_M) * viewRayStepSize;
+        float viewRaySampleOpticalDepth_R = dencityAtHeight(viewRaySampleHeight, scaleHeight_R) * viewRayStepSize;
+        float viewRaySampleOpticalDepth_M = dencityAtHeight(viewRaySampleHeight, scaleHeight_M) * viewRayStepSize;
 
         // Accumulate optical depth.
         viewRayOpticalDepth_R += viewRaySampleOpticalDepth_R;
@@ -181,8 +185,8 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
             float lightRaySampleHeight = getHeight(lightRaySample, planetRadius);
 
             // Accumulate the optical depth.
-            lightRayOpticalDepth_R += exp(-lightRaySampleHeight / scaleHeight_R) * lightRayStepSize;
-            lightRayOpticalDepth_M += exp(-lightRaySampleHeight / scaleHeight_M) * lightRayStepSize;
+            lightRayOpticalDepth_R += dencityAtHeight(lightRaySampleHeight, scaleHeight_R) * lightRayStepSize;
+            lightRayOpticalDepth_M += dencityAtHeight(lightRaySampleHeight, scaleHeight_M) * lightRayStepSize;
         }
 
         // Calculate attenuation.
@@ -192,18 +196,17 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
         total_R += viewRaySampleOpticalDepth_R * attenuation ;
         total_M += viewRaySampleOpticalDepth_M * attenuation ;
     }
-    // Calculate and return the final color.
-    if(viewRayAtmosphereIntersection.x < 1e-3) { // in the atmosphere
-        return vec4(
+    return mix(
+        vec4(
             sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M)),
-            0.9
-        );
-    } else {
-        return vec4(
+            (1.0 - shadow_R) * 0.9
+        ),
+        vec4(
             normalize(sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M))),
-            (1.0 - shadow_R) * (1.0 - exp(-(viewRayAtmosphereIntersection.y - viewRayAtmosphereIntersection.x)))
-        );
-    }
+            (1.0 - shadow_R) * (1.0 - exp(-(viewRayAtmosphereIntersection.y - viewRayAtmosphereIntersection.x))) * 0.9
+        ),
+        min(viewRayAtmosphereIntersection.x * 2, 1)
+    );
 }
 
 void main()
