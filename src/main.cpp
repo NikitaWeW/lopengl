@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     glm::vec3 sunPos{1000, 500, 100};
     float planetSize = 10;
     float atmosphereSize = 4;
-    float sunIntensity = 22;
+    float sunIntensity = 50;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
         glViewport(0, 0, app.camera.width, app.camera.height);
         glClearColor(app.clearColor.r, app.clearColor.g, app.clearColor.b, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);    
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 

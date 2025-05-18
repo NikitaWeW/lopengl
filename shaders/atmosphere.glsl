@@ -86,22 +86,21 @@ float getHeight(vec3 point, float planetRadius)
     float sd = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
     return max(sd, 0);
 }
-float dencityAtHeight(float height, float scaleHeight)
-{
-    return exp(-height / scaleHeight) * 0.1;
-}
 
 // thanks to https://github.com/wwwtyro/glsl-atmosphere
 // constants
 // =========
 const float PI = 3.14159265;
-const float numLightSamples = 2;
-const float numViewSamples = 2;
-const float scaleHeight_R = 0.8;
+const float numLightSamples = 10;
+const float numViewSamples = 10;
+const float scaleHeight_R = 0.1;
 const float scaleHeight_M = 0.1;
 const float g = 0.88;
 const vec3 beta_R = vec3(0.055, 0.13, 0.3);
 const float beta_M = 0.021;
+const float shadowOffset = 0.0;
+const float atmosphereAlphaDensity = 2;
+const float shadowAmbient = 0;
 // =========
 // viewRay and sunDir are in local space!
 vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, float atmosphereSize, float meshRadius) {
@@ -131,7 +130,7 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
     // maybe shadow mapping?
     Ray viewRayLightRay = Ray(at(viewRay, viewRayAtmosphereIntersection.y - 1e-4), sunDir);
     vec2 viewRayLightRayPlanetIntersection = rayAABB(viewRayLightRay, planetBox);
-    float shadow_R = clamp(1 - dot(normalize(viewRayLightRay.origin), sunDir) - 0.9, 0, 0.9);
+    float shadow_R = clamp(1 - dot(normalize(viewRayLightRay.origin), sunDir) - shadowOffset, 0, 1 - shadowAmbient);
     float shadow_M = float(viewRayLightRayPlanetIntersection.x >= 0);
 
     // Initialize accumulators for Rayleigh and Mie scattering.
@@ -158,8 +157,8 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
         float viewRaySampleHeight = getHeight(viewRaySample, planetRadius);
 
         // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
-        float viewRaySampleOpticalDepth_R = dencityAtHeight(viewRaySampleHeight, scaleHeight_R) * viewRayStepSize;
-        float viewRaySampleOpticalDepth_M = dencityAtHeight(viewRaySampleHeight, scaleHeight_M) * viewRayStepSize;
+        float viewRaySampleOpticalDepth_R = exp(-viewRaySampleHeight / scaleHeight_R) * viewRayStepSize;
+        float viewRaySampleOpticalDepth_M = exp(-viewRaySampleHeight / scaleHeight_M) * viewRayStepSize;
 
         // Accumulate optical depth.
         viewRayOpticalDepth_R += viewRaySampleOpticalDepth_R;
@@ -185,8 +184,8 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
             float lightRaySampleHeight = getHeight(lightRaySample, planetRadius);
 
             // Accumulate the optical depth.
-            lightRayOpticalDepth_R += dencityAtHeight(lightRaySampleHeight, scaleHeight_R) * lightRayStepSize;
-            lightRayOpticalDepth_M += dencityAtHeight(lightRaySampleHeight, scaleHeight_M) * lightRayStepSize;
+            lightRayOpticalDepth_R += exp(-lightRaySampleHeight / scaleHeight_R) * lightRayStepSize;
+            lightRayOpticalDepth_M += exp(-lightRaySampleHeight / scaleHeight_M) * lightRayStepSize;
         }
 
         // Calculate attenuation.
@@ -203,9 +202,9 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
         ),
         vec4(
             normalize(sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M))),
-            (1.0 - shadow_R) * (1.0 - exp(-(viewRayAtmosphereIntersection.y - viewRayAtmosphereIntersection.x))) * 0.9
+            (1.0 - shadow_R) * atmosphereAlphaDensity * viewRayOpticalDepth_R
         ),
-        min(viewRayAtmosphereIntersection.x * 2, 1)
+        smoothstep(0.0, 0.5, min(viewRayAtmosphereIntersection.x, 1))
     );
 }
 
