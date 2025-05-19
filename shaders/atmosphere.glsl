@@ -99,7 +99,6 @@ const float g = 0.88;
 const vec3 beta_R = vec3(0.055, 0.13, 0.3);
 const float beta_M = 0.021;
 const float shadowOffset = 0.0;
-const float atmosphereAlphaDensity = 2;
 const float shadowAmbient = 0;
 // =========
 // viewRay and sunDir are in local space!
@@ -109,9 +108,10 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
     viewRay.direction = normalize(viewRay.direction);
 
     // Calculate atmosphere and planet mathematical models
+    float atmosphereRadius = meshRadius;
     AABB atmosphereBox;
-    atmosphereBox.min = -vec3(meshRadius);
-    atmosphereBox.max =  vec3(meshRadius);
+    atmosphereBox.min = -vec3(atmosphereRadius);
+    atmosphereBox.max =  vec3(atmosphereRadius);
 
     float planetRadius = planetSize * meshRadius / (planetSize + atmosphereSize);
     AABB planetBox;
@@ -128,7 +128,7 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
 
     // Calculate shadow
     // maybe shadow mapping?
-    Ray viewRayLightRay = Ray(at(viewRay, viewRayAtmosphereIntersection.y - 1e-4), sunDir);
+    Ray viewRayLightRay = Ray(at(viewRay, mix(viewRayAtmosphereIntersection.x, viewRayAtmosphereIntersection.y - 1e-4, max(0, dot(viewRay.direction, sunDir)))), sunDir);
     vec2 viewRayLightRayPlanetIntersection = rayAABB(viewRayLightRay, planetBox);
     float shadow_R = clamp(1 - dot(normalize(viewRayLightRay.origin), sunDir) - shadowOffset, 0, 1 - shadowAmbient);
     float shadow_M = float(viewRayLightRayPlanetIntersection.x >= 0);
@@ -195,14 +195,16 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
         total_R += viewRaySampleOpticalDepth_R * attenuation ;
         total_M += viewRaySampleOpticalDepth_M * attenuation ;
     }
+
+    vec3 finalColor = sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M));
     return mix(
         vec4(
-            sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M)),
+            finalColor,
             (1.0 - shadow_R) * 0.9
         ),
         vec4(
-            normalize(sunIntensity * (phase_R * beta_R * total_R * (1 - shadow_R) + phase_M * beta_M * total_M * (1 - shadow_M))),
-            (1.0 - shadow_R) * atmosphereAlphaDensity * viewRayOpticalDepth_R
+            finalColor,
+            (1.0 - shadow_R) * smoothstep(0, 0.05, viewRayOpticalDepth_R)
         ),
         smoothstep(0.0, 0.5, min(viewRayAtmosphereIntersection.x, 1))
     );
