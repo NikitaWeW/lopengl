@@ -116,7 +116,7 @@ void main()
     // ===========
 
     vec3 position = cubePositions[cubeIndices[cubeVertexID]];
-    gl_Position = u_projectionMat * u_viewMat * modelMat * vec4(position, 1);
+    gl_Position = u_projectionMat * u_viewMat * ringModelMat * modelMat * vec4(position, 1);
 }
 
 #shader fragment
