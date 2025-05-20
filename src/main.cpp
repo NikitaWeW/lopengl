@@ -43,6 +43,7 @@ cmake --build build && build/main
 #include "opengl/Framebuffer.hpp"
 #include "opengl/UniformBuffer.hpp"
 #include "opengl/Cubemap.hpp"
+#include "opengl/ShaderStorageBuffer.hpp"
 
 #include <chrono>
 #include <memory>
@@ -75,18 +76,16 @@ int main(int argc, char **argv)
     app.camera.speed = 10;
     app.shaders = {
         {"shaders/basic.glsl",              SHOW_LOGS}, // 0
-        {"shaders/atmosphere.glsl",         SHOW_LOGS}, // 1
-        {"shaders/planet.glsl",         SHOW_LOGS}, // 2
+        {"shaders/asteroids.glsl",          SHOW_LOGS}, // 1
     }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
 
     Model cube{"res/models/cube.obj", FLIP_TEXTURES, FLIP_WINING_ORDER};
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
 
-    glm::vec3 sunPos{1000, 500, 100};
-    float planetSize = 10;
-    float atmosphereSize = 4;
-    float sunIntensity = 50;
+    constexpr float planetSize = 10;
+    constexpr size_t numAsteroids = 10000;
+    constexpr unsigned verticesInCube = 3 * 2 * 6;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -103,28 +102,12 @@ int main(int argc, char **argv)
         glCullFace(GL_BACK);
 
         // planet
-        app.shaders[2].bind(); 
+        app.shaders[0].bind(); 
         cube.resetMatrix();
         cube.rotate({45, 15, 35});
         cube.scale(glm::vec3{planetSize});
-        glUniform3fv(app.shaders[2].getUniform("u_camPos"), 1, &app.camera.position.x);
-        glUniform3fv(app.shaders[2].getUniform("u_sunPos"), 1, &sunPos.x);
-        glUniform4f(app.shaders[2].getUniform("u_color"), 0.2, 0.43, 0.15, 1);
-        glUniformMatrix4fv(app.shaders[2].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[2].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[2].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
-        for(Mesh const &mesh : cube.getMeshes()) {
-            mesh.va.bind();
-            mesh.ib.bind();
-            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        }
-        
-        // sun
-        app.shaders[0].bind(); 
-        cube.resetMatrix();
-        cube.translate(sunPos);
-        cube.scale(glm::vec3{10});
-        glUniform4f(app.shaders[0].getUniform("u_color"), 0.9, 0.8, 0.6, 1);
+        glUniform3fv(app.shaders[0].getUniform("u_camPos"), 1, &app.camera.position.x);
+        glUniform4f(app.shaders[0].getUniform("u_color"), 0.2, 0.43, 0.15, 1);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
@@ -134,27 +117,12 @@ int main(int argc, char **argv)
             glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
         }
         
-        // atmosphere
-        glCullFace(GL_FRONT);
-        glDisable(GL_DEPTH_TEST);
-        app.shaders[1].bind(); 
-        cube.resetMatrix();
-        cube.rotate({45, 15, 35});
-        cube.scale(glm::vec3{planetSize + atmosphereSize});
-        glUniform3fv(app.shaders[1].getUniform("u_camPos"), 1, &app.camera.position.x);
-        glUniform3fv(app.shaders[1].getUniform("u_sunPos"), 1, &sunPos.x);
-        glUniform1f(app.shaders[1].getUniform("u_sunIntensity"), sunIntensity);
-        glUniform1f(app.shaders[1].getUniform("u_planetSize"), planetSize + 1e-4f);
-        glUniform1f(app.shaders[1].getUniform("u_atmosphereSize"), atmosphereSize);
-        glUniform2f(app.shaders[1].getUniform("u_resolution"), app.camera.width, app.camera.height);
-        glUniformMatrix4fv(app.shaders[1].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
+
+        app.shaders[1].bind();
+        glBindVertexArray(0);
         glUniformMatrix4fv(app.shaders[1].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[1].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
-        for(Mesh const &mesh : cube.getMeshes()) {
-            mesh.va.bind();
-            mesh.ib.bind();
-            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        }
+        glUniformMatrix4fv(app.shaders[1].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
+        glDrawArrays(GL_TRIANGLES, 0, numAsteroids * verticesInCube);
         
         if(app.frameCounter % 100 == 0) glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
         glfwSwapBuffers(app.window);
