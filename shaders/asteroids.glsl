@@ -9,7 +9,7 @@ uniform int u_first = 0; // optional: if the first vertex is not 0 in the draw c
 const int verticesInCube = 36;
 const float ringOut = 25;
 const float ringIn = 15;
-const vec3 ringRot = vec3(15, 45, 20);
+const vec3 ringRot = vec3(0, 0, 0);
 const float ringHeight = 2;
 
 const vec3 cubePositions[8] = vec3[](
@@ -109,14 +109,14 @@ void main()
         point = vec3(randMapped(asteroidSeed, -ringOut, ringOut), randMapped(asteroidSeed, -ringHeight, ringHeight), randMapped(asteroidSeed, -ringOut, ringOut));
     } while(abs(point.x) < ringIn && abs(point.z) < ringIn);
     modelMat = translate(modelMat, point);
-    modelMat = rotate(modelMat, randMapped(asteroidSeed, 0, 360), vec3(0.6f, 0.4f, 0.8f));
+    modelMat = rotate(modelMat, randMapped(asteroidSeed, 0.0, 360.0), vec3(0.6f, 0.4f, 0.8f));
     modelMat = scale(modelMat, vec3(randMapped(asteroidSeed, 0.01, 0.1)));
     // generate ring model matrix
     mat4 ringModelMat = mat4(1.0);
     ringModelMat = translate(ringModelMat, u_planetPos);
-    ringModelMat = rotate(ringModelMat, ringRot.x, vec3(1, 0, 0));
-    ringModelMat = rotate(ringModelMat, ringRot.y, vec3(0, 1, 0));
-    ringModelMat = rotate(ringModelMat, ringRot.z, vec3(0, 0, 1));
+    ringModelMat = rotate(ringModelMat, radians(ringRot.x), vec3(1, 0, 0));
+    ringModelMat = rotate(ringModelMat, radians(ringRot.y), vec3(0, 1, 0));
+    ringModelMat = rotate(ringModelMat, radians(ringRot.z), vec3(0, 0, 1));
     // ===========
 
     vec3 position = cubePositions[cubeIndices[cubeVertexID]];
