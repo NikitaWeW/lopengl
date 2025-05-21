@@ -1,6 +1,7 @@
 #shader vertex
 #version 330 core
 
+uniform vec3 u_planetPos;
 uniform mat4 u_viewMat;
 uniform mat4 u_projectionMat;
 uniform int u_first = 0; // optional: if the first vertex is not 0 in the draw call
@@ -108,10 +109,11 @@ void main()
         point = vec3(randMapped(asteroidSeed, -ringOut, ringOut), randMapped(asteroidSeed, -ringHeight, ringHeight), randMapped(asteroidSeed, -ringOut, ringOut));
     } while(abs(point.x) < ringIn && abs(point.z) < ringIn);
     modelMat = translate(modelMat, point);
-    modelMat = scale(modelMat, vec3(randMapped(asteroidSeed, 0.01, 0.1)));
     modelMat = rotate(modelMat, randMapped(asteroidSeed, 0, 360), vec3(0.6f, 0.4f, 0.8f));
+    modelMat = scale(modelMat, vec3(randMapped(asteroidSeed, 0.01, 0.1)));
     // generate ring model matrix
     mat4 ringModelMat = mat4(1.0);
+    ringModelMat = translate(ringModelMat, u_planetPos);
     ringModelMat = rotate(ringModelMat, 1.0, ringRot);
     // ===========
 
