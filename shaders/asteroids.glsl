@@ -6,35 +6,31 @@ uniform mat4 u_viewMat;
 uniform mat4 u_projectionMat;
 uniform int u_first = 0; // optional: if the first vertex is not 0 in the draw call
 
-const int verticesInCube = 36;
+const int verticesInCube = 16;
 const float ringOut = 25;
 const float ringIn = 15;
 const vec3 ringRot = vec3(0, 0, 0);
 const float ringHeight = 2;
 
-const vec3 cubePositions[8] = vec3[](
-    vec3(-1.0, -1.0, -1.0),
-    vec3( 1.0, -1.0, -1.0),
-    vec3( 1.0,  1.0, -1.0),
-    vec3(-1.0,  1.0, -1.0),
-    vec3(-1.0, -1.0,  1.0),
-    vec3( 1.0, -1.0,  1.0),
-    vec3( 1.0,  1.0,  1.0),
-    vec3(-1.0,  1.0,  1.0) 
-);
-const int cubeIndices[verticesInCube] = int[](
-    4, 5, 6,
-    4, 6, 7,
-    0, 3, 2,
-    0, 2, 1,
-    3, 7, 6,
-    3, 6, 2,
-    0, 1, 5,
-    0, 5, 4,
-    0, 7, 3,
-    0, 4, 7,
-    1, 2, 6,
-    1, 6, 5
+const vec3 cubePositions[verticesInCube] = vec3[](
+    vec3( 0.5, 0.5, 0.5),
+
+    vec3( 0.5, 0.5, 0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3( 0.5,-0.5, 0.5),
+    vec3(-0.5,-0.5, 0.5),
+    vec3(-0.5,-0.5,-0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3(-0.5, 0.5,-0.5),
+    vec3( 0.5, 0.5, 0.5),
+    vec3( 0.5, 0.5,-0.5),
+    vec3( 0.5,-0.5, 0.5),
+    vec3( 0.5,-0.5,-0.5),
+    vec3(-0.5,-0.5,-0.5),
+    vec3( 0.5, 0.5,-0.5),
+    vec3(-0.5, 0.5,-0.5),
+
+    vec3(-0.5, 0.5,-0.5) 
 );
 
 // return random uint in [0; 0xffffffffu]
@@ -119,7 +115,7 @@ void main()
     ringModelMat = rotate(ringModelMat, radians(ringRot.z), vec3(0, 0, 1));
     // ===========
 
-    vec3 position = cubePositions[cubeIndices[cubeVertexID]];
+    vec3 position = cubePositions[cubeVertexID];
     gl_Position = u_projectionMat * u_viewMat * ringModelMat * modelMat * vec4(position, 1);
 }
 

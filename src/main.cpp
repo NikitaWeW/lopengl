@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
     constexpr float planetSize = 10;
     constexpr size_t numAsteroids = 10000;
-    constexpr unsigned verticesInCube = 3 * 2 * 6;
+    constexpr unsigned verticesInCube = 16;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
         glBindVertexArray(0);
         glUniformMatrix4fv(app.shaders[1].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[1].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
-        glDrawArrays(GL_TRIANGLES, 0, numAsteroids * verticesInCube);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, numAsteroids * verticesInCube);
         
         if(app.frameCounter % 100 == 0) glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
         glfwSwapBuffers(app.window);
