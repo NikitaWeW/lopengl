@@ -206,7 +206,7 @@ vec4 atmosphere(Ray viewRay, vec3 sunDir, float sunIntensity, float planetSize, 
             finalColor,
             (1.0 - shadow_R) * smoothstep(0, 0.05, viewRayOpticalDepth_R)
         ),
-        smoothstep(0.0, 0.5, min(viewRayAtmosphereIntersection.x, 1))
+        smoothstep(0.0, 0.25, min(viewRayAtmosphereIntersection.x, 1))
     );
 }
 
