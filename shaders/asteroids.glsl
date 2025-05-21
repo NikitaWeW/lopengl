@@ -114,7 +114,9 @@ void main()
     // generate ring model matrix
     mat4 ringModelMat = mat4(1.0);
     ringModelMat = translate(ringModelMat, u_planetPos);
-    ringModelMat = rotate(ringModelMat, 1.0, ringRot);
+    ringModelMat = rotate(ringModelMat, ringRot.x, vec3(1, 0, 0));
+    ringModelMat = rotate(ringModelMat, ringRot.y, vec3(0, 1, 0));
+    ringModelMat = rotate(ringModelMat, ringRot.z, vec3(0, 0, 1));
     // ===========
 
     vec3 position = cubePositions[cubeIndices[cubeVertexID]];
