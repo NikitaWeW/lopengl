@@ -71,9 +71,9 @@ float lerp(float a, float b, float x) { return a + x * (b - a); }
 int main(int argc, char **argv)
 {
     Application app; // initialisation
-    app.camera = ControllableCamera{app.window, {0, 0, 15}, {-90, 0, 0}};
+    app.camera = ControllableCamera{app.window, {0, 15, 0}, {-90, -90, 0}};
     app.camera.far = 1300;
-    app.camera.speed = 10;
+    app.camera.speed = 30;
     app.shaders = {
         {"shaders/basic.glsl",              SHOW_LOGS}, // 0
         {"shaders/asteroids.glsl",          SHOW_LOGS}, // 1
@@ -86,6 +86,14 @@ int main(int argc, char **argv)
     constexpr float planetSize = 10;
     constexpr size_t numAsteroids = 10000;
     constexpr unsigned verticesInCube = 16;
+
+    glm::mat4 ringRotMat = glm::mat4{1.0f};
+    ringRotMat = glm::rotate(ringRotMat, 0.0f, {1, 0, 0});
+    ringRotMat = glm::rotate(ringRotMat, 0.0f, {0, 1, 0});
+    ringRotMat = glm::rotate(ringRotMat, 0.0f, {0, 0, 1});
+    glm::vec3 ringRotVec = glm::normalize(glm::vec3{0.2, 1, 0.1});
+    glm::vec3 planetPos{0, 0, -5};
+    float ringRotAngle = 0;
 
     while (!glfwWindowShouldClose(app.window))
     {
@@ -104,6 +112,7 @@ int main(int argc, char **argv)
         // planet
         app.shaders[0].bind(); 
         cube.resetMatrix();
+        cube.translate(planetPos);
         cube.rotate({45, 15, 35});
         cube.scale(glm::vec3{planetSize});
         glUniform3fv(app.shaders[0].getUniform("u_camPos"), 1, &app.camera.position.x);
@@ -117,9 +126,13 @@ int main(int argc, char **argv)
             glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
         }
         
-
+        ringRotAngle += 25 * app.deltatime;
         app.shaders[1].bind();
         glBindVertexArray(0);
+        glUniform1f(app.shaders[1].getUniform("u_rotAngle"), ringRotAngle);
+        glUniform3fv(app.shaders[1].getUniform("u_planetPos"), 1, &planetPos.x);
+        glUniform3fv(app.shaders[1].getUniform("u_rotVector"), 1, &ringRotVec.x);
+        glUniformMatrix4fv(app.shaders[1].getUniform("u_ringRotMat"),1, GL_FALSE, &ringRotMat[0][0]);
         glUniformMatrix4fv(app.shaders[1].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
         glUniformMatrix4fv(app.shaders[1].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, numAsteroids * verticesInCube);
