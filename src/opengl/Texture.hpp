@@ -1,52 +1,38 @@
 #pragma once
+#include "Object.hpp"
 #include <string>
+#include <filesystem>
 #include "glad/gl.h"
-#include "utils/Resource.hpp"
 
-class Texture : public Resource
+namespace ogl
 {
-private:
-    unsigned m_RenderID = 0;
-    std::string m_FilePath;
-    unsigned char *m_Buffer = nullptr;
-    int m_Width = 0, m_Height = 0, m_BPP = 0;
-public:
-    std::string type; 
-    Texture(size_t width, size_t height, GLenum format = GL_RGBA, GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR);
-    Texture();
-    Texture(std::string const &filepath, bool flip = true, bool srgb = false, GLenum wrap = GL_REPEAT, GLenum filter = GL_LINEAR, std::string const &type = "");
-    ~Texture();
+    class Texture : public Object
+    {
+    public:
+        std::string type = "";
+        Texture() = default;
+        explicit Texture(GLenum filtermin, GLenum filtermag, GLenum wrap = GL_CLAMP_TO_EDGE) noexcept;
+        explicit Texture(std::filesystem::path const &filepath, bool flip = false, bool srgb = false, std::string const &type = "", bool *isGrayScalePtr = nullptr);
+        ~Texture();
 
-    void bind(unsigned slot = 0) const;
-    void unbind(unsigned slot = 0) const;
-    static void unbindStatic(unsigned slot = 0);
+        void bind(unsigned slot = 0) const noexcept override;
+    };
+    class TextureMS : public Object
+    {
+    public:
+        TextureMS() = default;
+        explicit TextureMS(GLenum filter, GLenum wrap = GL_CLAMP_TO_EDGE) noexcept;
+        ~TextureMS();
 
-    inline std::string const &getFilePath() const { return m_FilePath; }
-    inline unsigned getRenderID() const {return m_RenderID; }
-    inline int getWidth() const { return m_Width; }
-    inline int getHeight() const { return m_Height; }
-    inline int getBitsPerPixel() const { return m_BPP; }
-};
-
-class MultisampleTexture : public Resource
-{
-private:
-    unsigned m_RenderID = 0;
-    std::string m_FilePath;
-    unsigned char *m_Buffer = nullptr;
-    int m_Width = 0, m_Height = 0, m_BPP = 0;
-public:
-    std::string type; 
-    MultisampleTexture() = default;
-    MultisampleTexture(GLsizei width, GLsizei height, unsigned samples = 4, GLenum format = GL_RGBA);
-    ~MultisampleTexture();
-
-    void bind(unsigned slot = 0) const;
-    void unbind(unsigned slot = 0) const;
-
-    inline std::string const &getFilePath() const { return m_FilePath; }
-    inline unsigned getRenderID() const {return m_RenderID; }
-    inline int getWidth() const { return m_Width; }
-    inline int getHeight() const { return m_Height; }
-    inline int getBitsPerPixel() const { return m_BPP; }
-};
+        void bind(unsigned slot = 0) const noexcept override;
+    };
+    class Cubemap : public Object
+    {
+    public:
+        Cubemap() = default;
+        explicit Cubemap(unsigned) noexcept;
+        // load equirectangular projection as a cube map
+        explicit Cubemap(std::filesystem::path const &filepath, bool flip = false);
+        void bind(unsigned slot = 0) const noexcept override;
+    };
+} // namespace ogl

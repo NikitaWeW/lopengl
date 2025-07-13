@@ -1,21 +1,10 @@
-#include "glad/gl.h"
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <array>
-#include <regex>
-
 #include "Shader.hpp"
-#include "logger.h"
+#include <fstream>
+#include <cassert>
+#include <filesystem>
+#include <iostream>
 
-void ShaderProgram::deallocate() {
-    glDeleteProgram(m_renderID);
-    for(Shader const &shader : m_shaders) {
-        glDeleteShader(shader.renderID);
-    }   
-}
-
-bool compileShader(ShaderProgram::Shader &shader, std::string &log) {
+bool compileShader(ogl::ShaderProgram::Shader &shader, std::string &log) noexcept {
     shader.renderID = glCreateShader(shader.type);
     char *source = &*shader.source.begin();
     glShaderSource(shader.renderID, 1, &source, nullptr);
@@ -28,20 +17,13 @@ bool compileShader(ShaderProgram::Shader &shader, std::string &log) {
         if(log_size > 0) {
             log.resize(log_size);
             glGetShaderInfoLog(shader.renderID, log_size, nullptr, &log[0]);
-
-            static std::regex regex{R"(\d+:\d+\(\d+\)[^=])"};
-            auto iterator = std::sregex_iterator{log.begin(), log.end(), regex};
-            static auto endIterator = std::sregex_iterator{};
-            for(; iterator != endIterator; ++iterator) {
-                log.insert(log.find(iterator->str()) + iterator->str().size() - 1, "=" + std::to_string(std::stoi(iterator->str().substr(iterator->str().find_first_of(':') + 1, iterator->str().find_first_of('(') - 1)) + shader.fileLine)); 
-            }
         }
         return false;
     }
     return true;
 }
 
-bool linkProgram(unsigned &program, std::vector<ShaderProgram::Shader> shaders, std::string &log) {
+bool linkProgram(unsigned &program, std::vector<ogl::ShaderProgram::Shader> shaders, std::string &log) noexcept {
     program = glCreateProgram();
     for(auto const &shader : shaders) {
         glAttachShader(program, shader.renderID);
@@ -62,7 +44,65 @@ bool linkProgram(unsigned &program, std::vector<ShaderProgram::Shader> shaders, 
     return true;
 }
 
-std::string shaderTypeToString(unsigned type) {
+void ogl::ShaderProgram::deallocate() noexcept
+{
+    if(m_renderID) glDeleteProgram(m_renderID);
+    for(Shader const &shader : m_shaders) {
+        if(shader.renderID) glDeleteShader(shader.renderID);
+    }   
+}
+
+ogl::ShaderProgram::ShaderProgram(std::string const &directory, bool showLog)
+{
+    if(!collectShaders(directory)) {
+        m_log.insert(0, "failed to collect shaders in directory \"" + directory + "\"\n");
+        if(showLog) std::cout << getLog();
+        throw std::runtime_error{"failed to init shader program"};
+    }
+    if(!compileShaders()) {
+        m_log.insert(0, "failed to compile shaders in directory \"" + directory + "\"\n");
+        if(showLog) std::cout << getLog();
+        throw std::runtime_error{"failed to init shader program"};
+    }
+}
+
+ogl::ShaderProgram::~ShaderProgram()
+{
+    if(canDeallocate()) {
+        deallocate();
+    }
+}
+
+bool ogl::ShaderProgram::collectShaders(std::string const &directory) noexcept
+{
+    assert(std::filesystem::exists(directory));
+    m_dirPath = directory;
+    m_log = "";
+    m_shaders.erase(m_shaders.begin(), m_shaders.end());
+    m_uniformLocationCache.erase(m_uniformLocationCache.begin(), m_uniformLocationCache.end());
+    for(auto const &directoryEntry : std::filesystem::recursive_directory_iterator{directory}) {
+        if(!std::filesystem::is_regular_file(directoryEntry.path())) continue; 
+        Shader shader;
+
+        std::string extension = directoryEntry.path().string().substr(directoryEntry.path().string().find_last_of('.'), directoryEntry.path().string().size());
+        if(extension == ".vert") shader.type = GL_VERTEX_SHADER;
+        else if(extension == ".geom") shader.type = GL_GEOMETRY_SHADER;
+        else if(extension == ".frag") shader.type = GL_FRAGMENT_SHADER;
+        else if(extension == ".comp") shader.type = GL_COMPUTE_SHADER;
+        else {
+            m_log.append("unrecognised shader extension: \"" + directoryEntry.path().extension().string() + "\"\n");
+            // return false;
+            continue;
+        }
+
+        std::ifstream filestream{directoryEntry.path()};
+        shader.source = std::string{std::istreambuf_iterator<char>{filestream}, std::istreambuf_iterator<char>{}};
+        m_shaders.emplace_back(std::move(shader));
+    }
+    return true;
+}
+
+std::string shaderTypeToString(unsigned type) noexcept {
     switch (type)
     {
     case GL_VERTEX_SHADER:   return "vertex";
@@ -72,104 +112,12 @@ std::string shaderTypeToString(unsigned type) {
     default:                 return "unknown type";
     }
 }
+bool ogl::ShaderProgram::compileShaders() noexcept
+{
+    if(canDeallocate()) 
+        deallocate();
 
-ShaderProgram::ShaderProgram() = default;
-ShaderProgram::ShaderProgram(std::string const &filepath, bool showLog) : m_filepath(filepath)
-{
-    if(!ParceShaderFile(filepath)) {
-        if(showLog) {
-            LOG_ERROR("shader name: %s\n%s", m_filepath.c_str(), m_log.c_str());
-        }
-        throw std::runtime_error("failed to parce shaders!");
-    }
-    if(!CompileShaders()) {
-        if(showLog) {
-            LOG_ERROR("shader name: %s\n%s", m_filepath.c_str(), m_log.c_str());
-        }
-        throw std::logic_error("failed to compile shaders!");
-    }
-}
-ShaderProgram::~ShaderProgram() {
-    if(canDeallocate()) deallocate();
-}
-
-void ShaderProgram::bind() const {
-    glUseProgram(m_renderID);
-}
-void ShaderProgram::unbind() const {
-    glUseProgram(0);
-}
-int ShaderProgram::getUniform(std::string const &name) const
-{
-    if(m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) return m_UniformLocationCache[name];
-    int location = glGetUniformLocation(m_renderID, name.c_str());
-    m_UniformLocationCache[name] = location;
-    if(location == -1) {
-        LOG_WARN("uniform \"%s\" in shader \"%s\" is not used.", name.c_str(), getFilePath().c_str());
-    }
-    return location;
-}
-int ShaderProgram::getUniformBlock(std::string const &name) const
-{
-    bind();
-    int location = glGetUniformBlockIndex(m_renderID, name.c_str());
-    return location;
-}
-int ShaderProgram::getStorageBlock(std::string const &name) const
-{
-    bind();
-    int location = glGetProgramResourceIndex(m_renderID, GL_SHADER_STORAGE_BLOCK, name.c_str());
-    return location;
-}
-bool ShaderProgram::ParceShaderFile(std::string const &filepath)
-{
-    std::ifstream fileStream(filepath, std::ios::in);
-    if(!fileStream) {
-        m_log = "failed to open " + filepath;
-        return false;
-    }
-    std::array<std::stringstream, 5> shaderSourceStreams;
-    std::array<unsigned, 5>          shaderStartLines;
-    unsigned currentIndex = 0;
-    std::string line;
-    unsigned lineNum = 1;
-    while (getline(fileStream, line))
-    {
-        if (line.find("#shader") != std::string::npos)
-        {
-            if (line.find("vertex") != std::string::npos)
-            {
-                currentIndex = 1;
-            } else if (line.find("fragment") != std::string::npos)
-            {
-                currentIndex = 2;
-            } else if(line.find("geometry") != std::string::npos) {
-                currentIndex = 3;
-            } else if(line.find("compute") != std::string::npos) {
-                currentIndex = 4;
-            } else {
-                LOG_WARN("unrecognised #shader statement:\n\t%s <-- here", line.substr(0, line.size() - 1).c_str());
-                currentIndex = 0;
-            }
-            shaderStartLines[currentIndex] = lineNum;
-        } else
-        {
-            shaderSourceStreams[currentIndex] << line << '\n';
-        }
-        ++lineNum;
-    }
-    m_shaders.erase(m_shaders.begin(), m_shaders.end());
-    if(shaderSourceStreams[1].str().size() > 0) m_shaders.push_back({0, GL_VERTEX_SHADER,   shaderSourceStreams[1].str(), shaderStartLines[1]});
-    if(shaderSourceStreams[2].str().size() > 0) m_shaders.push_back({0, GL_FRAGMENT_SHADER, shaderSourceStreams[2].str(), shaderStartLines[2]});
-    if(shaderSourceStreams[3].str().size() > 0) m_shaders.push_back({0, GL_GEOMETRY_SHADER, shaderSourceStreams[3].str(), shaderStartLines[3]});
-    if(shaderSourceStreams[4].str().size() > 0) m_shaders.push_back({0, GL_COMPUTE_SHADER,  shaderSourceStreams[4].str(), shaderStartLines[4]});
-
-    return true;
-}
-bool ShaderProgram::CompileShaders() {
-    if(canDeallocate()) deallocate();
-
-    m_UniformLocationCache.erase(m_UniformLocationCache.begin(), m_UniformLocationCache.end());
+    m_uniformLocationCache.erase(m_uniformLocationCache.begin(), m_uniformLocationCache.end());
     m_log = "";
     
     for(Shader &shader : m_shaders) {
@@ -184,7 +132,30 @@ bool ShaderProgram::CompileShaders() {
         return false;
     }
 
-
-
     return true;
 }
+
+int ogl::ShaderProgram::getUniform(std::string const &name) const noexcept
+{
+    if(m_uniformLocationCache.find(name) != m_uniformLocationCache.end()) return m_uniformLocationCache[name];
+    int location = glGetUniformLocation(m_renderID, name.c_str());
+    m_uniformLocationCache[name] = location;
+    // if(location == -1) {
+    //     std::cout << "uniform \"" << name << "\" in shaders \"" << getPath() << "\" is not used or does not exist.\n";
+    // }
+    return location;
+}
+
+int ogl::ShaderProgram::getUniformBlock(std::string const &name) const noexcept
+{
+    int location = glGetUniformBlockIndex(m_renderID, name.c_str());
+    return location;
+}
+
+int ogl::ShaderProgram::getStorageBlock(std::string const &name) const noexcept
+{
+    int location = glGetProgramResourceIndex(m_renderID, GL_SHADER_STORAGE_BLOCK, name.c_str());
+    return location;
+}
+
+void ogl::ShaderProgram::bind(unsigned slot) const noexcept { glUseProgram(m_renderID); }

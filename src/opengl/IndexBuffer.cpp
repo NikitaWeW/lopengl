@@ -1,22 +1,23 @@
-#include "glad/gl.h"
-#include <utility>
 #include "IndexBuffer.hpp"
 
-void IndexBuffer::bind() const   { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderID); }
-void IndexBuffer::unbind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
-
-IndexBuffer::IndexBuffer(const GLuint *data, size_t size) : m_size(size)
+ogl::IndexBuffer::IndexBuffer(size_t size, GLenum usage) noexcept
 {
     glGenBuffers(1, &m_renderID);
     bind();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, nullptr, usage);
 }
-IndexBuffer::IndexBuffer(size_t size) : m_size(size)
+
+ogl::IndexBuffer::IndexBuffer(size_t size, void const *data, GLenum usage) noexcept
 {
     glGenBuffers(1, &m_renderID);
     bind();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
 }
 
-IndexBuffer::IndexBuffer() = default;
-IndexBuffer::~IndexBuffer() { if(canDeallocate()) glDeleteBuffers(1, &m_renderID); }
+ogl::IndexBuffer::~IndexBuffer()
+{
+    if(canDeallocate())
+        glDeleteBuffers(1, &m_renderID);
+}
+
+void ogl::IndexBuffer::bind(unsigned slot) const noexcept { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderID); }

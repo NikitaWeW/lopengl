@@ -1,92 +1,68 @@
 #include "Framebuffer.hpp"
-#include "glad/gl.h"
-#include <utility>
 
-Framebuffer::Framebuffer()
+ogl::Framebuffer::Framebuffer(unsigned)
 {
     glGenFramebuffers(1, &m_renderID);
 }
-
-Framebuffer::~Framebuffer()
+ogl::Framebuffer::~Framebuffer()
 {
     if(canDeallocate()) {
         glDeleteFramebuffers(1, &m_renderID);
     }
 }
 
-void Framebuffer::bind() { glBindFramebuffer(GL_FRAMEBUFFER, m_renderID); }
-void Framebuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
-
-bool Framebuffer::isComplete()
+void ogl::Framebuffer::bind(unsigned slot) const noexcept
 {
-    bind();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_renderID);
+}
+bool ogl::Framebuffer::isComplete()
+{
     return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
-void Framebuffer::attach(Texture const &texture, GLenum attachment) 
+void ogl::Framebuffer::attach(Texture const &texture, GLenum attachment)
 {
-    bind();
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.getRenderID(), 0);
 }
-void Framebuffer::attach(MultisampleTexture const &texture, GLenum attachment)
+void ogl::Framebuffer::attach(TextureMS const &texture, GLenum attachment)
 {
-    bind();
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, texture.getRenderID(), 0);
 }
-
-void Framebuffer::attach(Renderbuffer const &renderbuffer, GLenum attachment)
+void ogl::Framebuffer::attach(Cubemap const &cubemap, GLenum attachment)
 {
-    // i hate it
-    bind();
+    glFramebufferTexture(GL_FRAMEBUFFER, attachment, cubemap.getRenderID(), 0);
+}
+void ogl::Framebuffer::attach(Renderbuffer const &renderbuffer, GLenum attachment)
+{
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer.getRenderID());
+}
+void ogl::Framebuffer::attach(RenderbufferMS const &renderbuffer, GLenum attachment)
+{
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer.getRenderID());
 }
 
-void Framebuffer::attach(MultisampleRenderbuffer const &renderbuffer, GLenum attachment)
-{
-    bind();
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer.getRenderID());
-}
-
-Renderbuffer::Renderbuffer()
+ogl::Renderbuffer::Renderbuffer(unsigned)
 {
     glGenRenderbuffers(1, &m_renderID);
 }
-
-Renderbuffer::Renderbuffer(unsigned format, int width, int height)
-{
-    glGenRenderbuffers(1, &m_renderID);
-    bind();
-    glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
-}
-
-Renderbuffer::~Renderbuffer()
+ogl::Renderbuffer::~Renderbuffer()
 {
     if(canDeallocate()) {
         glDeleteRenderbuffers(1, &m_renderID);
     }
 }
 
-void Renderbuffer::bind()   { glBindRenderbuffer(GL_RENDERBUFFER, m_renderID); }
-void Renderbuffer::unbind() { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
+void ogl::Renderbuffer::bind(unsigned slot) const noexcept { glBindRenderbuffer(GL_RENDERBUFFER, m_renderID); }
 
-MultisampleRenderbuffer::MultisampleRenderbuffer()
+ogl::RenderbufferMS::RenderbufferMS(unsigned)
 {
     glGenRenderbuffers(1, &m_renderID);
 }
-
-MultisampleRenderbuffer::MultisampleRenderbuffer(unsigned format, int width, int height, int samples)
-{
-    glGenRenderbuffers(1, &m_renderID);
-    bind();
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, format, width, height);
-}
-
-MultisampleRenderbuffer::~MultisampleRenderbuffer()
+ogl::RenderbufferMS::~RenderbufferMS()
 {
     if(canDeallocate()) {
         glDeleteRenderbuffers(1, &m_renderID);
     }
 }
 
-void MultisampleRenderbuffer::bind()   { glBindRenderbuffer(GL_RENDERBUFFER, m_renderID); }
-void MultisampleRenderbuffer::unbind() { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
+void ogl::RenderbufferMS::bind(unsigned slot) const noexcept { glBindRenderbuffer(GL_RENDERBUFFER, m_renderID); }

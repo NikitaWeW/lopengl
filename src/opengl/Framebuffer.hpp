@@ -1,51 +1,40 @@
 #pragma once
-#include "Texture.hpp"
-#include "utils/Resource.hpp"
+#include "Object.hpp"
+#include "glad/gl.h"
+#include "opengl/Texture.hpp"
 
-class Renderbuffer : public Resource {
-private:
-    unsigned m_renderID = 0;
-public:
-    Renderbuffer();
-    Renderbuffer(unsigned format, int width, int height);
-    ~Renderbuffer();
+namespace ogl
+{
+    class Renderbuffer : public Object {
+    public:
+        Renderbuffer() = default;
+        explicit Renderbuffer(unsigned); // dummy argument, constructor generates object
+        ~Renderbuffer();
+    
+        void bind(unsigned slot = 0) const noexcept override;
+    };
+    class RenderbufferMS : public Object {
+    public:
+        RenderbufferMS() = default;
+        RenderbufferMS(unsigned); // dummy argument, constructor generates object
+        ~RenderbufferMS();
+    
+        void bind(unsigned slot = 0) const noexcept override;
+    };
 
-    void bind();
-    void unbind();
-
-    inline unsigned getRenderID() const { return m_renderID; }
-};
-
-class MultisampleRenderbuffer : public Resource {
-private:
-    unsigned m_renderID = 0;
-public:
-    MultisampleRenderbuffer();
-    MultisampleRenderbuffer(unsigned format, int width, int height, int samples = 4);
-    ~MultisampleRenderbuffer();
-
-    void bind();
-    void unbind();
-
-    inline unsigned getRenderID() const { return m_renderID; }
-};
-
-class Framebuffer : Resource {
-private:
-    unsigned m_renderID = 0;
-public:
-    Framebuffer();
-    ~Framebuffer();
-
-    void bind();
-    void unbind();
-
-    bool isComplete();
-
-    void attach(Texture const &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
-    void attach(MultisampleTexture const &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
-    void attach(Renderbuffer const &renderbuffer, GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT);
-    void attach(MultisampleRenderbuffer const &renderbuffer, GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT);
-
-    inline unsigned getRenderID() const { return m_renderID; }
-};
+    class Framebuffer : public Object {
+    protected:
+        mutable unsigned m_renderID = 0;
+    public:
+        Framebuffer() = default;
+        explicit Framebuffer(unsigned); // dummy argument, constructor generates object
+        ~Framebuffer();
+        void bind(unsigned slot = 0) const noexcept override;
+        bool isComplete();
+        void attach(Texture const &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
+        void attach(TextureMS const &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
+        void attach(Cubemap const &cubemap, GLenum attachment = GL_COLOR_ATTACHMENT0);
+        void attach(Renderbuffer const &renderbuffer, GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT);
+        void attach(RenderbufferMS const &renderbuffer, GLenum attachment = GL_DEPTH_STENCIL_ATTACHMENT);
+    };
+} // namespace ogl

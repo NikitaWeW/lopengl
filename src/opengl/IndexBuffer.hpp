@@ -1,20 +1,17 @@
 #pragma once
+#include "Object.hpp"
 #include <cstddef>
 #include "glad/gl.h"
-#include "utils/Resource.hpp"
 
-class IndexBuffer : public Resource {
-private:
-    unsigned m_size = 0;
-    unsigned m_renderID = 0;
-public:
-    void bind() const;
-    void unbind() const;
-
-    IndexBuffer(const GLuint *data, size_t size);
-    IndexBuffer(size_t size);
-    IndexBuffer();
-    ~IndexBuffer();
-    
-    inline size_t getSize() const { return m_size; }
-};
+namespace ogl
+{
+    class IndexBuffer : public Object 
+    {
+    public:
+        IndexBuffer() = default;
+        IndexBuffer(size_t size, GLenum usage = GL_DYNAMIC_DRAW) noexcept;
+        IndexBuffer(size_t size, void const *data, GLenum usage = GL_DYNAMIC_DRAW) noexcept;
+        ~IndexBuffer();
+        void bind(unsigned slot = 0) const noexcept override;
+    }; 
+} // namespace ogl

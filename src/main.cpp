@@ -1,8 +1,4 @@
 /*
-i use this (gcc + ninja)
-cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall' -G Ninja
-cmake --build build && build/main
-
         +____________+
         /:\         ,:\
        / : \       , : \
@@ -26,23 +22,22 @@ cmake --build build && build/main
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "imgui.h"
-#include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_glfw.h"
-#include "logger.h"
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
 
-#include "Application.hpp"
-#include "random.hpp"
-#include "opengl/Renderer.hpp"
-#include "utils/ControllableCamera.hpp"
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_glfw.h"
+
+#include "logger.h"
+#include "tiny_obj_loader.h"
+
 #include "opengl/Framebuffer.hpp"
-#include "opengl/UniformBuffer.hpp"
-#include "opengl/Cubemap.hpp"
+#include "opengl/Texture.hpp"
+#include "opengl/IndexBuffer.hpp"
+#include "opengl/VertexBuffer.hpp"
+#include "opengl/Shader.hpp"
 
 #include <chrono>
 #include <memory>
@@ -50,83 +45,218 @@ cmake --build build && build/main
 #include <iostream>
 #include <stdexcept>
 
-#ifdef NDEBUG
-extern const bool debug = false;
-#else
-extern const bool debug = true;
-#endif
-#define SHOW_LOGS         true // for readability
-#define LOAD_NOW          true
-#define FLIP_TEXTURES     true
-#define FLIP_WINING_ORDER true
-#define SRGB              true
-#define currentShader app.shaders[app.displayShaders[app.currentShaderIndex]]
+struct Mesh
+{
+    ogl::VertexBuffer vbo;
+    ogl::VertexArray vao;
+    ogl::IndexBuffer ibo;
+    unsigned count;
+};
 
-void imguistuff(Application &app, ControllableCamera &cam);
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-float lerp(float a, float b, float x) { return a + x * (b - a); }
+bool init(GLFWwindow **window);
+Mesh load(std::string_view path, bool flip = false);
 
 int main(int argc, char **argv)
 {
-    Application app; // initialisation
-    app.camera = ControllableCamera{app.window, {0, 0, 4}, {-90, 0, 0}};
-    app.shaders = {
-        {"shaders/basic.glsl",              SHOW_LOGS}, // 0
-    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
+    GLFWwindow *window = nullptr;
+    if(!init(&window)) {
+        LOG_FATAL("failed to init!");
+        return -1;
+    }
+    assert(window);
 
-    Model cube{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
-    Model sphere{"res/models/sphere.obj", FLIP_TEXTURES };
+    // ===================================
 
-    // glm::vec4 *data = new glm::vec4[count];
-    // for(unsigned i = 0; i < count; ++i) {
-    //     data[i] = {randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), 1};
-    // }
-    unsigned count = 3;
-    float data[] = {
-        0, 1, 0, 1,
-        1, 1, 0, 1, 
-        1, 1, 1, 1
-    };
-    UniformBuffer ubo{sizeof(GLfloat) + sizeof(glm::vec4) * 200 };
-    ubo.bind();
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4) * count, data);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 200, sizeof(GLfloat), &count);
-    ubo.bindingPoint(0);
+    ogl::Cubemap skybox{"res/textures/qwantani_dawn_puresky_2k.hdr"};
+    ogl::ShaderProgram displayShader{"shaders/display"};
+    ogl::ShaderProgram skyboxShader{"shaders/skybox"};
 
-    while (!glfwWindowShouldClose(app.window))
+    // ===================================
+
+    glm::ivec2 windowDim{-1};
+    float deltatime = 0.1; // seconds
+    long long unsigned frameCounter = 0;
+    bool cameraLocked = false;
+
+    while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
-        app.camera.update(app.deltatime);
-        glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
-// ================== //
-//  geometry pass
-// ================== //
+        glfwGetWindowSize(window, &windowDim.x, &windowDim.y);
+        glfwSetInputMode(window, GLFW_CURSOR, cameraLocked ? GLFW_CURSOR_CAPTURED : GLFW_CURSOR_NORMAL);
 
-        glViewport(0, 0, app.camera.width, app.camera.height);
-        glClearColor(app.clearColor.r, app.clearColor.g, app.clearColor.b, 1);
+        glm::mat4 projection = glm::perspective<float>(glm::radians(45.0f), windowDim.x / windowDim.y, 0.01, 100);
+
+        glViewport(0, 0, windowDim.x, windowDim.y);
+        glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        app.shaders[0].bind();
-        glUniformBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getUniformBlock("vectors"), 0);
-        cube.resetMatrix();
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
-        for(Mesh const &mesh : cube.getMeshes()) {
-            mesh.va.bind();
-            mesh.ib.bind();
-            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        }
+        skyboxShader.bind();
+        skybox.bind(0);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 14);
         
-        if(app.frameCounter % 100 == 0) glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
-        glfwSwapBuffers(app.window);
+        glfwSwapBuffers(window);
         glfwPollEvents();
-        ++app.frameCounter;
-        app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
+        deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
+        ++frameCounter;
     }
+    
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
-/*
-c++ be like:
-Because the lvalueness or rvalueness of an expression is independent of its type, it’s possible to have lvalues whose type is rvalue reference, and it’s also possible to have rvalues of the type rvalue reference.
-*/
+void APIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *objMesh)
+{
+    if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_OTHER)) return; // handled by ShaderProgram class 
+
+    struct OpenGlError {
+        GLuint id;
+        std::string source;
+        std::string type;
+        std::string severity;
+        std::string msg;
+    } error;
+    
+    error.id = id;
+    error.msg = msg;
+
+    switch (source) {
+        case GL_DEBUG_SOURCE_API:
+        error.source = "api";
+        break;
+
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        error.source = "window system";
+        break;
+
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        error.source = "shader compiler";
+        break;
+
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+        error.source = "third party";
+        break;
+
+        case GL_DEBUG_SOURCE_APPLICATION:
+        error.source = "application";
+        break;
+
+        case GL_DEBUG_SOURCE_OTHER:
+        error.source = "unknown";
+        break;
+
+        default:
+        error.source = "unknown";
+        break;
+    }
+    switch (type) {
+        case GL_DEBUG_TYPE_ERROR:
+        error.type = "error";
+        break;
+
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        error.type = "deprecated behavior warning";
+        break;
+
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        error.type = "udefined behavior warning";
+        break;
+
+        case GL_DEBUG_TYPE_PORTABILITY:
+        error.type = "portability warning";
+        break;
+
+        case GL_DEBUG_TYPE_PERFORMANCE:
+        error.type = "performance warning";
+        break;
+
+        case GL_DEBUG_TYPE_OTHER:
+        error.type = "message";
+        break;
+
+        case GL_DEBUG_TYPE_MARKER:
+        error.type = "marker message";
+        break;
+
+        default:
+        error.type = "unknown message";
+        break;
+    }
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+        error.severity = "high";
+        break;
+
+        case GL_DEBUG_SEVERITY_MEDIUM:
+        error.severity = "medium";
+        break;
+
+        case GL_DEBUG_SEVERITY_LOW:
+        error.severity = "low";
+        break;
+
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+        error.severity = "notification";
+        break;
+
+        default:
+        error.severity = "unknown";
+        break;
+    }
+
+    LOG_WARN("%d: opengl %s severity %s, raised from %s:\n\t%s", 
+            error.id, 
+            error.severity.c_str(), 
+            error.type.c_str(), 
+            error.source.c_str(), 
+            error.msg.c_str());
+}
+bool init(GLFWwindow **window)
+{
+    if (!glfwInit()) {
+        LOG_FATAL("failed to initialize glfw!");
+        return false;
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+
+    GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    *window = glfwCreateWindow(mode->width * 0.7, mode->height * 0.9, "opengl", nullptr, nullptr);
+
+    if (!*window) {
+        LOG_FATAL("failed to initialize window.");
+        return false;
+    }
+    glfwMakeContextCurrent(*window);
+    if (!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) {
+        LOG_FATAL("gladLoadGL: Failed to initialize GLAD!");
+        return false;
+    }
+    
+    ImGui::CreateContext();
+    IMGUI_CHECKVERSION();
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+    if(getenv("WAYLAND_DISPLAY")) LOG_INFO("wayland detected! imgui multiple viewports feature is not supported!");
+    else io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    ImGui_ImplGlfw_InitForOpenGL(*window, true);
+    ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui::StyleColorsDark();
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(debugCallback, nullptr);
+    LOG_DEBUG("running in debug mode!");
+    
+    glfwSwapInterval(0);
+
+    return true;
+}
+Mesh load(std::string_view path, bool flip)
+{
+    return Mesh{};
+}
