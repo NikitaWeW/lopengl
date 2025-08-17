@@ -11,16 +11,17 @@ in VS_OUT {
 } fs_in;
 
 const float maxFadeDistance = 50;
+const float gridTiling = 100;
+const float uvTiling = 1;
 
 // thx to https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8
 float grid(float lineWidth, vec2 texCoord) {
-    vec4 uvDDXY = vec4(dFdx(texCoord), dFdy(texCoord)); 
-    vec2 uvDeriv = vec2(length(uvDDXY.xz), length(uvDDXY.yw));
+    vec2 uvDeriv = fwidth(texCoord * gridTiling);
     bool invertLine = lineWidth > 0.5;
     vec2 targetWidth = vec2(invertLine ? 1.0 - lineWidth : lineWidth);
     vec2 drawWidth = clamp(targetWidth, uvDeriv, vec2(0.5));
     vec2 lineAA = uvDeriv * 1.5;
-    vec2 gridUV = abs(fract(texCoord) * 2.0 - 1.0);
+    vec2 gridUV = abs(fract(texCoord * gridTiling) * 2.0 - 1.0);
     gridUV = invertLine ? gridUV : 1.0 - gridUV;
     vec2 grid2 = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
     grid2 *= clamp(targetWidth / drawWidth, 0.0, 1.0);
@@ -34,5 +35,5 @@ void main() {
     o_color = u_color;
 
     float falloff = smoothstep(1.0, 0.0, length(fs_in.fragmentPosition - fs_in.cameraPosition) / maxFadeDistance); // fade the grid
-    o_color.a = (grid(0.01, 1000 * fs_in.texCoord) + grid(0.003, 100 * fs_in.texCoord)) * falloff;
+    o_color.a = (grid(0.01, uvTiling * 10 * fs_in.texCoord) + grid(0.003, uvTiling * 1 * fs_in.texCoord)) * falloff;
 }

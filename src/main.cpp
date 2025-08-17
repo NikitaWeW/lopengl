@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
         while(!glfwWindowShouldClose(window))
         {
             glfwSetWindowTitle(window, ("ogl setup | " + std::to_string(*deltatime * 1e3) + "ms").c_str());
-            std::this_thread::sleep_for(std::chrono::milliseconds{500});
+            std::this_thread::sleep_for(std::chrono::milliseconds{250});
         }
     }, window, &deltatime};
 
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        rotation += float(deltatime) * glm::vec3{1, 0, 2};
+        rotation += float(deltatime) * glm::vec3{1, 2, 3};
         glm::mat4 modelMat = mm{}.translate(1, 1, 0).rotate(rotation).get();
         shader.bind();
         texture.bind(0);
@@ -91,7 +91,6 @@ int main(int argc, char **argv) {
         gridShader.bind();
         glUniformMatrix4fv(gridShader.getUniform("u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
         glUniformMatrix4fv(gridShader.getUniform("u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
-        glUniform3fv      (gridShader.getUniform("u_cameraPosition"),1,           glm::value_ptr(camera.position));
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glfwSwapBuffers(window);

@@ -2,7 +2,6 @@
 
 uniform mat4 u_projectionMat;
 uniform mat4 u_viewMat;
-uniform vec3 u_cameraPosition;
 
 out VS_OUT {
     vec3 fragmentPosition;
@@ -23,23 +22,18 @@ const vec2 texCoords[4] = vec2[4](
     vec2(1.0f, 1.0f)
 );
 
-const float gridSize = 100;
+const float gridSize = 50;
 const float gridHeight = -0.2;
-const float gridSpacing = 20;
 const float EPSILON = 1e-3;
-
-bool approximatelyEqual(float a, float b)
-{
-    return abs(a - b) <= (abs(a) < abs(b) ? abs(b) : abs(a)) * EPSILON;
-}
+const float gridTiling = 0.1;
 
 void main() {
+    vec3 cameraPosition = -u_viewMat[3].xyz;
     vec3 vertexPosition = vertices[gl_VertexID] * gridSize;
-    vertexPosition += floor(u_cameraPosition / gridSpacing) * gridSpacing;
+    vertexPosition += floor(cameraPosition * gridTiling) / gridTiling;
     vertexPosition.y = gridHeight;
-    if(approximatelyEqual(u_cameraPosition.y, gridHeight)) vertexPosition = vec3(0); // discard the grid (wierd dots appear)
     vs_out.fragmentPosition = vertexPosition;
-    vs_out.cameraPosition = u_cameraPosition;
+    vs_out.cameraPosition = cameraPosition;
     vs_out.texCoord = texCoords[gl_VertexID];
     gl_Position = u_projectionMat * u_viewMat * vec4(vs_out.fragmentPosition, 1);
 }
