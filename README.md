@@ -1,7 +1,7 @@
 me learning opengl
 ===
 
-This is repository with my opengl expirience. there are some bad / messy classes, but everything else is ok. Oh yeah, its missing some gui.
+This is repository with my opengl expirience. there are some bad / messy classes, but for learing purposes its ok. There are different branches to see.
 
 ogl setup
 ===
