@@ -1,132 +1,103 @@
-/*
-i use this (gcc + ninja)
-cmake -S . -B build -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_CXX_FLAGS='-fdiagnostics-color=always -Wall' -G Ninja
-cmake --build build && build/main
+#include <iostream>
+#include <chrono>
+#include <cassert>
+#include <thread>
 
-        +____________+
-        /:\         ,:\
-       / : \       , : \
-      /  :  \     ,  :  \
-     /   :   +-----------+
-    +....:../:...+   :  /|
-    |\   +./.:...`...+ / |
-    | \ ,`/  :   :` ,`/  |
-    |  \ /`. :   : ` /`  |
-    | , +-----------+  ` |
-    |,  |   `+...:,.|...`+
-    +...|...,'...+  |   /
-     \  |  ,     `  |  /
-      \ | ,       ` | /
-       \|,         `|/
-        +___________+
-
-2-Dimensional Representation Of A 3-Dimensional Cross-Section Of A 4-Dimensional Cube
-*/
-
+#include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
-#include "GLFW/glfw3native.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "imgui.h"
-#include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_glfw.h"
-#include "logger.h"
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
+#include "core/Camera.hpp"
+#include "core/opengl/Shader.hpp"
+#include "core/opengl/VertexBuffer.hpp"
+#include "core/opengl/Texture.hpp"
+#include "core/load.hpp"
+#include "core/modelMat.hpp"
 
-#include "Application.hpp"
-#include "random.hpp"
-#include "opengl/Renderer.hpp"
-#include "utils/ControllableCamera.hpp"
-#include "opengl/Framebuffer.hpp"
-#include "opengl/UniformBuffer.hpp"
-#include "opengl/Cubemap.hpp"
+bool init(GLFWwindow **window);
 
-#include <chrono>
-#include <memory>
-#include <thread>
-#include <iostream>
-#include <stdexcept>
+class Deallocator {
+public: 
+    inline ~Deallocator() {
+        glfwTerminate();
+    }
+};
 
-#ifdef NDEBUG
-extern const bool debug = false;
-#else
-extern const bool debug = true;
-#endif
-#define SHOW_LOGS         true // for readability
-#define LOAD_NOW          true
-#define FLIP_TEXTURES     true
-#define FLIP_WINING_ORDER true
-#define SRGB              true
-#define currentShader app.shaders[app.displayShaders[app.currentShaderIndex]]
-
-void imguistuff(Application &app, ControllableCamera &cam);
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-float lerp(float a, float b, float x) { return a + x * (b - a); }
-
-int main(int argc, char **argv)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    Application app; // initialisation
-    app.camera = ControllableCamera{app.window, {0, 0, 4}, {-90, 0, 0}};
-    app.shaders = {
-        {"shaders/basic.glsl",              SHOW_LOGS}, // 0
-    }; // on shader reload contents will be recompiled, if fails failed shader will be restored. 
+    ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        camera.locked = !camera.locked;
+}
 
-    Model cube{"res/models/cube.obj", !FLIP_TEXTURES, FLIP_WINING_ORDER};
-    Model sphere{"res/models/sphere.obj", FLIP_TEXTURES };
 
-    // glm::vec4 *data = new glm::vec4[count];
-    // for(unsigned i = 0; i < count; ++i) {
-    //     data[i] = {randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), randRange(0.0f, 1.0f), 1};
-    // }
-    unsigned count = 3;
-    float data[] = {
-        0, 1, 0, 1,
-        1, 1, 0, 1, 
-        1, 1, 1, 1
-    };
-    UniformBuffer ubo{sizeof(GLfloat) + sizeof(glm::vec4) * 200 };
-    ubo.bind();
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4) * count, data);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 200, sizeof(GLfloat), &count);
-    ubo.bindingPoint(0);
+int main(int argc, char **argv) {
+    std::unique_ptr<Deallocator> cleanup = std::make_unique<Deallocator>();
+    GLFWwindow* window;
+    if(!init(&window)) {
+        std::cout << "failed to init!\n";
+        return -1;
+    }
 
-    while (!glfwWindowShouldClose(app.window))
+    double deltatime = 0.1;
+    ControllableCamera camera{window};
+    camera.position.z = 4;
+    glfwSetWindowUserPointer(window, &camera);
+    model::Loader loader;
+    auto cube = loader.load("res/models/cube.obj");
+    ogl::ShaderProgram shader{"shaders/basic"};
+    ogl::ShaderProgram gridShader{"shaders/grid"};
+
+    glfwSetKeyCallback(window, key_callback);
+
+    ogl::Texture texture = texture::load("res/textures/wood0/wood_planks_diff_2k.png", "diffuse");
+    std::thread fpsShower{[](GLFWwindow *window, double const *deltatime){
+        assert(window);
+        assert(deltatime);
+        while(!glfwWindowShouldClose(window))
+        {
+            glfwSetWindowTitle(window, ("ogl setup | " + std::to_string(*deltatime * 1e3) + "ms").c_str());
+            std::this_thread::sleep_for(std::chrono::milliseconds{500});
+        }
+    }, window, &deltatime};
+
+    glm::vec3 rotation{0};
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
-        app.camera.update(app.deltatime);
-        glfwGetWindowSize(app.window, &app.camera.width, &app.camera.height);
-// ================== //
-//  geometry pass
-// ================== //
+        camera.update(deltatime);
+        glfwGetWindowSize(window, &camera.width, &camera.height);
 
-        glViewport(0, 0, app.camera.width, app.camera.height);
-        glClearColor(app.clearColor.r, app.clearColor.g, app.clearColor.b, 1);
+        glViewport(0, 0, camera.width, camera.height);
+        glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        app.shaders[0].bind();
-        glUniformBlockBinding(app.shaders[0].getRenderID(), app.shaders[0].getUniformBlock("vectors"), 0);
-        cube.resetMatrix();
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_viewMat"),      1, GL_FALSE, &app.camera.getViewMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_projectionMat"),1, GL_FALSE, &app.camera.getProjectionMatrix()[0][0]);
-        glUniformMatrix4fv(app.shaders[0].getUniform("u_modelMat"), 1, GL_FALSE, &cube.getModelMat()[0][0]);
-        for(Mesh const &mesh : cube.getMeshes()) {
-            mesh.va.bind();
-            mesh.ib.bind();
-            glDrawElements(GL_TRIANGLES, mesh.ib.getSize(), GL_UNSIGNED_INT, nullptr);
-        }
+        rotation += float(deltatime) * glm::vec3{1, 0, 2};
+        glm::mat4 modelMat = mm{}.translate(1, 1, 0).rotate(rotation).get();
+        shader.bind();
+        texture.bind(0);
+        glUniformMatrix4fv(shader.getUniform("u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
+        glUniformMatrix4fv(shader.getUniform("u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
+        glUniformMatrix4fv(shader.getUniform("u_modelMat"),      1, GL_FALSE, glm::value_ptr(modelMat));
+
+        cube.vao.bind();
+        glDrawArrays(GL_TRIANGLES, 0, cube.count);
         
-        if(app.frameCounter % 100 == 0) glfwSetWindowTitle(app.window, ("lopengl -- " + std::to_string((int) glm::round(1 / app.deltatime)) + " FPS").c_str());
-        glfwSwapBuffers(app.window);
+        gridShader.bind();
+        glUniformMatrix4fv(gridShader.getUniform("u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
+        glUniformMatrix4fv(gridShader.getUniform("u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
+        glUniform3fv      (gridShader.getUniform("u_cameraPosition"),1,           glm::value_ptr(camera.position));
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        
+        glfwSwapBuffers(window);
         glfwPollEvents();
-        ++app.frameCounter;
-        app.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
+        deltatime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) * 1.0E-6;
     }
+
+    fpsShower.join();
 }
-/*
-c++ be like:
-Because the lvalueness or rvalueness of an expression is independent of its type, it’s possible to have lvalues whose type is rvalue reference, and it’s also possible to have rvalues of the type rvalue reference.
-*/
