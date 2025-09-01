@@ -1,6 +1,5 @@
 #include "load.hpp"
 #include "tiny_obj_loader.h"
-#include "tiny_gltf_loader.h"
 #include "glm/glm.hpp"
 
 #include <vector>
