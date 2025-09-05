@@ -129,6 +129,20 @@ bool init(GLFWwindow **window)
         return false;
     }
     
+    ImGui::CreateContext();
+    IMGUI_CHECKVERSION();
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    if(getenv("WAYLAND_DISPLAY")) 
+        std::cout << "wayland detected! imgui multiple viewports feature is not supported!\n";
+    else 
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    ImGui_ImplGlfw_InitForOpenGL(*window, true);
+    ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui::StyleColorsDark();
+    
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(debugCallback, nullptr);
     

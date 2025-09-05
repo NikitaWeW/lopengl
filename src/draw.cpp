@@ -137,3 +137,37 @@ void drawFrame(Data &data)
 
     glBlitNamedFramebuffer(data.displayFBO.getRenderID(), 0, 0, 0, data.windowSize.x, data.windowSize.y, 0, 0, data.windowSize.x, data.windowSize.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
+
+void generateTexture(Data &data)
+{
+    auto start = std::chrono::high_resolution_clock::now();
+
+    data.texture = ogl::Cubemap{0};
+    glTextureStorage2D(
+        data.texture.getRenderID(),
+        1,
+        TEXTURE_FORMAT,
+        data.inputs.textureSize,
+        data.inputs.textureSize
+    );
+
+    data.cubeGenerateShader.bind();
+    glUniform1ui(data.cubeGenerateShader.getUniform("u_seed"), data.inputs.seed);
+    glUniform2f( data.cubeGenerateShader.getUniform("u_dimensions"), data.inputs.textureSize, data.inputs.textureSize);
+    glViewport(0, 0, data.inputs.textureSize, data.inputs.textureSize);
+
+    data.textureFBO.bind();
+    for(unsigned face = 0; face < 6; ++face)
+    {
+        glUniform1ui(data.cubeGenerateShader.getUniform("u_face"), face);
+        glNamedFramebufferTextureLayer(data.textureFBO.getRenderID(), GL_COLOR_ATTACHMENT0, data.texture.getRenderID(), 0, face);
+        assert(data.textureFBO.isComplete());
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+    data.textureFBO.attach(ogl::Cubemap{}, GL_COLOR_ATTACHMENT0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    auto time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-3;
+    std::cout << "finished generating texture in " << time << "ms.\n";
+}

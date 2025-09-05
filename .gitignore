@@ -5,3 +5,4 @@ log
 *.ini
 CMakeUserPresets.json
 install
+image.png

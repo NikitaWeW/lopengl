@@ -9,6 +9,11 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_stdlib.h"
+
 #include "stb_image.h"
 #include "stb_image_write.h"
 #include "core/equirect.hpp"
@@ -30,7 +35,10 @@
 #include <stdexcept>
 #include <algorithm>
 #include <sstream>
+#include <random>
+#include <limits>
 
+using seed_t = unsigned;
 
 // for a small application like this i think its fine to use a single struct as an app state
 struct Data
@@ -49,14 +57,18 @@ struct Data
     glm::vec3 cameraDir{1};
 
     ogl::Cubemap skybox;
+
+    ogl::Framebuffer textureFBO{0};
     ogl::Cubemap texture;
 
     ogl::ShaderProgram cubeDrawShader{"shaders/prop"};
-    // ogl::ShaderProgram cubeGenerateShader{"shaders/prop"};
+    ogl::ShaderProgram cubeGenerateShader{"shaders/generateTexture"};
     ogl::ShaderProgram displayShader{"shaders/hdrImage"};
     ogl::ShaderProgram skyboxDrawShader{"shaders/skybox"};
-    // ogl::ShaderProgram skyboxGenerateShader{"shaders/skybox"};
     ogl::ShaderProgram gridShader{"shaders/grid"};
+
+    std::mt19937_64 gen;
+    std::uniform_int_distribution<seed_t> dist{0, std::numeric_limits<seed_t>::max()};
 
     model::Mesh cube;
 
@@ -75,6 +87,8 @@ struct Data
 
     struct Inputs {
         float sensitivity = 1;
+        seed_t seed;
+        unsigned textureSize = 1024;
     } inputs;
 };
 
@@ -83,9 +97,13 @@ constexpr std::string_view CONFIG_WINDOW_NAME = "Properties";
 constexpr float ZNEAR = 0.01;
 constexpr float ZFAR = 100;
 constexpr float CUBE_MODEL_SIZE = 1.0f; 
+constexpr unsigned TEXTURE_FORMAT = GL_RGB8;
 
 bool init(GLFWwindow **window);
 void processInput(Data &data);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void drawFrame(Data &data);
+void generateTexture(Data &data);
+void randomSeed(Data &data);
+void ui(Data &data);

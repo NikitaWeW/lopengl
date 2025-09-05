@@ -13,7 +13,7 @@ CPMAddPackage("gh:nikitawew/ecs@1.1.1")
 
 file(GLOB_RECURSE DEPENDENCIES_SOURCES "dependencies/compile/*")
 add_library(dependencies ${DEPENDENCIES_SOURCES})
-target_include_directories(dependencies PUBLIC dependencies/include)
+target_include_directories(dependencies PUBLIC dependencies/include dependencies/include/imgui)
 
 ######################################################################
 

@@ -44,14 +44,15 @@ int main(int argc, char **argv)
 
     Data data{};
 
-    data.skybox = ogl::Cubemap{"res/textures/milky_way.jpg"};
-    data.texture = data.skybox;
+    data.skybox = ogl::Cubemap{"res/textures/space.jpg"};
     model::Loader loader;
     data.cube = loader.load("res/models/cube.obj");
     
     data.window = window;
     data.distance.falloff = 10;
     data.inputs.sensitivity = 0.5;
+
+    randomSeed(data);
 
     // ===================================
     
@@ -69,13 +70,37 @@ int main(int argc, char **argv)
 
     while (!glfwWindowShouldClose(window))
     {
-        float start = (float) glfwGetTime();
+        auto start = std::chrono::high_resolution_clock::now();
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGuiIO &io = ImGui::GetIO();
         drawFrame(data);
+        
+        glViewport(0, 0, data.windowSize.x, data.windowSize.y);
+        if(io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("Editor DockSpace");
+            ImGui::DockSpaceOverViewport(dockspace_id, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+        }
+                
+
+        ui(data);
 
         glfwPollEvents();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        if(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+        }
         glfwSwapBuffers(window);
-        data.deltatime = (float) glfwGetTime() - start;
+        data.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
     
     glfwDestroyWindow(window);
