@@ -1,20 +1,19 @@
-#include <iostream>
-#include <cassert>
-#include "glad/gl.h"
-#include "GLFW/glfw3.h"
+#include "main.hpp"
 
-void debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei, const GLchar *message, const void *) {
+void debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *msg, const void *objMesh)
+{
     if(source == GL_DEBUG_SOURCE_SHADER_COMPILER && (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_OTHER)) return; // handled by ShaderProgram class 
+
     struct OpenGlError {
         GLuint id;
         std::string source;
         std::string type;
         std::string severity;
-        std::string message;
-    };
-    OpenGlError error;
+        std::string msg;
+    } error;
+    
     error.id = id;
-    error.message = message;
+    error.msg = msg;
 
     switch (source) {
         case GL_DEBUG_SOURCE_API:
@@ -100,38 +99,40 @@ void debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsiz
         break;
     }
 
-    std::cout << error.id << ": opengl " << error.severity << " severity " << error.type << ", raised from " << error.source << ":\n\t" << error.message << '\n';
-    assert(severity != GL_DEBUG_SEVERITY_HIGH);
+    std::cout << error.id << ": opengl " << error.severity << " severity " << error.type << ", raised from " << error.source << ":\n\t" << error.msg << '\n';
 }
-bool init(GLFWwindow** window) {
-    assert(window);
-    if (!glfwInit())
+bool init(GLFWwindow **window)
+{
+    if(!glfwInit()) {
+        std::cout << "failed to initialize glfw!\n";
         return false;
-
+    }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, NUM_SAMPLES);
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
-    *window = glfwCreateWindow(640, 480, "breakout", NULL, NULL);
-    if (!*window) {
-        std::cout << "ERROR: failed to init the window!\n";
+    GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    *window = glfwCreateWindow(mode->width * 0.5, mode->height * 0.5, "opengl", nullptr, nullptr);
+    glfwSetWindowTitle(*window, "flow cubemap editor v0.5");
+
+    if(!*window) {
+        std::cout << "failed to initialize window!\n";
         return false;
     }
-
     glfwMakeContextCurrent(*window);
-    glfwSwapInterval(0);
-
-    int version = gladLoadGL(glfwGetProcAddress);
-    if (version == 0) {
-        std::cout << "ERROR: Failed to initialize OpenGL context\n";
+    if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) {
+        std::cout << "gladLoadGL: Failed to initialize GLAD!\n";
         return false;
     }
+    
+    glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(debugCallback, nullptr);
-    glEnable(GL_MULTISAMPLE);
+    
+    glfwSwapInterval(1);
 
     return true;
 }

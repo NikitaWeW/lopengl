@@ -1,7 +1,7 @@
-me learning opengl
+Planet texture generator
 ===
 
-This is repository with my opengl expirience. there are some bad / messy classes, but for learing purposes its ok. There are different branches to see.
+A quickly put together planet texture generator (just for you, DEA__TH)
 
 ogl setup
 ===

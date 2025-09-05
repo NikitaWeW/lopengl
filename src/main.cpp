@@ -1,107 +1,83 @@
-#include <iostream>
-#include <chrono>
-#include <cassert>
-#include <thread>
+/*
+        +____________+
+        /:\         ,:\
+       / : \       , : \
+      /  :  \     ,  :  \
+     /   :   +-----------+
+    +....:../:...+   :  /|
+    |\   +./.:...`...+ / |
+    | \ ,`/  :   :` ,`/  |
+    |  \ /`. :   : ` /`  |
+    | , +-----------+  ` |
+    |,  |   `+...:,.|...`+
+    +...|...,'...+  |   /
+     \  |  ,     `  |  /
+      \ | ,       ` | /
+       \|,         `|/
+        +___________+
 
-#include "glm/glm.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glad/gl.h"
-#include "GLFW/glfw3.h"
-#include "core/Camera.hpp"
-#include "core/ogl/Shader.hpp"
-#include "core/ogl/VertexBuffer.hpp"
-#include "core/ogl/Texture.hpp"
-#include "core/load.hpp"
-#include "core/modelMat.hpp"
+2-Dimensional ASCII Representation Of A 3-Dimensional Cross-Section Of A 4-Dimensional Cube
 
-bool init(GLFWwindow **window);
+---
 
-class Deallocator {
-public: 
-    inline ~Deallocator() {
-        glfwTerminate();
-    }
-};
+Copyright (c) 2025 Nikita Martynau (https://opensource.org/license/mit)
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+#include "main.hpp"
+
+int main(int argc, char **argv)
 {
-    ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        camera.firstCursorMove = true;
-        camera.locked = !camera.locked;
-    }
-}
-
-
-int main(int argc, char **argv) {
-    std::unique_ptr<Deallocator> cleanup = std::make_unique<Deallocator>();
-    GLFWwindow* window;
+    GLFWwindow *window = nullptr;
     if(!init(&window)) {
         std::cout << "failed to init!\n";
         return -1;
     }
+    assert(window);
 
-    double deltatime = 0.1;
-    ControllableCamera camera{window};
-    camera.position.z = 4;
-    glfwSetWindowUserPointer(window, &camera);
+    // ===================================
+
+    Data data{};
+
+    data.skybox = ogl::Cubemap{"res/textures/milky_way.jpg"};
+    data.texture = data.skybox;
     model::Loader loader;
-    auto cube = loader.load("res/models/cube.obj");
-    ogl::ShaderProgram shader{"shaders/basic"};
-    ogl::ShaderProgram gridShader{"shaders/grid"};
+    data.cube = loader.load("res/models/cube.obj");
+    
+    data.window = window;
+    data.distance.falloff = 10;
+    data.inputs.sensitivity = 0.5;
 
-    glfwSetKeyCallback(window, key_callback);
+    // ===================================
+    
+    glfwSetWindowUserPointer(data.window, &data);
+    glfwSetScrollCallback(data.window, scroll_callback);
+    glfwSetKeyCallback(data.window, key_callback);
 
-    ogl::Texture texture = texture::load("res/textures/wood0/wood_planks_diff_2k.png", "diffuse");
-    std::thread fpsShower{[](GLFWwindow *window, double const *deltatime){
-        assert(window);
-        assert(deltatime);
-        while(!glfwWindowShouldClose(window))
-        {
-            glfwSetWindowTitle(window, ("ogl setup | " + std::to_string(*deltatime * 1e3) + "ms").c_str());
-            std::this_thread::sleep_for(std::chrono::milliseconds{250});
-        }
-    }, window, &deltatime};
-
-    glm::vec3 rotation{0};
-
-    glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     while (!glfwWindowShouldClose(window))
     {
-        auto start = std::chrono::high_resolution_clock::now();
-        camera.update(deltatime);
-        glfwGetWindowSize(window, &camera.width, &camera.height);
+        float start = (float) glfwGetTime();
 
-        glViewport(0, 0, camera.width, camera.height);
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        drawFrame(data);
 
-        rotation += float(deltatime) * glm::vec3{1, 2, 3};
-        glm::mat4 modelMat = mm{}.translate(1, 1, 0).rotate(rotation).get();
-
-        shader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture.getRenderID());
-        glUniformMatrix4fv(shader.getUniform("u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
-        glUniformMatrix4fv(shader.getUniform("u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
-        glUniformMatrix4fv(shader.getUniform("u_modelMat"),      1, GL_FALSE, glm::value_ptr(modelMat));
-
-        glBindVertexArray(cube.vao.getRenderID());
-        glDrawArrays(GL_TRIANGLES, 0, cube.count);
-        
-        glUseProgram(gridShader.getRenderID());
-        glUniformMatrix4fv(gridShader.getUniform("u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
-        glUniformMatrix4fv(gridShader.getUniform("u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        
-        glfwSwapBuffers(window);
         glfwPollEvents();
-        deltatime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) * 1.0E-6;
+        glfwSwapBuffers(window);
+        data.deltatime = (float) glfwGetTime() - start;
     }
-
-    fpsShower.join();
+    
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
