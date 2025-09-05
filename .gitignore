@@ -4,3 +4,4 @@ log
 .vscode
 *.ini
 CMakeUserPresets.json
+install

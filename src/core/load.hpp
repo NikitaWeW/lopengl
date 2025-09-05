@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/opengl/Shader.hpp"
-#include "core/opengl/VertexBuffer.hpp"
-#include "core/opengl/Texture.hpp"
+#include "core/ogl/Shader.hpp"
+#include "core/ogl/VertexBuffer.hpp"
+#include "core/ogl/Texture.hpp"
 #include "glm/glm.hpp"
 
 namespace texture

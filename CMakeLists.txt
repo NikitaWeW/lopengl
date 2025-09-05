@@ -9,7 +9,7 @@ project(breakout C CXX)
 include(cmake/cpm.cmake)
 
 CPMAddPackage("gh:glfw/glfw#3.4")
-CPMAddPackage("gh:nikitawew/ecs@1.0.1")
+CPMAddPackage("gh:nikitawew/ecs@1.1.1")
 
 file(GLOB_RECURSE DEPENDENCIES_SOURCES "dependencies/compile/*")
 add_library(dependencies ${DEPENDENCIES_SOURCES})
