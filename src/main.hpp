@@ -38,6 +38,18 @@
 #include <random>
 #include <limits>
 
+#ifdef USE_RENDERDOC
+#include <renderdoc_app.h>
+
+// renderdoc in-app api
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
+#endif
+
 using seed_t = unsigned;
 
 // for a small application like this i think its fine to use a single struct as an app state
@@ -58,14 +70,13 @@ struct Data
 
     ogl::Cubemap skybox;
 
-    ogl::Framebuffer textureFBO{0};
     ogl::Cubemap texture;
 
-    ogl::ShaderProgram cubeDrawShader{"shaders/prop"};
-    ogl::ShaderProgram cubeGenerateShader{"shaders/generateTexture"};
-    ogl::ShaderProgram displayShader{"shaders/hdrImage"};
-    ogl::ShaderProgram skyboxDrawShader{"shaders/skybox"};
-    ogl::ShaderProgram gridShader{"shaders/grid"};
+    ogl::ShaderProgram cubeDrawShader;
+    ogl::ShaderProgram cubeGenerateShader;
+    ogl::ShaderProgram displayShader;
+    ogl::ShaderProgram skyboxDrawShader;
+    ogl::ShaderProgram gridShader;
 
     std::mt19937_64 gen;
     std::uniform_int_distribution<seed_t> dist{0, std::numeric_limits<seed_t>::max()};
@@ -73,17 +84,21 @@ struct Data
     model::Mesh cube;
 
     ogl::Framebuffer mainFBO;
-    ogl::Renderbuffer mainRBO{0};
-    ogl::TextureMS mainColor{GL_LINEAR, GL_CLAMP_TO_EDGE};
+    ogl::Renderbuffer mainRBO;
+    ogl::TextureMS mainColor;
 
     ogl::Framebuffer displayFBO;
-    ogl::Renderbuffer displayRBO{0};
-    ogl::Texture displayTexture{GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE};
+    ogl::Renderbuffer displayRBO;
+    ogl::Texture displayTexture;
 
     float deltatime = 0.1;
 
     VelocityValue<glm::vec2> yawPitch{.value = glm::vec2{0}};
     VelocityValue<float> distance{.value = 3};
+
+    #ifdef USE_RENDERDOC
+    RENDERDOC_API_1_1_2 *rdoc_api = NULL;
+    #endif
 
     struct Inputs {
         float sensitivity = 1;
@@ -99,7 +114,7 @@ constexpr float ZFAR = 100;
 constexpr float CUBE_MODEL_SIZE = 1.0f; 
 constexpr unsigned TEXTURE_FORMAT = GL_RGB8;
 
-bool init(GLFWwindow **window);
+bool init(Data &data);
 void processInput(Data &data);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);

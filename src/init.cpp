@@ -101,7 +101,7 @@ void debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsiz
 
     std::cout << error.id << ": opengl " << error.severity << " severity " << error.type << ", raised from " << error.source << ":\n\t" << error.msg << '\n';
 }
-bool init(GLFWwindow **window)
+bool init(Data &data)
 {
     if(!glfwInit()) {
         std::cout << "failed to initialize glfw!\n";
@@ -116,14 +116,14 @@ bool init(GLFWwindow **window)
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
     GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    *window = glfwCreateWindow(mode->width * 0.5, mode->height * 0.5, "opengl", nullptr, nullptr);
-    glfwSetWindowTitle(*window, "planet texture generator");
+    data.window = glfwCreateWindow(mode->width * 0.5, mode->height * 0.5, "opengl", nullptr, nullptr);
+    glfwSetWindowTitle(data.window, "planet texture generator");
 
-    if(!*window) {
+    if(!data.window) {
         std::cout << "failed to initialize window!\n";
         return false;
     }
-    glfwMakeContextCurrent(*window);
+    glfwMakeContextCurrent(data.window);
     if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) {
         std::cout << "gladLoadGL: Failed to initialize GLAD!\n";
         return false;
@@ -139,7 +139,7 @@ bool init(GLFWwindow **window)
         std::cout << "wayland detected! imgui multiple viewports feature is not supported!\n";
     else 
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    ImGui_ImplGlfw_InitForOpenGL(*window, true);
+    ImGui_ImplGlfw_InitForOpenGL(data.window, true);
     ImGui_ImplOpenGL3_Init("#version 430");
     ImGui::StyleColorsDark();
     
@@ -147,6 +147,29 @@ bool init(GLFWwindow **window)
     glDebugMessageCallback(debugCallback, nullptr);
     
     glfwSwapInterval(1);
+
+    #ifdef USE_RENDERDOC
+    #ifdef __linux__
+    if(void *mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
+    {
+        pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
+        int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&data.rdoc_api);
+        assert(ret == 1);
+    }
+
+    #endif
+    #ifdef _WIN32
+
+    if(HMODULE mod = GetModuleHandleA("renderdoc.dll"))
+    {
+        pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+            (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+        int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&data.rdoc_api);
+        assert(ret == 1);
+    }
+    #endif
+
+    #endif
 
     return true;
 }

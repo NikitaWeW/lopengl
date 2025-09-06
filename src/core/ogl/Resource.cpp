@@ -9,5 +9,6 @@ void Resource::operator=(Resource &&other)      { m_referenceCount.exchange(othe
 
 bool Resource::canDeallocate() const
 {
-    return m_referenceCount == 1;
+    // it will leak it anyway...
+    return false;
 }

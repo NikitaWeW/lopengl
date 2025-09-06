@@ -33,22 +33,33 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 int main(int argc, char **argv)
 {
-    GLFWwindow *window = nullptr;
-    if(!init(&window)) {
+    Data data{};
+
+    if(!init(data)) {
         std::cout << "failed to init!\n";
         return -1;
     }
-    assert(window);
 
     // ===================================
 
-    Data data{};
+    data.cubeDrawShader     = ogl::ShaderProgram{"shaders/prop"};
+    data.cubeGenerateShader = ogl::ShaderProgram{"shaders/generateTexture"};
+    data.displayShader      = ogl::ShaderProgram{"shaders/hdrImage"};
+    data.skyboxDrawShader   = ogl::ShaderProgram{"shaders/skybox"};
+    data.gridShader         = ogl::ShaderProgram{"shaders/grid"};
+
+    data.mainFBO    = ogl::Framebuffer{0};
+    data.displayFBO = ogl::Framebuffer{0};
+
+    data.mainRBO    = ogl::Renderbuffer{0};
+    data.displayRBO = ogl::Renderbuffer{0};
+
+    data.displayTexture = ogl::Texture{GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE};
 
     data.skybox = ogl::Cubemap{"res/textures/space.jpg"};
     model::Loader loader;
     data.cube = loader.load("res/models/cube.obj");
     
-    data.window = window;
     data.distance.falloff = 10;
     data.inputs.sensitivity = 0.5;
 
@@ -68,16 +79,16 @@ int main(int argc, char **argv)
     glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(data.window))
     {
         auto start = std::chrono::high_resolution_clock::now();
 
+        drawFrame(data);
+        
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGuiIO &io = ImGui::GetIO();
-        drawFrame(data);
-        
         glViewport(0, 0, data.windowSize.x, data.windowSize.y);
         if(io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
@@ -99,10 +110,10 @@ int main(int argc, char **argv)
             ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(data.window);
         data.deltatime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-6;
     }
     
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(data.window);
     glfwTerminate();
 }

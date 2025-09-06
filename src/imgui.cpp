@@ -15,7 +15,7 @@ static void helpMarker(std::string_view desc)
 
 static void save(Data &data)
 {
-    int const numComponents = 4;
+    int const numComponents = 3;
 
     std::array<Bitmap<unsigned char>, eqr::NUM_CUBEMAP_FACES> cubemapFaces;
 
@@ -37,7 +37,7 @@ static void save(Data &data)
             1                               // depth
         );
 
-        cubemapFaces[i] = Bitmap<unsigned char>{data.inputs.textureSize, data.inputs.textureSize, 4};
+        cubemapFaces[i] = Bitmap<unsigned char>{data.inputs.textureSize, data.inputs.textureSize, numComponents};
 
         // FIXME: pbo maybe?
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -51,12 +51,16 @@ static void save(Data &data)
 void ui(Data &data)
 {
     ImGui::Begin(CONFIG_WINDOW_NAME.data());
-
-    ImGui::Text("seed: %s", std::to_string(data.inputs.seed).c_str());
-    if(ImGui::Button("random seed"))
+    if(ImGui::InputScalar("seed", ImGuiDataType_U32, &data.inputs.seed))
+        generateTexture(data);
+    if(ImGui::Button("random seed")) 
         randomSeed(data);
 
+    
     ImGui::Separator();
+    
+    if(ImGui::InputScalar("size", ImGuiDataType_U32, &data.inputs.textureSize))
+        generateTexture(data);
 
     if(ImGui::Button("save"))
         save(data);
