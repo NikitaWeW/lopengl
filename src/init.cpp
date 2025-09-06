@@ -117,7 +117,7 @@ bool init(GLFWwindow **window)
 
     GLFWvidmode const *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     *window = glfwCreateWindow(mode->width * 0.5, mode->height * 0.5, "opengl", nullptr, nullptr);
-    glfwSetWindowTitle(*window, "flow cubemap editor v0.5");
+    glfwSetWindowTitle(*window, "planet texture generator");
 
     if(!*window) {
         std::cout << "failed to initialize window!\n";

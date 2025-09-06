@@ -161,8 +161,8 @@ void generateTexture(Data &data)
     {
         glUniform1ui(data.cubeGenerateShader.getUniform("u_face"), face);
         glNamedFramebufferTextureLayer(data.textureFBO.getRenderID(), GL_COLOR_ATTACHMENT0, data.texture.getRenderID(), 0, face);
-        assert(data.textureFBO.isComplete());
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     data.textureFBO.attach(ogl::Cubemap{}, GL_COLOR_ATTACHMENT0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

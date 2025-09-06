@@ -1,9 +1,10 @@
 #version 330 core
 
-vec2 vertices[3] = vec2[](
+vec2 vertices[4] = vec2[](
+    vec2(-1, 1), 
+    vec2( 1, 1),
     vec2(-1,-1), 
-    vec2(3,-1), 
-    vec2(-1, 3)
+    vec2( 1,-1)
 );
 
 out vec2 v_texCoord;
