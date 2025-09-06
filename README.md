@@ -1,3 +1,7 @@
+**GOOFY CODE ALERT**
+===
+The core/ogl lib contains a horrible code that survived from the very beginning of this repo and needs to be nuked.
+
 me learning opengl
 ===
 
