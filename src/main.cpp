@@ -59,7 +59,25 @@ int main(int argc, char **argv)
     data.skybox = ogl::Cubemap{"res/textures/space.jpg"};
     model::Loader loader;
     data.cube = loader.load("res/models/cube.obj");
-    
+
+    data.texture = ogl::Cubemap{};
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &data.texture.getRenderID());
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_BASE_LEVEL, 0);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAX_LEVEL, 0);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAX_LEVEL, 0);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureStorage2D(
+        data.texture.getRenderID(),
+        1,
+        TEXTURE_FORMAT,
+        data.inputs.textureSize,
+        data.inputs.textureSize
+    );
+
     data.distance.falloff = 10;
     data.inputs.sensitivity = 0.5;
 

@@ -9,7 +9,7 @@ static void resizeColorAttachment(ogl::Framebuffer &fbo, ogl::TextureMS &texture
     if(fbo.getRenderID() != 0)
     {
         fbo.attach(texture, GL_COLOR_ATTACHMENT0);
-        // assert(fbo.isComplete());
+        assert(fbo.isComplete());
     }
 }
 static void resizeColorAttachment(ogl::Framebuffer &fbo, ogl::Texture &texture, glm::ivec2 size, GLenum attachment = GL_COLOR_ATTACHMENT0)
@@ -21,7 +21,7 @@ static void resizeColorAttachment(ogl::Framebuffer &fbo, ogl::Texture &texture, 
     if(fbo.getRenderID() != 0)
     {
         fbo.attach(texture, GL_COLOR_ATTACHMENT0);
-        // assert(fbo.isComplete());
+        assert(fbo.isComplete());
     }
 }
 
@@ -146,28 +146,8 @@ void generateTexture(Data &data)
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    if(data.texture.getRenderID() != 0)
-        glDeleteTextures(1, &data.texture.getRenderID());
-    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &data.texture.getRenderID());
-    if(data.inputs.textureSize <= 100)
-    {
-        glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    } else
-    {
-        glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    glTextureStorage2D(
-        data.texture.getRenderID(),
-        1,
-        TEXTURE_FORMAT,
-        data.inputs.textureSize,
-        data.inputs.textureSize
-    );
-
     data.cubeGenerateShader.bind();
-    glUniform1ui(data.cubeGenerateShader.getUniform("u_seed"), data.inputs.seed);
+    glUniform1f(data.cubeGenerateShader.getUniform("u_seed"), data.inputs.seed);
     glViewport(0, 0, data.inputs.textureSize, data.inputs.textureSize);
 
     ogl::Framebuffer textureFBO;

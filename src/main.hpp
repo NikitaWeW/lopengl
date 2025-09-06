@@ -50,7 +50,7 @@
 #endif
 #endif
 
-using seed_t = unsigned;
+using seed_t = float;
 
 // for a small application like this i think its fine to use a single struct as an app state
 struct Data
@@ -79,7 +79,7 @@ struct Data
     ogl::ShaderProgram gridShader;
 
     std::mt19937_64 gen;
-    std::uniform_int_distribution<seed_t> dist{0, std::numeric_limits<seed_t>::max()};
+    std::uniform_real_distribution<seed_t> dist{0, 100};
 
     model::Mesh cube;
 
@@ -103,7 +103,7 @@ struct Data
     struct Inputs {
         float sensitivity = 1;
         seed_t seed;
-        unsigned textureSize = 1024;
+        unsigned textureSize = 2048;
     } inputs;
 };
 

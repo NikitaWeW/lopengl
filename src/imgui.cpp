@@ -51,7 +51,7 @@ static void save(Data &data)
 void ui(Data &data)
 {
     ImGui::Begin(CONFIG_WINDOW_NAME.data());
-    if(ImGui::InputScalar("seed", ImGuiDataType_U32, &data.inputs.seed))
+    if(ImGui::InputFloat("seed", &data.inputs.seed))
         generateTexture(data);
     if(ImGui::Button("random seed")) 
         randomSeed(data);
@@ -59,8 +59,8 @@ void ui(Data &data)
     
     ImGui::Separator();
     
-    if(ImGui::InputScalar("size", ImGuiDataType_U32, &data.inputs.textureSize))
-        generateTexture(data);
+    // if(ImGui::InputScalar("size", ImGuiDataType_U32, &data.inputs.textureSize))
+    //     generateTexture(data);
 
     if(ImGui::Button("save"))
         save(data);

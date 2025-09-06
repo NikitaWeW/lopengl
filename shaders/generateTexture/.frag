@@ -4,7 +4,7 @@ in vec2 v_texCoord;
 out vec3 o_color;
 
 uniform uint u_face;
-uniform uint u_seed;
+uniform float u_seed;
 
 vec3 getPoint() {
     // https://www.reddit.com/r/opengl/comments/1kuayos/convert_cubemap_face_uv_to_xyz/
@@ -191,14 +191,24 @@ float cnoise(vec4 P)
   float n_xyzw = mix(n_yzw.x, n_yzw.y, fade_xyzw.x);
   return 2.2 * n_xyzw;
 }
+// white noise
+float wnoise(float x){
+    return fract(sin(dot(vec2(x, (x + 14) * 12.24), vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 
 const vec3 waterColor = vec3(0.0, 0.2, 0.47);
+const vec3 shoreColor = vec3(0.15, 0.38, 0.71);
+const vec3 sandColor  = vec3(0.82, 0.88, 0.29);
 const vec3 grassColor = vec3(0.35, 0.73, 0.0);
-const vec3 stoneColor = vec3(0.37, 0.36, 0.26);
+const vec3 stoneColor = vec3(0.63, 0.61, 0.31);
 const vec3 snowColor  = vec3(0.85);
+const vec3 iceColor   = vec3(0.42, 0.62, 0.9);
+
 void main() {
+    vec3 dir = getDir();
     vec3 xyz = getPoint();
+    float xyzID = xyz.z * xyz.y * xyz.x + xyz.y * xyz.x * xyz.x;
 
     vec3 step = vec3(1.3, 1.7, 2.1);
     float n = cnoise(vec4((xyz), u_seed));
@@ -210,10 +220,27 @@ void main() {
 
     n = n * 0.5 + 0.5;
 
-    if(n > 0.4) o_color = waterColor;
-    if(n > 0.5) o_color = grassColor;
-    if(n > 0.8) o_color = stoneColor;
-    if(n > 0.9) o_color = snowColor;
+    if(n > 0.4)   o_color = waterColor;
+    if(n > 0.49)  o_color = shoreColor;
+    if(n > 0.5)   o_color = sandColor;
+    if(n > 0.51)  o_color = grassColor;
+    if(n > 0.7)   o_color = stoneColor;
+    if(n > 0.8)   o_color = stoneColor * 0.5;
+    if(n > 0.9)   o_color = snowColor;
 
-    o_color += 0.0625 * cnoise(vec4((xyz * 8.0 - 3.0 * step), u_seed));
+    float pole = abs(dot(dir, vec3(0, 1, 0))) + 0.0625 * cnoise(vec4((xyz * 8.0 - 3.0 * step),  u_seed));
+
+    if(pole > 0.85 && o_color != waterColor)
+    {
+        o_color = stoneColor;
+    }
+    if(pole > 0.9)
+    {
+        if(o_color != waterColor)
+            o_color = snowColor;
+        else
+            o_color = iceColor;
+    }
+
+    o_color += 0.01 * wnoise(xyzID * float(u_seed));
 }
