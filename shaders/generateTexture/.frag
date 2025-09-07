@@ -4,7 +4,8 @@ in vec2 v_texCoord;
 out vec3 o_color;
 
 uniform uint u_face;
-uniform float u_seed;
+uniform uint u_seed;
+uniform bool u_spherical;
 
 vec3 getPoint() {
     // https://www.reddit.com/r/opengl/comments/1kuayos/convert_cubemap_face_uv_to_xyz/
@@ -38,10 +39,6 @@ vec3 getPoint() {
     }
     return ret;
 } 
-vec3 getDir()
-{
-    return normalize(getPoint());
-}
 
 //
 // GLSL textureless classic 4D noise "cnoise",
@@ -193,54 +190,63 @@ float cnoise(vec4 P)
 }
 // white noise
 float wnoise(float x){
-    return fract(sin(dot(vec2(x, (x + 14) * 12.24), vec2(12.9898, 78.233))) * 43758.5453);
+    return fract(sin(dot(vec2(x, fract((x + 14) * 12.24)), vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-
-const vec3 waterColor = vec3(0.0, 0.2, 0.47);
-const vec3 shoreColor = vec3(0.15, 0.38, 0.71);
+const vec3 waterColor = vec3(0.11, 0.35, 0.69);
 const vec3 sandColor  = vec3(0.82, 0.88, 0.29);
-const vec3 grassColor = vec3(0.35, 0.73, 0.0);
-const vec3 stoneColor = vec3(0.63, 0.61, 0.31);
+const vec3 grassColor = vec3(0.36, 0.65, 0.08);
+const vec3 stoneColor = vec3(0.56, 0.53, 0.47);
 const vec3 snowColor  = vec3(0.85);
 const vec3 iceColor   = vec3(0.42, 0.62, 0.9);
 
 void main() {
-    vec3 dir = getDir();
-    vec3 xyz = getPoint();
+    float seed = u_seed;
+
+    vec3 point = getPoint();
+    vec3 dir = normalize(point);
+    vec3 xyz = u_spherical ? dir : point;
     float xyzID = xyz.z * xyz.y * xyz.x + xyz.y * xyz.x * xyz.x;
 
+    float noise = wnoise(xyzID * float(seed) / 0xffffffffu);
+
     vec3 step = vec3(1.3, 1.7, 2.1);
-    float n = cnoise(vec4((xyz), u_seed));
-    n += 0.5     * cnoise(vec4((xyz * 2.0 - step),        u_seed));
-    n += 0.25    * cnoise(vec4((xyz * 4.0 - 2.0 * step),  u_seed));
-    n += 0.125   * cnoise(vec4((xyz * 8.0 - 3.0 * step),  u_seed));
-    n += 0.0625  * cnoise(vec4((xyz * 16.0 - 4.0 * step), u_seed));
-    n += 0.03125 * cnoise(vec4((xyz * 32.0 - 5.0 * step), u_seed));
+
+    float smallNoise = 0;
+    smallNoise += 0.25      * cnoise(vec4((xyz * 4.0  - 2.0 * step), seed));
+    smallNoise += 0.125     * cnoise(vec4((xyz * 8.0  - 3.0 * step), seed));
+    smallNoise += 0.0625    * cnoise(vec4((xyz * 16.0 - 4.0 * step), seed));
+    smallNoise += 0.03125   * cnoise(vec4((xyz * 32.0 - 5.0 * step), seed));
+    // smallNoise += 0.015625  * cnoise(vec4((xyz * 64.0 - 6.0 * step), seed));
+
+    float n = 0;
+    n += 1   * cnoise(vec4((xyz * 1.0 - 0.0 * step), seed));
+    n += 0.5 * cnoise(vec4((xyz * 2.0 - 1.0 * step), seed));
+    n += smallNoise;
 
     n = n * 0.5 + 0.5;
 
-    if(n > 0.4)   o_color = waterColor;
-    if(n > 0.49)  o_color = shoreColor;
-    if(n > 0.5)   o_color = sandColor;
-    if(n > 0.51)  o_color = grassColor;
-    if(n > 0.7)   o_color = stoneColor;
-    if(n > 0.8)   o_color = stoneColor * 0.5;
-    if(n > 0.9)   o_color = snowColor;
+    o_color = mix(waterColor * 0.75, waterColor, smoothstep(0, 0.4, n));
+    if(n > 0.49) o_color = sandColor;
+    if(n > 0.5) o_color = mix(
+        mix(grassColor, grassColor * 0.75, smoothstep(0.5, 0.75, n)),
+        mix(stoneColor, stoneColor * 0.75, smoothstep(0.75, 0.9, n)),
+        smoothstep(0.7, 0.9, n)
+    );
+    if(n > 0.9)
+        o_color = mix(snowColor, snowColor * 1.25, smoothstep(0.9, 1.0, n));
 
-    float pole = abs(dot(dir, vec3(0, 1, 0))) + 0.0625 * cnoise(vec4((xyz * 8.0 - 3.0 * step),  u_seed));
+    float pole = u_spherical ? abs(dot(dir, vec3(0, 1, 0))) : 1.45 - max(abs(point.x), abs(point.z));
+    pole += smallNoise;
 
-    if(pole > 0.85 && o_color != waterColor)
+    if(pole > 0.8)
     {
-        o_color = stoneColor;
-    }
-    if(pole > 0.9)
-    {
-        if(o_color != waterColor)
+        if(n > 0.4)
             o_color = snowColor;
         else
             o_color = iceColor;
+        o_color = mix(o_color, o_color * 1.25, smoothstep(0.4, 0.9, n));
     }
 
-    o_color += 0.01 * wnoise(xyzID * float(u_seed));
+    o_color += 0.03 * noise;
 }

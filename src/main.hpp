@@ -50,7 +50,7 @@
 #endif
 #endif
 
-using seed_t = float;
+using seed_t = unsigned;
 
 // for a small application like this i think its fine to use a single struct as an app state
 struct Data
@@ -78,10 +78,13 @@ struct Data
     ogl::ShaderProgram skyboxDrawShader;
     ogl::ShaderProgram gridShader;
 
-    std::mt19937_64 gen;
-    std::uniform_real_distribution<seed_t> dist{0, 100};
+    std::random_device dev;
+    std::mt19937 gen{dev()};
+    std::uniform_int_distribution<seed_t> dist{0, std::numeric_limits<seed_t>::max()};
 
+    model::Mesh *model;
     model::Mesh cube;
+    model::Mesh sphere;
 
     ogl::Framebuffer mainFBO;
     ogl::Renderbuffer mainRBO;
@@ -103,7 +106,8 @@ struct Data
     struct Inputs {
         float sensitivity = 1;
         seed_t seed;
-        unsigned textureSize = 2048;
+        unsigned textureSize = 100;
+    bool spherical = false;
     } inputs;
 };
 
@@ -112,7 +116,7 @@ constexpr std::string_view CONFIG_WINDOW_NAME = "Properties";
 constexpr float ZNEAR = 0.01;
 constexpr float ZFAR = 100;
 constexpr float CUBE_MODEL_SIZE = 1.0f; 
-constexpr unsigned TEXTURE_FORMAT = GL_RGB8;
+constexpr unsigned TEXTURE_FORMAT = GL_SRGB8;
 
 bool init(Data &data);
 void processInput(Data &data);
@@ -122,3 +126,4 @@ void drawFrame(Data &data);
 void generateTexture(Data &data);
 void randomSeed(Data &data);
 void ui(Data &data);
+void createTexture(Data &data);

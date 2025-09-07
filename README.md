@@ -1,6 +1,9 @@
 Planet texture generator
 ===
 
+![image](screenshot0.png)
+![image](screenshot1.png)
+
 A quickly put together planet texture generator (just for you, DEA__TH)
 
 ogl setup

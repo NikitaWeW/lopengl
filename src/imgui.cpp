@@ -51,7 +51,7 @@ static void save(Data &data)
 void ui(Data &data)
 {
     ImGui::Begin(CONFIG_WINDOW_NAME.data());
-    if(ImGui::InputFloat("seed", &data.inputs.seed))
+    if(ImGui::InputScalar("seed", ImGuiDataType_U32, &data.inputs.seed))
         generateTexture(data);
     if(ImGui::Button("random seed")) 
         randomSeed(data);
@@ -59,8 +59,22 @@ void ui(Data &data)
     
     ImGui::Separator();
     
-    // if(ImGui::InputScalar("size", ImGuiDataType_U32, &data.inputs.textureSize))
-    //     generateTexture(data);
+    if(ImGui::InputScalar("size", ImGuiDataType_U32, &data.inputs.textureSize))
+    {
+        data.inputs.textureSize = glm::max(1u, data.inputs.textureSize);
+        glDeleteTextures(1, &data.texture.getRenderID());
+        createTexture(data);
+        generateTexture(data);
+    }
+
+    if(ImGui::Checkbox("spherical", &data.inputs.spherical))
+    {
+        if(data.inputs.spherical)
+            data.model = &data.sphere;
+        else
+            data.model = &data.cube;
+        generateTexture(data);
+    }
 
     if(ImGui::Button("save"))
         save(data);

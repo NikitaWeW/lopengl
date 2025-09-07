@@ -110,8 +110,9 @@ void drawFrame(Data &data)
     glUniformMatrix4fv(data.cubeDrawShader.getUniform("u_viewMat"),         1, GL_FALSE, glm::value_ptr(data.viewMat));
     glUniformMatrix4fv(data.cubeDrawShader.getUniform("u_projectionMat"),   1, GL_FALSE, glm::value_ptr(data.projMat));
     
-    data.cube.vao.bind();
-    glDrawArrays(GL_TRIANGLES, 0, data.cube.count);
+    assert(data.model);
+    data.model->vao.bind();
+    glDrawArrays(GL_TRIANGLES, 0, data.model->count);
 
     // ============================================
     // draw to a display texture + post processing 
@@ -144,23 +145,29 @@ void generateTexture(Data &data)
     if(data.rdoc_api) data.rdoc_api->StartFrameCapture(NULL, NULL);
     #endif
 
+    std::cout << "\ngenerating a " << data.inputs.textureSize << "px texture with the seed: " << data.inputs.seed << "...\n";
     auto start = std::chrono::high_resolution_clock::now();
 
     data.cubeGenerateShader.bind();
-    glUniform1f(data.cubeGenerateShader.getUniform("u_seed"), data.inputs.seed);
-    glViewport(0, 0, data.inputs.textureSize, data.inputs.textureSize);
-
+    glUniform1ui(data.cubeGenerateShader.getUniform("u_seed"), data.inputs.seed);
+    glUniform1ui(data.cubeGenerateShader.getUniform("u_spherical"), data.inputs.spherical);
+    
     ogl::Framebuffer textureFBO;
     glCreateFramebuffers(1, &textureFBO.getRenderID());
     glBindFramebuffer(GL_FRAMEBUFFER, textureFBO.getRenderID());
+    glViewport(0, 0, data.inputs.textureSize, data.inputs.textureSize);
+    glDisable(GL_CULL_FACE);
+    glDepthFunc(GL_ALWAYS);
     for(unsigned face = 0; face < eqr::NUM_CUBEMAP_FACES; ++face)
     {
-        glUniform1ui(data.cubeGenerateShader.getUniform("u_face"), face);
         glNamedFramebufferTextureLayer(textureFBO.getRenderID(), GL_COLOR_ATTACHMENT0, data.texture.getRenderID(), 0, face);
         assert(textureFBO.isComplete());
         
+        glUniform1ui(data.cubeGenerateShader.getUniform("u_face"), face);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
+    glEnable(GL_CULL_FACE);
+    glNamedFramebufferTexture(textureFBO.getRenderID(), GL_COLOR_ATTACHMENT0, 0, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     auto time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() * 1.0E-3;
@@ -169,4 +176,24 @@ void generateTexture(Data &data)
     #ifdef USE_RENDERDOC
     if(data.rdoc_api) data.rdoc_api->EndFrameCapture(NULL, NULL);
     #endif
+}
+
+void createTexture(Data &data)
+{
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &data.texture.getRenderID());
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_BASE_LEVEL, 0);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAX_LEVEL, 0);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAX_LEVEL, 0);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(data.texture.getRenderID(), GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureStorage2D(
+        data.texture.getRenderID(),
+        1,
+        TEXTURE_FORMAT,
+        data.inputs.textureSize,
+        data.inputs.textureSize
+    );
 }
