@@ -53,15 +53,10 @@ void ui(Data &data)
     ImGui::Begin(CONFIG_WINDOW_NAME.data());
     if(ImGui::InputScalar("seed", ImGuiDataType_U32, &data.inputs.seed))
         generateTexture(data);
-    if(ImGui::Button("random seed")) 
-        randomSeed(data);
-
-    
-    ImGui::Separator();
     
     if(ImGui::InputScalar("size", ImGuiDataType_U32, &data.inputs.textureSize))
     {
-        data.inputs.textureSize = glm::max(1u, data.inputs.textureSize);
+        data.inputs.textureSize = glm::clamp(data.inputs.textureSize, 10u, 5000u);
         glDeleteTextures(1, &data.texture.getRenderID());
         createTexture(data);
         generateTexture(data);
@@ -69,13 +64,15 @@ void ui(Data &data)
 
     if(ImGui::Checkbox("spherical", &data.inputs.spherical))
     {
-        if(data.inputs.spherical)
-            data.model = &data.sphere;
-        else
-            data.model = &data.cube;
+        changeModel(data);
         generateTexture(data);
     }
 
+    ImGui::Separator();
+
+    if(ImGui::Button("random seed")) 
+        randomSeed(data);
+    ImGui::SameLine();
     if(ImGui::Button("save"))
         save(data);
     helpMarker("Save into the image.png as an equirectangular image (panorama)");

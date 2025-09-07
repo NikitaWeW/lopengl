@@ -60,8 +60,8 @@ int main(int argc, char **argv)
     model::Loader loader;
     data.cube = loader.load("res/models/cube.obj");
     data.sphere = loader.load("res/models/sphere.obj");
-    data.model = &data.cube;
-
+    
+    changeModel(data);
     createTexture(data);
     randomSeed(data);
 

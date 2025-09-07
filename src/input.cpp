@@ -53,14 +53,21 @@ void processInput(Data &data)
     data.deltaMouse /= glm::max<float>(data.windowSize.x, data.windowSize.y) / 1000.0f;
     data.prevMousePos = data.mousePos;
 
-    if((glfwGetKey(data.window, GLFW_KEY_LEFT)  == GLFW_PRESS) && focused) data.yawPitch.velocity.x += data.deltatime * data.inputs.sensitivity * 400.0f;
-    if((glfwGetKey(data.window, GLFW_KEY_RIGHT) == GLFW_PRESS) && focused) data.yawPitch.velocity.x -= data.deltatime * data.inputs.sensitivity * 400.0f;
-    if((glfwGetKey(data.window, GLFW_KEY_UP)    == GLFW_PRESS) && focused) data.yawPitch.velocity.y += data.deltatime * data.inputs.sensitivity * 400.0f;
-    if((glfwGetKey(data.window, GLFW_KEY_DOWN)  == GLFW_PRESS) && focused) data.yawPitch.velocity.y -= data.deltatime * data.inputs.sensitivity * 400.0f;
+    glm::vec2 vel{0};
+
+    if((glfwGetKey(data.window, GLFW_KEY_LEFT)  == GLFW_PRESS) && focused) vel.x += data.deltatime * data.inputs.sensitivity * 400.0f;
+    if((glfwGetKey(data.window, GLFW_KEY_RIGHT) == GLFW_PRESS) && focused) vel.x -= data.deltatime * data.inputs.sensitivity * 400.0f;
+    if((glfwGetKey(data.window, GLFW_KEY_UP)    == GLFW_PRESS) && focused) vel.y += data.deltatime * data.inputs.sensitivity * 400.0f;
+    if((glfwGetKey(data.window, GLFW_KEY_DOWN)  == GLFW_PRESS) && focused) vel.y -= data.deltatime * data.inputs.sensitivity * 400.0f;
     if(cameraLocked && focused) 
     {
-        data.yawPitch.velocity += glm::vec2{data.deltaMouse.x, -data.deltaMouse.y} * data.deltatime * data.inputs.sensitivity * 400.0f;
+        vel += glm::vec2{data.deltaMouse.x, -data.deltaMouse.y} * data.deltatime * data.inputs.sensitivity * 400.0f;
     }
+
+    if(glm::abs(data.yawPitch.value.y) > 90 && glm::abs(data.yawPitch.value.y) <= 270)
+        vel.x = -vel.x;
+
+    data.yawPitch.velocity += vel;
 
     updateVP(data, cameraLocked);
 }
@@ -78,6 +85,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     Data &data = *static_cast<Data *>(glfwGetWindowUserPointer(window));
     if(shouldProcessInput(data)) 
     {
+        if(key == GLFW_KEY_R && action == GLFW_PRESS)
+        {
+            rebuildShaders(data);
+            generateTexture(data);
+        }
     } else 
     {
         ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);

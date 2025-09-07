@@ -145,7 +145,7 @@ void generateTexture(Data &data)
     if(data.rdoc_api) data.rdoc_api->StartFrameCapture(NULL, NULL);
     #endif
 
-    std::cout << "\ngenerating a " << data.inputs.textureSize << "px texture with the seed: " << data.inputs.seed << "...\n";
+    std::cout << "\ngenerating a " << (data.inputs.spherical ? "spherical" : "cubical") <<  ' ' << data.inputs.textureSize << "px texture with the seed: " << data.inputs.seed << "...\n";
     auto start = std::chrono::high_resolution_clock::now();
 
     data.cubeGenerateShader.bind();
@@ -162,6 +162,7 @@ void generateTexture(Data &data)
         glNamedFramebufferTextureLayer(textureFBO.getRenderID(), GL_COLOR_ATTACHMENT0, data.texture.getRenderID(), 0, face);
         assert(textureFBO.isComplete());
         
+        glClear(GL_COLOR_BUFFER_BIT);
         glUniform1ui(data.cubeGenerateShader.getUniform("u_face"), face);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -195,4 +196,32 @@ void createTexture(Data &data)
         data.inputs.textureSize,
         data.inputs.textureSize
     );
+}
+
+void changeModel(Data &data)
+{
+    if(data.inputs.spherical)
+        data.model = &data.sphere;
+    else
+        data.model = &data.cube;
+}
+
+void rebuildShaders(Data &data)
+{
+    std::vector<ogl::ShaderProgram *> shaders{&data.cubeGenerateShader};
+    for(ogl::ShaderProgram *shader : shaders) {
+        std::cout << "\nrecompiling " << shader->getPath() << '\n';
+
+        ogl::ShaderProgram copy = *shader;
+        if(!shader->collectShaders(shader->getPath())) {
+            std::cout << shader->getPath() << ": " << shader->getLog() << '\n';
+            std::swap(*shader, copy);
+            continue;
+        };
+        if(!shader->compileShaders()) {
+            std::cout << shader->getPath() << ": " << shader->getLog() << '\n';
+            std::swap(*shader, copy);
+            continue;
+        }
+    }
 }

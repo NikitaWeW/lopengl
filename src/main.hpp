@@ -107,7 +107,7 @@ struct Data
         float sensitivity = 1;
         seed_t seed;
         unsigned textureSize = 100;
-    bool spherical = false;
+        bool spherical = false;
     } inputs;
 };
 
@@ -127,3 +127,5 @@ void generateTexture(Data &data);
 void randomSeed(Data &data);
 void ui(Data &data);
 void createTexture(Data &data);
+void changeModel(Data &data);
+void rebuildShaders(Data &data);
