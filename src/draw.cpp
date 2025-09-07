@@ -157,7 +157,6 @@ void generateTexture(Data &data)
     glBindFramebuffer(GL_FRAMEBUFFER, textureFBO.getRenderID());
     glViewport(0, 0, data.inputs.textureSize, data.inputs.textureSize);
     glDisable(GL_CULL_FACE);
-    glDepthFunc(GL_ALWAYS);
     for(unsigned face = 0; face < eqr::NUM_CUBEMAP_FACES; ++face)
     {
         glNamedFramebufferTextureLayer(textureFBO.getRenderID(), GL_COLOR_ATTACHMENT0, data.texture.getRenderID(), 0, face);
