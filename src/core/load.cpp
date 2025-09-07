@@ -175,6 +175,7 @@ static model::Mesh loadObjMesh(std::string_view path)
 }
 static model::Mesh loadGltfMesh(std::string_view path){
     assert(false && "gltf loading not implemented");
+    return model::Mesh{};
 }
 
 model::Mesh model::ObjLoader::load(std::string_view path)
