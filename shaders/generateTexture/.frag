@@ -207,7 +207,7 @@ const float waterLevel = 0.5;
 const float mountainSnowLevel = 0.9;
 const float PI = 3.14159265359;
 const float MOISTURE_DROP_RATE = 0.7;
-const float MOISTURE_NOISE_SCALE = 0.0;
+const float MOISTURE_NOISE_SCALE = 1.0;
 
 // biome colors
 const vec3 stoneColor = vec3(0.56, 0.53, 0.47);
@@ -228,7 +228,7 @@ const int ARCTIC = 4;
 const vec2 biomes[NUM_BIOMES] = vec2[NUM_BIOMES](
     //  temp   moist
     vec2(0.85, 0.15), // DESERT: hot, dry
-    vec2(0.80, 0.85), // JUNGLE: hot, wet
+    vec2(0.85, 0.90), // JUNGLE: hot, wet
     vec2(0.25, 0.35), // TUNDRA: cold, dry-ish
     vec2(0.55, 0.55), // PLAINS: temperate, medium moist
     vec2(0.10, 0.10)  // ARCTIC: cold, dry
@@ -236,11 +236,13 @@ const vec2 biomes[NUM_BIOMES] = vec2[NUM_BIOMES](
 
 float[NUM_BIOMES] getBiomeMask(float temp, float moist)
 {
+    vec2 point = vec2(temp, moist);
+
     float weights[NUM_BIOMES];
     float sumW = 0.0;
 
     for (int i = 0; i < NUM_BIOMES; ++i) {
-        float d = distance(vec2(temp, moist), biomes[i]);
+        float d = distance(point, biomes[i]);
         float w = exp(- (d * d) / 0.05);
         weights[i] = w;
         sumW += w;
@@ -308,7 +310,7 @@ void main() {
     float noise_w = wnoise(xyzID * float(seed) / 0xffffffffu);
     float noise_t = fbm(vec4(xyz, seed), 0.25, 6);
     float noise_h = fbm(vec4(xyz, seed+1));
-    float noise_m = fbm(vec4(xyz * 0.05 + vec3(100.0), seed+2));
+    float noise_m = fbm(vec4(xyz * 0.25, seed+2));
 
     float latitude;
     if(u_spherical) 
@@ -322,7 +324,7 @@ void main() {
     float height = noise_h * 0.5 + 0.5;
 
     // set the temperature and moisture
-    float temp = (1 - latitude + noise_t) * smoothstep(1, 0.8, height);
+    float temp = (1 - latitude) * smoothstep(1, 0.8, height) + noise_t;
     float moist = getMoisture(latitude, height, noise_m);
 
     // set the biome
@@ -355,10 +357,21 @@ void main() {
         );
         
         color = water;
+
+        if(height >= waterLevel - 0.012) // beaches
+        {
+            color = 
+                vec3(0.74, 0.65, 0.38) * biome[DESERT] +
+                vec3(0.47, 0.41, 0.24) * biome[JUNGLE] +
+                vec3(0.83, 0.74, 0.47) * biome[PLAINS] +
+                tundraColor            * biome[TUNDRA] +
+                arcticColor            * biome[ARCTIC];
+        }
     }
 
     color += 0.03 * noise_w;
     // color = debugBiome(biome);
+    // color = vec3(noise_m);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     
