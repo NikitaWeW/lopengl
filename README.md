@@ -6,6 +6,15 @@ Planet texture generator
 
 A quickly put together planet texture generator (just for you, DEA__TH)
 
+Feature list
+---
+
+- spherical and cubical representation
+- uint32 seed
+- procedural generation
+- dynamic biomes
+- variable resolution
+
 ogl setup
 ===
 

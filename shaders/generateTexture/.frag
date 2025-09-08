@@ -207,13 +207,13 @@ const float waterLevel = 0.5;
 const float mountainSnowLevel = 0.9;
 const float PI = 3.14159265359;
 const float MOISTURE_DROP_RATE = 0.7;
-const float MOISTURE_NOISE_SCALE = 1.0;
+const float CLIMATE_NOISE_SCALE = 0.25;
 
 // biome colors
 const vec3 stoneColor = vec3(0.56, 0.53, 0.47);
 
 const vec3 desertColor = vec3(0.85, 0.76, 0.49); const vec3 desertWaterColor = vec3(0.20, 0.45, 0.40);
-const vec3 jungleColor = vec3(0.13, 0.45, 0.18); const vec3 jungleWaterColor = vec3(0.08, 0.25, 0.20);
+const vec3 jungleColor = vec3(0.13, 0.45, 0.18); const vec3 jungleWaterColor = vec3(0.18, 0.41, 0.36);
 const vec3 tundraColor = vec3(0.50, 0.55, 0.45); const vec3 tundraWaterColor = vec3(0.25, 0.40, 0.50);
 const vec3 plainsColor = vec3(0.36, 0.65, 0.20); const vec3 plainsWaterColor = vec3(0.15, 0.45, 0.55);
 const vec3 arcticColor = vec3(0.85, 0.88, 0.92); const vec3 arcticWaterColor = vec3(0.55, 0.75, 0.85);
@@ -275,7 +275,7 @@ vec3 waterDepth(vec3 waterCol, float h)
 float getMoisture(float lat01, float height01, float noiseSample) {
     float mLat = (1.1 - lat01);
     float mAlt = exp(-height01 * MOISTURE_DROP_RATE);
-    float m = mLat * mAlt + noiseSample * MOISTURE_NOISE_SCALE;
+    float m = mLat * mAlt + noiseSample;
     return clamp(m, 0.0, 1.0);
 }
 
@@ -324,8 +324,8 @@ void main() {
     float height = noise_h * 0.5 + 0.5;
 
     // set the temperature and moisture
-    float temp = (1 - latitude) * smoothstep(1, 0.8, height) + noise_t;
-    float moist = getMoisture(latitude, height, noise_m);
+    float temp = smoothstep(0.1, 1, 1 - latitude) * smoothstep(1, 0.8, height) + CLIMATE_NOISE_SCALE * noise_t;
+    float moist = getMoisture(latitude, height, CLIMATE_NOISE_SCALE * noise_m);
 
     // set the biome
     float[NUM_BIOMES] biome = getBiomeMask(temp, moist);
