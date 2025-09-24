@@ -1,9 +1,11 @@
 #include "load.hpp"
 #include "tiny_obj_loader.h"
 #include "glm/glm.hpp"
+#include "stb_image.h"
 
 #include <vector>
 #include <iostream>
+#include <filesystem>
 
 std::string_view getExtension(std::string_view path)
 {
@@ -11,15 +13,15 @@ std::string_view getExtension(std::string_view path)
         return path.substr(path.find_last_of(".") + 1);
     return "";
 }
-texture::Texture loadTextureIfExists(std::string_view path, std::string_view type)
+ogl::Texture loadTextureIfExists(std::string_view path, std::string_view type)
 {
     if(path != "") 
         return texture::load(path, type);
     else 
-        return texture::Texture{};
+        return ogl::Texture{};
 }
 
-static model::Mesh loadObjMesh(std::string_view path)
+model::Mesh model::ObjLoader::load(std::string_view path)
 {
     tinyobj::ObjReaderConfig config;
     config.mtl_search_path = "./";
@@ -129,61 +131,52 @@ static model::Mesh loadObjMesh(std::string_view path)
         }
     }
 
-    // fill the vbo
-
-    mesh.vbo = ogl::VertexBuffer{
-        positions.size() * sizeof(decltype(positions[0])) +
-        normals.size()   * sizeof(decltype(normals[0])) +
-        texcoords.size() * sizeof(decltype(texcoords[0])) +
-        tangents.size() * sizeof(decltype(tangents[0]))
+    mesh.buffers = {
+        .positions = ogl::makeBuffer<ogl::VBO>(positions),
+        .texCoords = ogl::makeBuffer<ogl::VBO>(texcoords),
+        .normals   = ogl::makeBuffer<ogl::VBO>(normals),
+        .tangents  = ogl::makeBuffer<ogl::VBO>(tangents),
     };
 
-    glNamedBufferSubData(mesh.vbo.getRenderID(), 
-        0, 
-        positions.size() * sizeof(decltype(positions[0])), 
-        positions.data()
-    );
-    glNamedBufferSubData(mesh.vbo.getRenderID(), 
-        positions.size() * sizeof(decltype(positions[0])), 
-        normals.size()   * sizeof(decltype(normals[0])),
-        normals.data()
-    );
-    glNamedBufferSubData(mesh.vbo.getRenderID(), 
-            positions.size() * sizeof(decltype(positions[0])) + 
-            normals.size()   * sizeof(decltype(normals[0])), 
-        texcoords.size() * sizeof(decltype(texcoords[0])),
-        texcoords.data()
-    );
-    glNamedBufferSubData(mesh.vbo.getRenderID(), 
-            positions.size() * sizeof(decltype(positions[0])) + 
-            normals.size()   * sizeof(decltype(normals[0])) + 
-            texcoords.size() * sizeof(decltype(texcoords[0])), 
-        tangents.size() * sizeof(decltype(tangents[0])),
-        tangents.data()
-    );
-    
-    mesh.vbLayout = {
-        /* 0. posiitons  */ { 3, GL_FLOAT, 0 },
-        /* 1. normals    */ { 3, GL_FLOAT, positions.size() * sizeof(decltype(positions[0])) },
-        /* 2. tex coords */ { 2, GL_FLOAT, positions.size() * sizeof(decltype(positions[0])) + normals.size() * sizeof(decltype(normals[0])) },
-        /* 3. tangents   */ { 3, GL_FLOAT, positions.size() * sizeof(decltype(positions[0])) + normals.size() * sizeof(decltype(normals[0])) + texcoords.size() * sizeof(decltype(texcoords[0]))} 
-    };
+    glCreateVertexArrays(1, &mesh.vao.id);
 
-    mesh.vao = ogl::VertexArray{mesh.vbo, mesh.vbLayout};
+    constexpr GLuint BIND_POS = 0;
+    constexpr GLuint BIND_NORM = 1;
+    constexpr GLuint BIND_TEX = 2;
+    constexpr GLuint BIND_TAN = 3;
+
+    glVertexArrayVertexBuffer(mesh.vao.id, BIND_POS,  mesh.buffers.positions.id, 0, sizeof(glm::vec3));
+    glVertexArrayVertexBuffer(mesh.vao.id, BIND_NORM, mesh.buffers.normals  .id, 0, sizeof(glm::vec3));
+    glVertexArrayVertexBuffer(mesh.vao.id, BIND_TEX,  mesh.buffers.texCoords.id, 0, sizeof(glm::vec2));
+    glVertexArrayVertexBuffer(mesh.vao.id, BIND_TAN,  mesh.buffers.tangents .id, 0, sizeof(glm::vec3));
+
+    glEnableVertexArrayAttrib(mesh.vao.id, 0);
+    glVertexArrayAttribFormat(mesh.vao.id, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(mesh.vao.id, 0, BIND_POS);
+
+    glEnableVertexArrayAttrib(mesh.vao.id, 1);
+    glVertexArrayAttribFormat(mesh.vao.id, 1, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(mesh.vao.id, 1, BIND_NORM);
+
+    glEnableVertexArrayAttrib(mesh.vao.id, 2);
+    glVertexArrayAttribFormat(mesh.vao.id, 2, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(mesh.vao.id, 2, BIND_TEX);
+
+    glEnableVertexArrayAttrib(mesh.vao.id, 3);
+    glVertexArrayAttribFormat(mesh.vao.id, 3, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(mesh.vao.id, 3, BIND_TAN);
+
+    glVertexArrayBindingDivisor(mesh.vao.id, BIND_POS,  0);
+    glVertexArrayBindingDivisor(mesh.vao.id, BIND_NORM, 0);
+    glVertexArrayBindingDivisor(mesh.vao.id, BIND_TEX,  0);
+    glVertexArrayBindingDivisor(mesh.vao.id, BIND_TAN,  0);
 
     return mesh;
 }
-static model::Mesh loadGltfMesh(std::string_view path){
-    assert(false && "gltf loading not implemented");
-}
-
-model::Mesh model::ObjLoader::load(std::string_view path)
-{
-    return loadObjMesh(path);
-}
 model::Mesh model::GltfLoader::load(std::string_view path)
 {
-    return loadGltfMesh(path);
+    assert(false && "gltf loading not implemented");
+    return model::Mesh{};
 }
 
 model::Loader::Loader()
@@ -208,7 +201,14 @@ model::Mesh model::Loader::load(std::string_view path)
     return m_loaders.at(extension)->load(path);
 }
 
-texture::Texture texture::load(std::string_view path, std::string_view type)
+ogl::Texture texture::load(std::string_view path, std::string_view type)
 {
-    return ogl::Texture{path, false, type == "diffuse", std::string{type}};
+    int width = 0, height = 0, numChannels = 0;
+    float *buff = stbi_loadf(path.data(), &width, &height, &numChannels, 4);
+    assert(buff);
+
+    ogl::Texture texture = ogl::makeTexture(Bitmap{(unsigned) width, (unsigned) height, 4, buff}, type == "diffuse");
+    stbi_image_free(buff);
+
+    return texture;
 }

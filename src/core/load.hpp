@@ -1,14 +1,11 @@
 #pragma once
 
-#include "core/ogl/Shader.hpp"
-#include "core/ogl/VertexBuffer.hpp"
-#include "core/ogl/Texture.hpp"
+#include "ogl.hpp"
 #include "glm/glm.hpp"
 
 namespace texture
 {
-    using Texture = ogl::Texture;
-    Texture load(std::string_view path, std::string_view type);
+    ogl::Texture load(std::string_view path, std::string_view type);
 } // namespace texture
 
 namespace model
@@ -26,21 +23,27 @@ namespace model
     };
     struct MaterialTextures
     {
-        texture::Texture ambient;
-        texture::Texture diffuse;
-        texture::Texture specular;
-        texture::Texture bump;
-        texture::Texture displacement;
-        texture::Texture alpha;
-        texture::Texture reflection;
+        ogl::Texture ambient;
+        ogl::Texture diffuse;
+        ogl::Texture specular;
+        ogl::Texture bump;
+        ogl::Texture displacement;
+        ogl::Texture alpha;
+        ogl::Texture reflection;
     };
     struct Mesh
     {
+        struct VertexBuffers
+        {
+            ogl::VBO positions;
+            ogl::VBO texCoords;
+            ogl::VBO normals;
+            ogl::VBO tangents;
+        } buffers;
+
         Material material;
         MaterialTextures textures;
-        ogl::VertexBuffer vbo;
-        ogl::VertexArray vao;
-        ogl::VertexBufferLayout vbLayout;
+        ogl::VAO vao;
         unsigned count = 0;
     };
     

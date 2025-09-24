@@ -23,7 +23,7 @@ const vec2 texCoords[4] = vec2[4](
 );
 
 const float gridSize = 50;
-const float gridHeight = -0.2;
+const float gridHeight = -2;
 const float EPSILON = 1e-3;
 const float gridTiling = 0.1;
 

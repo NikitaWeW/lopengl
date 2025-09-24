@@ -116,7 +116,7 @@ bool init(GLFWwindow** window) {
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 
-    *window = glfwCreateWindow(640, 480, "breakout", NULL, NULL);
+    *window = glfwCreateWindow(640, 480, "ogl setup", NULL, NULL);
     if (!*window) {
         std::cout << "ERROR: failed to init the window!\n";
         return false;

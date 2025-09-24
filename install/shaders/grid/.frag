@@ -2,7 +2,7 @@
 out vec4 o_color;
 in vec2 v_texCoord;
 
-uniform vec4 u_color = vec4(1);
+uniform vec4 u_color = vec4(0.7);
 
 in VS_OUT {
     vec3 fragmentPosition;
