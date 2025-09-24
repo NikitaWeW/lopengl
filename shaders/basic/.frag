@@ -8,9 +8,7 @@ in VS_OUT {
     flat mat3 TBN;
 } fs_in;
 
-layout(binding = 0) uniform sampler2D u_diffuse;
-
 void main()
 {
-    o_color = texture(u_diffuse, fs_in.texCoords);
+    o_color = vec4(0.17, 0.71, 0.3, 1.0);
 }
