@@ -8,7 +8,9 @@ in VS_OUT {
     flat mat3 TBN;
 } fs_in;
 
+uniform vec3 sunPos;
+
 void main()
 {
-    o_color = vec4(0.17, 0.71, 0.3, 1.0);
+    o_color = vec4(0.08, 0.25, 0.13, 1.0) * max(0, dot(normalize(sunPos), normalize(fs_in.fragPos)));
 }

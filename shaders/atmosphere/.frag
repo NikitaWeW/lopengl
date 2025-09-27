@@ -4,8 +4,8 @@ Copyright (c) 2025 Nikita Martynau (MIT license: https://opensource.org/license/
 
 #version 330
 
-uniform float PlanetSize = 1;
-uniform float AtmosphereSize = 1.; // relative to planetSize
+uniform float PlanetSize = 100;
+uniform float AtmosphereSize = 15; // relative to planetSize
 
 in vec3 camPosLocalSpace;
 in vec3 sunPosLocalSpace;
@@ -109,14 +109,14 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 	float invsamp = 1. / (numViewSamples - 1.);
 
 	vec3 step = indir * invsamp;
-	vec3 lightin;
+	vec3 lightin = vec3(0);
 	vec3 inpoint = at(ray,raysphere(ray,outcube).x);
 
 	vec3 scattervals = 400. / WaveLength;
 	scattervals *= scattervals;
 	scattervals *= scattervals * ScatterStrength;
 
-	float veiwoptdepth;
+	float veiwoptdepth = 0;
 
 	for(float i = 0.; i < numViewSamples; i++) {
 		float densityhere;

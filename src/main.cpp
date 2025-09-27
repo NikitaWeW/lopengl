@@ -35,8 +35,10 @@ int main(int argc, char **argv) {
 
     float deltatime = 0.1;
     ControllableCamera camera{window};
-    camera.position.z = 3;
-    camera.speed = 0.5;
+    camera.position.z = 150;
+    camera.speed = 75;
+    camera.near = 0.1;
+    camera.far = 1000;
     glfwSetWindowUserPointer(window, &camera);
     model::Loader loader;
     auto model = loader.load("res/models/sphere.obj");
@@ -52,8 +54,8 @@ int main(int argc, char **argv) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const float planetSize = 1;
-    const float atmosphereSize = 1;
+    const float planetSize = 100;
+    const float atmosphereSize = 15;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -70,9 +72,10 @@ int main(int argc, char **argv) {
         glDisable(GL_CULL_FACE);
         glUniformMatrix4fv(ogl::getUniform(gridShader, "u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
         glUniformMatrix4fv(ogl::getUniform(gridShader, "u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-        sunPos = glm::vec3(glm::cos(time), glm::cos(time * 0.1), glm::sin(time));
+        sunPos = glm::normalize(glm::vec3(glm::cos(time), 0, glm::sin(time))) * 10.0f;
+        // sunPos = glm::normalize(glm::vec3(glm::cos(time), glm::cos(time * 0.1), glm::sin(time))) * 10.0f;
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -80,20 +83,23 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_modelMat"),      1, GL_FALSE, glm::value_ptr(mm{}.scale(glm::vec3{planetSize}).get()));
+        glUniform3fv(      ogl::getUniform(planetShader, "sunPos"), 1, glm::value_ptr(sunPos));
 
         glBindVertexArray(model.vao.id);
         glDrawArrays(GL_TRIANGLES, 0, model.count);
         
         glCullFace(GL_FRONT);
+        glDisable(GL_DEPTH_TEST);
         glUseProgram(atmosphereShader.id);
         glUniformMatrix4fv(ogl::getUniform(atmosphereShader, "ViewMatrix"),        1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
         glUniformMatrix4fv(ogl::getUniform(atmosphereShader, "ProjMat"),           1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
         glUniformMatrix4fv(ogl::getUniform(atmosphereShader, "ModelMat"),          1, GL_FALSE, glm::value_ptr(mm{}.scale(glm::vec3{planetSize + atmosphereSize}).get()));
         glUniform3fv(      ogl::getUniform(atmosphereShader, "SS_CameraPosition"), 1, glm::value_ptr(camera.position));
         glUniform3fv(      ogl::getUniform(atmosphereShader, "LightPosition"), 1, glm::value_ptr(sunPos));
-
+        
         glBindVertexArray(model.vao.id);
         glDrawArrays(GL_TRIANGLES, 0, model.count);
+        glEnable(GL_DEPTH_TEST);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
