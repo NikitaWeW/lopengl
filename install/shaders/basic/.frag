@@ -12,5 +12,6 @@ uniform vec3 sunPos;
 
 void main()
 {
-    o_color = vec4(0.08, 0.25, 0.13, 1.0) * max(0, dot(normalize(sunPos), normalize(fs_in.fragPos)));
+    o_color = vec4(0.15, 0.62, 0.29, 1.0);
+    o_color.xyz *= max(0, dot(normalize(sunPos), normalize(fs_in.fragPos)));
 }

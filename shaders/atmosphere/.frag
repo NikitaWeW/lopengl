@@ -24,7 +24,7 @@ uniform float sunsetcof = 19.0;
 uniform vec4 skycorrpowday = vec4(0.7,0.9,0.3,0.5);
 uniform vec4 skycorrmulday = vec4(1.2,0.9,2.5,1.2);
 
-uniform vec4 skycorrpowset = vec4(1.2,1.4,0.9,1.1);
+uniform vec4 skycorrpowset = vec4(1.2,1.0,0.9,1.1);
 uniform vec4 skycorrmulset = vec4(0.8,0.6,1.3,1.2);
 
 struct Ray
@@ -38,8 +38,15 @@ struct AABB
 	vec3 max;
 };
 
-vec2 rayAABB(Ray ray, AABB aabb)
+vec2 rayAABB(Ray ray, float cubeside)
 {
+	AABB aabb;
+	aabb.max = vec3(cubeside);
+	aabb.min = -aabb.max;
+
+	// ray.origin = vec3(mm * vec4(ray.origin, 1));
+	// ray.direction = vec3(mm * vec4(ray.direction, 0));
+
 	if(ray.direction == vec3(0)) return vec2(-1);
 	vec3 rayInvDir = 1 / ray.direction;
 	vec3 tMin = (aabb.min - ray.origin) * rayInvDir;
@@ -61,30 +68,28 @@ vec3 at(Ray ray, float t)
 	return t * ray.direction + ray.origin;
 }
 
-vec2 raysphere(Ray ray,float rad) {
-    float a = dot(ray.direction,ray.direction);
-    float b = dot(ray.origin,ray.direction)*2.;
-    float c = dot(ray.origin,ray.origin)-rad*rad;
-    float det = b*b-4.*a*c;
-    if(det < 0.) {
-        return vec2(-1);
-    }
-    vec2 res = (vec2(-1,1)*sqrt(det)-b)/(a+a);
-    if(res.y < 0.) {
-        return vec2(-1);
-    }
-    return max(res,vec2(0));
-}
-
 vec3 cubeshellintersect(Ray ray,float innercube,float outercube) {
-	float innerclamp = raysphere(ray,innercube).x;
+	float innerclamp = rayAABB(ray,innercube).x;
 	innerclamp -= min(innerclamp,0.) * 1000.;
-	vec2 k = raysphere(ray,outercube);
+	vec2 k = rayAABB(ray,outercube);
 	return ray.direction * (min(k.y,innerclamp) - k.x) * 0.9999;
+}
+float max3(vec3 v)
+{
+	return max(max(v.x, v.y), v.z);
+}
+// float box(vec3 position, vec3 halfSize, float cornerRadius) {
+//    position = abs(position) - halfSize + cornerRadius;
+//    return length(max(position, 0.0)) + min(max(max(position.x, position.y), position.z), 0.0) - cornerRadius;
+// }
+float height(vec3 p) {
+	return max3(abs(p));
+    // float cornerRadius = 0.1;
+    // return box(p, vec3(0.5), cornerRadius);
 }
 
 float densityat(vec3 p,float irad,float f) {
-	float height = (length(p) - irad)  / (0.5 - irad);
+	float height = (height(p) - irad)  / (0.5 - irad);
 	return exp(-height * f) * (1. - height);
 }
 
@@ -110,7 +115,7 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 
 	vec3 step = indir * invsamp;
 	vec3 lightin = vec3(0);
-	vec3 inpoint = at(ray,raysphere(ray,outcube).x);
+	vec3 inpoint = at(ray,rayAABB(ray,outcube).x);
 
 	vec3 scattervals = 400. / WaveLength;
 	scattervals *= scattervals;
@@ -130,7 +135,7 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 
 		sunray.origin = inpoint;
 		sunray.direction = dir;
-		vec2 k = raysphere(sunray,outcube);
+		vec2 k = rayAABB(sunray,outcube);
 		sunrayin = dir * (k.y - k.x) * 0.9999 * invsamp;
 		sunoptdepth = opticaldepth(inpoint,sunrayin,h,DensityFalloff) * length(sunrayin);
 		transmittance = exp(-(sunoptdepth + veiwoptdepth) * scattervals);
@@ -139,6 +144,7 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 		inpoint += step;
 	}
 	lightin *= scattervals * 1.6;
+	// return vec4(vec3(veiwoptdepth), 1);
 	return vec4(lightin,max(lightin.x,max(lightin.y,lightin.z)));
 }
 
@@ -152,24 +158,13 @@ vec2 settings(vec3 p, vec3 l) {
 
 void main()
 {
-	float h = PlanetSize / (PlanetSize + AtmosphereSize) * 0.5;
 	Ray ray; // in the atmosphere local space
 	vec3 raydir = normalize(fragPosLocalSpace - camPosLocalSpace);
 	vec3 raypos = camPosLocalSpace;
 	ray.direction = raydir;
 	ray.origin = raypos;
-	AABB cubein;
-	AABB cubeout;
-	cubein.max = vec3(h);
-	cubeout.max = vec3(0.5);
-	cubein.min = -cubein.max;
-	cubeout.min = -cubeout.max;
-	vec2 intin = rayAABB(ray,cubein);
-	vec2 intout = rayAABB(ray,cubeout);
-	float t1 = intout.x;
 
 	vec2 s = settings(ray.origin,normalize(sunPosLocalSpace));
-	
 
 	fragColor = atmosphere(
 	ray,
@@ -177,6 +172,18 @@ void main()
 	distribu,
 	sunsetcof
 	);
-	// fragColor.xyz /= fragColor.a;
-	// fragColor = mix(fragColor,mix(pow(fragColor,skycorrpowset),pow(fragColor,skycorrpowday),s.y),s.x) * mix(vec4(1.),mix(skycorrmulset,skycorrmulday,s.y),s.x);
+	fragColor.xyz /= fragColor.a;
+	fragColor = mix(
+		fragColor,
+		mix(
+			pow(fragColor,skycorrpowset),
+			pow(fragColor,skycorrpowday),
+			s.y
+		),
+		s.x
+	) * mix(
+		vec4(1.),
+		mix(skycorrmulset,skycorrmulday,s.y),
+		s.x
+	);
 }
