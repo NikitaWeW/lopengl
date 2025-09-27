@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        sunPos = glm::normalize(glm::vec3(glm::cos(time*0.1), 0, glm::sin(time*0.1))) * 10.0f;
-        // sunPos = glm::normalize(glm::vec3(glm::cos(time), glm::cos(time * 0.1) * 0.1, glm::sin(time))) * 10.0f;
+        // sunPos = glm::normalize(glm::vec3(glm::cos(time*0.1), 0, glm::sin(time*0.1))) * 10.0f;
+        sunPos = glm::normalize(glm::vec3(glm::cos(time), 0, glm::sin(time))) * 10.0f;
 
         glUseProgram(planetShader.id);
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));

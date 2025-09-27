@@ -27,6 +27,8 @@ uniform vec4 skycorrmulday = vec4(1.2,0.9,2.5,1.2);
 uniform vec4 skycorrpowset = vec4(1.2,1.0,0.9,1.1);
 uniform vec4 skycorrmulset = vec4(0.8,0.6,1.3,1.2);
 
+uniform float cornerRadius = 0.1;
+
 struct Ray
 {
 	vec3 origin;
@@ -62,21 +64,26 @@ vec2 rayAABB(Ray ray, float cubeside)
 	vec2(tNear, tFar)) :
 	vec2(-1, -1);
 }
-
+float max3(vec3 v)
+{
+	return max(max(v.x, v.y), v.z);
+}
 vec3 at(Ray ray, float t)
 {
 	return t * ray.direction + ray.origin;
 }
+vec2 intersect(Ray ray, float side)
+{
+	vec2 box = rayAABB(ray, side);
+	// TODO: maybe rounded cube?
+	return box;
+}
 
 vec3 cubeshellintersect(Ray ray,float innercube,float outercube) {
-	float innerclamp = rayAABB(ray,innercube).x;
+	float innerclamp = intersect(ray,innercube).x;
 	innerclamp -= min(innerclamp,0.) * 1000.;
-	vec2 k = rayAABB(ray,outercube);
+	vec2 k = intersect(ray,outercube);
 	return ray.direction * (min(k.y,innerclamp) - k.x) * 0.9999;
-}
-float max3(vec3 v)
-{
-	return max(max(v.x, v.y), v.z);
 }
 // float box(vec3 position, vec3 halfSize, float cornerRadius) {
 //    position = abs(position) - halfSize + cornerRadius;
@@ -84,8 +91,10 @@ float max3(vec3 v)
 // }
 float height(vec3 p) {
 	return max3(abs(p));
-    // float cornerRadius = 0.1;
-    // return box(p, vec3(0.5), cornerRadius);
+	// float r = 0.5;
+    // float sd = box(p, vec3(1), r);
+    // float sd0 = box(vec3(0), vec3(1), r);
+    // return sd - sd0;
 }
 
 float densityat(vec3 p,float irad,float f) {
@@ -115,7 +124,7 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 
 	vec3 step = indir * invsamp;
 	vec3 lightin = vec3(0);
-	vec3 inpoint = at(ray,rayAABB(ray,outcube).x);
+	vec3 inpoint = at(ray,intersect(ray,outcube).x);
 
 	vec3 scattervals = 400. / WaveLength;
 	scattervals *= scattervals;
@@ -135,7 +144,7 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 
 		sunray.origin = inpoint;
 		sunray.direction = dir;
-		vec2 k = rayAABB(sunray,outcube);
+		vec2 k = intersect(sunray,outcube);
 		sunrayin = dir * (k.y - k.x) * 0.9999 * invsamp;
 		sunoptdepth = opticaldepth(inpoint,sunrayin,h,DensityFalloff) * length(sunrayin);
 		transmittance = exp(-(sunoptdepth + veiwoptdepth) * scattervals);
@@ -144,7 +153,6 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 		inpoint += step;
 	}
 	lightin *= scattervals * 1.6;
-	// return vec4(vec3(veiwoptdepth), 1);
 	return vec4(lightin,max(lightin.x,max(lightin.y,lightin.z)));
 }
 
