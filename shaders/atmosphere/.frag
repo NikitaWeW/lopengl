@@ -111,6 +111,11 @@ float opticaldepth(vec3 p,vec3 dp,float irad, float f) {
 	return tdenst;
 }
 
+float planeHeight(vec3 planePos, vec3 planeNorm, vec3 p)
+{
+	return dot(planeNorm, p - planePos);
+}
+
 vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 	float outcube = 0.5;
 
@@ -139,8 +144,10 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 		vec3 transmittance;
 		Ray sunray;
 
+		float stupidLittleCutoffThatHeReallyNeeds = smoothstep(0.0, 0.1, planeHeight(vec3(0), normalize(sunPosLocalSpace), inpoint));
+
 		densityhere = densityat(inpoint,h,DensityFalloff) * length(step);
-		veiwoptdepth += densityhere;
+		veiwoptdepth += densityhere * stupidLittleCutoffThatHeReallyNeeds;
 
 		sunray.origin = inpoint;
 		sunray.direction = dir;
@@ -149,7 +156,7 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 		sunoptdepth = opticaldepth(inpoint,sunrayin,h,DensityFalloff) * length(sunrayin);
 		transmittance = exp(-(sunoptdepth + veiwoptdepth) * scattervals);
 
-		lightin += densityhere * transmittance;
+		lightin += densityhere * transmittance * stupidLittleCutoffThatHeReallyNeeds;
 		inpoint += step;
 	}
 	lightin *= scattervals * 1.6;
