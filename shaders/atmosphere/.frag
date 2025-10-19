@@ -13,12 +13,12 @@ in vec3 fragPosLocalSpace;
 
 out vec4 fragColor;
 
-const float numLightSamples = 3;
-const float numViewSamples = 5;
+const float numLightSamples = 10;
+const float numViewSamples = 20;
 
 uniform vec3 WaveLength = vec3(700,540,440);
 
-uniform float distribu = 2.5;
+uniform float distribu = 3.0;
 uniform float sunsetcof = 19.0;
 
 uniform vec4 skycorrpowday = vec4(0.7,0.9,0.3,0.5);
@@ -26,6 +26,8 @@ uniform vec4 skycorrmulday = vec4(1.2,0.9,2.5,1.2);
 
 uniform vec4 skycorrpowset = vec4(1.2,1.0,0.9,1.1);
 uniform vec4 skycorrmulset = vec4(0.8,0.6,1.3,1.2);
+
+uniform vec4 skycorrmulspace = vec4(1.0, 1.0, 1.0,1.0);
 
 uniform float cornerRadius = 0.1;
 
@@ -138,23 +140,19 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 	float veiwoptdepth = 0;
 
 	for(float i = 0.; i < numViewSamples; i++) {
-		float densityhere;
-		vec3 sunrayin;
-		float sunoptdepth;
-		vec3 transmittance;
 		Ray sunray;
 
-		float stupidLittleCutoffThatHeReallyNeeds = smoothstep(0.0, 0.1, planeHeight(vec3(0), normalize(sunPosLocalSpace), inpoint));
+		float stupidLittleCutoffThatHeReallyNeeds = smoothstep(-0.5, 0.1, planeHeight(vec3(0), normalize(sunPosLocalSpace), inpoint));
 
-		densityhere = densityat(inpoint,h,DensityFalloff) * length(step);
-		veiwoptdepth += densityhere * stupidLittleCutoffThatHeReallyNeeds;
+		float densityhere = densityat(inpoint,h,DensityFalloff) * length(step);
+		veiwoptdepth += densityhere;
 
 		sunray.origin = inpoint;
 		sunray.direction = dir;
 		vec2 k = intersect(sunray,outcube);
-		sunrayin = dir * (k.y - k.x) * 0.9999 * invsamp;
-		sunoptdepth = opticaldepth(inpoint,sunrayin,h,DensityFalloff) * length(sunrayin);
-		transmittance = exp(-(sunoptdepth + veiwoptdepth) * scattervals);
+		vec3 sunrayin = dir * (k.y - k.x) * invsamp;
+		float sunoptdepth = opticaldepth(inpoint,sunrayin,h,DensityFalloff) * length(sunrayin);
+		vec3 transmittance = exp(-(sunoptdepth + veiwoptdepth) * scattervals);
 
 		lightin += densityhere * transmittance * stupidLittleCutoffThatHeReallyNeeds;
 		inpoint += step;
@@ -165,9 +163,8 @@ vec4 atmosphere(Ray ray, vec3 dir,float DensityFalloff,float ScatterStrength) {
 
 vec2 settings(vec3 p, vec3 l) {
 	float h = PlanetSize / (PlanetSize + AtmosphereSize) * 0.5;
-	float a = 1. / (max(length(p) - h,0.) * 20. + 1.);
-	a *= a;
-	float b = clamp(dot(normalize(p),l) * 5.3,0.,1.);
+	float a = 1. / pow(max(length(p) - h,0.) * 20. + 1., 2);
+	float b = clamp(dot(normalize(p),normalize(l)) * 5.3,0.,1.);
 	return vec2(a,b);
 }
 
@@ -179,7 +176,7 @@ void main()
 	ray.direction = raydir;
 	ray.origin = raypos;
 
-	vec2 s = settings(ray.origin,normalize(sunPosLocalSpace));
+	vec2 s = settings(ray.origin,sunPosLocalSpace);
 
 	fragColor = atmosphere(
 	ray,
@@ -197,8 +194,10 @@ void main()
 		),
 		s.x
 	) * mix(
-		vec4(1.),
+		skycorrmulspace,
 		mix(skycorrmulset,skycorrmulday,s.y),
 		s.x
 	);
+
+	fragColor = 1 - exp(-fragColor); // hdr tonemapping
 }

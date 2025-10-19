@@ -2,6 +2,7 @@
 #include "tiny_obj_loader.h"
 #include "glm/glm.hpp"
 #include "stb_image.h"
+#include "equirect.hpp"
 
 #include <vector>
 #include <iostream>
@@ -205,10 +206,27 @@ ogl::Texture texture::load(std::string_view path, std::string_view type)
 {
     int width = 0, height = 0, numChannels = 0;
     float *buff = stbi_loadf(path.data(), &width, &height, &numChannels, 4);
-    assert(buff);
+    if(!buff)
+    {
+        std::cout << stbi_failure_reason();
+        return ogl::Texture{};
+    }
 
     ogl::Texture texture = ogl::makeTexture(Bitmap{(unsigned) width, (unsigned) height, 4, buff}, type == "diffuse");
     stbi_image_free(buff);
 
     return texture;
+}
+
+ogl::Cubemap texture::loadCubemap(std::string_view path)
+{
+    int width = 0, height = 0, numChannels = 0;
+    float *buff = stbi_loadf(path.data(), &width, &height, &numChannels, 4);
+    if(!buff)
+    {
+        std::cout << stbi_failure_reason();
+        return ogl::Cubemap{};
+    }
+    
+    return ogl::makeCubemap(eqr::toCubemap(Bitmap{(unsigned) width, (unsigned) height, 4, buff}));
 }

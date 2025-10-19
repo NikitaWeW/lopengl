@@ -10,8 +10,10 @@ in VS_OUT {
 
 uniform vec3 sunPos;
 
+layout(binding = 0) uniform samplerCube u_texture;
+
 void main()
 {
-    o_color = vec4(0.15, 0.62, 0.29, 1.0);
-    o_color.xyz *= max(0, dot(normalize(sunPos), normalize(fs_in.fragPos)));
+    o_color = texture(u_texture, fs_in.fragPos);
+    o_color.xyz *= max(0.1, dot(normalize(sunPos), normalize(fs_in.fragPos)));
 }

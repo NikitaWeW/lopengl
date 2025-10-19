@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
     ogl::Program atmosphereShader = ogl::compileShader("shaders/atmosphere");
     ogl::Program gridShader = ogl::compileShader("shaders/grid");
     ogl::Program planetShader = ogl::compileShader("shaders/basic");
+    ogl::Cubemap planetTexture = texture::loadCubemap("res/textures/earth.png");
 
     glfwSetKeyCallback(window, key_callback);
 
@@ -68,10 +69,12 @@ int main(int argc, char **argv) {
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        // sunPos = glm::normalize(glm::vec3(glm::cos(time*0.1), 0, glm::sin(time*0.1))) * 10.0f;
-        sunPos = glm::normalize(glm::vec3(glm::cos(time * 0.1), 0, glm::sin(time * 0.1))) * 10.0f;
+        // sunPos = glm::normalize(glm::vec3(glm::cos(time*0.1), 0, glm::sin(time*0.1))) * 100.0f;
+        sunPos = glm::normalize(glm::vec3(glm::cos(time), glm::sin(time) * 0.1, glm::sin(time))) * 100.0f;
 
         glUseProgram(planetShader.id);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, planetTexture.id);
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
         glUniformMatrix4fv(ogl::getUniform(planetShader, "u_modelMat"),      1, GL_FALSE, glm::value_ptr(mm{}.scale(glm::vec3{planetSize}).get()));
