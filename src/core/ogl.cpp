@@ -140,7 +140,7 @@ bool ogl::isComplete(Framebuffer const &fbo)
     return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
-ogl::Texture ogl::makeTexture(Bitmap<float> data, bool srgb)
+ogl::Texture ogl::makeTexture(Bitmap<float> const &data, bool srgb)
 {
     Texture texture;
     texture.width = data.getWidth();
@@ -191,4 +191,38 @@ ogl::Texture ogl::makeTexture(Bitmap<float> data, bool srgb)
     glTextureParameteri(texture.id, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     return texture;
+}
+
+ogl::Cubemap engine::detail::ogl::makeCubemap(std::array<Bitmap<float>, 6> const &data)
+{
+    ogl::Cubemap cubemap;
+    cubemap.width = data[0].getWidth();
+    cubemap.height = data[0].getHeight();
+    cubemap.numSamples = 1;
+    assert(cubemap.width == cubemap.height);
+    unsigned faceSize = cubemap.width;
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemap.id);
+    glTextureStorage2D(
+        cubemap.id,
+        1,
+        GL_RGBA32F,
+        faceSize,
+        faceSize
+    );
+
+    for(int i = 0; i < 6; ++i){
+        const void* sourceImage = data[i].getData();
+        glTextureSubImage3D(
+            cubemap.id, 
+            0,       // layer
+            0, 0, i, // x,y,z
+            data[0].getWidth(), data[0].getHeight(), // 2D image dimensions
+            1,          // depth
+            GL_RGBA,    // format
+            GL_FLOAT,   // data type
+            sourceImage
+        );
+    }
+
+    return cubemap;
 }

@@ -69,7 +69,8 @@ namespace engine::detail::ogl
 
     std::size_t getSizeOfGLType(GLenum type);
 
-    Texture makeTexture(Bitmap<float> data, bool srgb);
+    Texture makeTexture(Bitmap<float> const &data, bool srgb);
+    Cubemap makeCubemap(std::array<Bitmap<float>, 6> const &data);
     /**
      * Does not create buffer object if size is 0.
      */

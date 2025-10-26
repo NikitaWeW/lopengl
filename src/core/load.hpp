@@ -6,6 +6,7 @@
 namespace texture
 {
     ogl::Texture load(std::string_view path, std::string_view type);
+    ogl::Cubemap loadCubemap(std::string_view path);
 } // namespace texture
 
 namespace model
