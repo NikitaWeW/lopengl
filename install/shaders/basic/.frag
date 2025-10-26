@@ -18,6 +18,7 @@ void main()
 
     const vec3 sunDir = normalize(vec3(1, -1, -1));
     o_color.rgb = max(0.1, dot(-sunDir, normal)) * color;
-    o_color.rgb = normal;
     o_color.a = 1;
+
+    o_color.rgb = length(o_color.rgb) < (1) ? vec3(0) : vec3(1);
 }

@@ -18,8 +18,9 @@ void main() {
     gl_Position = u_projectionMat * u_viewMat * vec4(vs_out.fragPos, 1);
     vs_out.texCoords = a_texCoord;
     
-    mat4 normalMat = transpose(inverse(u_modelMat));
     vec3 normal = normalize(vs_out.fragPos);
+    // normal = a_normal;
+    // mat4 normalMat = transpose(inverse(u_modelMat));
     // normal = normalize(vec3(normalMat * vec4(normal, 0)));
     
     vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
