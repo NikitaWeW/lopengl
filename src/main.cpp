@@ -1,83 +1,270 @@
-#include <iostream>
-#include <chrono>
-#include <cassert>
-#include <thread>
+#include <bits/stdc++.h>
 
+#include "Core/Resource/Loaders.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
-#include "core/Camera.hpp"
-#include "core/ogl.hpp"
-#include "core/load.hpp"
-#include "core/modelMat.hpp"
+#include "Core/Controller.hpp"
+#include "Core/ogl.hpp"
+#include "Core/ModelMat.hpp"
+#include "Core/Logging.hpp"
+#include "Core/IO.hpp"
 
 bool init(GLFWwindow **window);
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static std::string printTexture(Entity e)
 {
-    ControllableCamera &camera = *static_cast<ControllableCamera *>(glfwGetWindowUserPointer(window));
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if(!e.valid())
+        return fmt::format("e{} -- INVALID", e.entity());
+    auto const &texture = e.get<Texture>();
+    return fmt::format("e{}, \"{:<30} {}x{}, {:>3}", e.entity(), texture.path + "\",", texture.bitmap.getWidth(), texture.bitmap.getHeight(),(texture.srgb ? "srgb" : "not srgb"));
+}
+static void printModelData(Entity e)
+{
+    assert(reg.has<Model>(e));
+    Model const &model = e.get<Model>();
+    LOG_INFO("");
+    LOG_INFO("Model: e{}: \"{}\"", e.entity(), model.path);
+    LOG_INFO("Skeleton: ");
+    LOG_INFO("  Bone map size / number of bones: {}", model.skeleton.boneMap.size());
+    if(model.skeleton.boneMap.size() <= 30)
+        for(auto const &[name, id] : model.skeleton.boneMap)
+            LOG_INFO("    [\"{}\": {}]", name, id);
+
+    LOG_INFO("Animations: {}", model.animations.size());
+    for(auto const &animation : model.animations)
     {
-        camera.firstCursorMove = true;
-        camera.locked = !camera.locked;
+        LOG_INFO("-----------------");
+        LOG_INFO("Animation: \"{}\"", animation.name);
+        LOG_INFO("  Duration: {} ticks, tps: {}", animation.durationTicks, animation.ticksPerSecond);
+        LOG_INFO("  Bones size: {}", animation.bones.size());
+    }
+
+    LOG_INFO("Meshes: {}", model.meshes.size());
+    for(auto const &mesh : model.meshes)
+    {
+        LOG_INFO("-----------------");
+
+        LOG_INFO("Geometry:");
+        LOG_INFO("  Triangles: {}", mesh.geometry.indices.size() / 3);
+        LOG_INFO("  Indices:   {}", mesh.geometry.indices.size());
+        LOG_INFO("  Positions: {}", mesh.geometry.positions.size());
+        LOG_INFO("  TexCoords: {}", mesh.geometry.texCoords.size());
+        LOG_INFO("  Normals:   {}", mesh.geometry.normals.size());
+        LOG_INFO("  Tangents:  {}", mesh.geometry.tangents.size());
+        LOG_INFO("  BoneIDs:   {}", mesh.geometry.boneIDs.size());
+        LOG_INFO("  Weights:   {}", mesh.geometry.weights.size());
+        
+        LOG_INFO("Material:");
+        LOG_INFO("Textures:");
+        LOG_INFO("  Albedo:       {}", printTexture({&e.reg(), mesh.material.textures.albedo}));
+        LOG_INFO("  Metallic:     {}", printTexture({&e.reg(), mesh.material.textures.metallic}));
+        LOG_INFO("  Roughness:    {}", printTexture({&e.reg(), mesh.material.textures.roughness}));
+        LOG_INFO("  Ambient:      {}", printTexture({&e.reg(), mesh.material.textures.ambient}));
+        LOG_INFO("  Normal:       {}", printTexture({&e.reg(), mesh.material.textures.normal}));
+        LOG_INFO("  Displacement: {}", printTexture({&e.reg(), mesh.material.textures.displacement}));
+        LOG_INFO("Properties:");
+        LOG_INFO("  Ambient:       {}", fmt::streamed(mesh.material.properties.ambient));
+        LOG_INFO("  Albedo:        {}", fmt::streamed(mesh.material.properties.albedo));
+        LOG_INFO("  Specular:      {}", fmt::streamed(mesh.material.properties.specular));
+        LOG_INFO("  Emission:      {}", fmt::streamed(mesh.material.properties.emission));
+        LOG_INFO("  Shininess:     {}", mesh.material.properties.shininess);
+        LOG_INFO("  Metallic:      {}", mesh.material.properties.metallic);
+        LOG_INFO("  IOR:           {}", mesh.material.properties.ior);
     }
 }
 
+static Entity loadModel(std::string_view path, ModelLoaderOptions options = {}, std::optional<Material> material = {})
+{
+    static ModelLoader loader(sReg.getReg());
+    
+    auto eModel = Entity{&sReg, loader.loadFromFile(path, options)};
+    auto &model = eModel.get<Model>();
+    
+    if(material.has_value())
+    {
+        auto defaultMaterial = loader.getDefaultMaterial();
+        if(material->textures.albedo       == INVALID_ENTITY) material->textures.albedo       = defaultMaterial.textures.albedo;
+        if(material->textures.metallic     == INVALID_ENTITY) material->textures.metallic     = defaultMaterial.textures.metallic;
+        if(material->textures.roughness    == INVALID_ENTITY) material->textures.roughness    = defaultMaterial.textures.roughness;
+        if(material->textures.ambient      == INVALID_ENTITY) material->textures.ambient      = defaultMaterial.textures.ambient;
+        if(material->textures.normal       == INVALID_ENTITY) material->textures.normal       = defaultMaterial.textures.normal;
+        if(material->textures.displacement == INVALID_ENTITY) material->textures.displacement = defaultMaterial.textures.displacement;
+        eModel.reg()->get<Texture>(material->textures.albedo).srgb = true;
+
+        for(auto &mesh : model.meshes)
+            mesh.material = material.value();
+    }
+
+    printModelData(eModel);
+
+    return eModel;
+}
+struct OglModel
+{
+    struct OglMesh
+    {
+        struct Material {
+            struct Textures {
+                ogl::Texture albedo;
+                ogl::Texture metallic;
+                ogl::Texture roughness;
+                ogl::Texture ambient;
+                ogl::Texture normal;
+                ogl::Texture displacement;
+            } textures;
+            ::Material::Properties properties;
+        } material;
+
+        ogl::VAO vao;
+        ogl::IBO ibo;
+        GLenum mode = GL_TRIANGLES;
+
+        unsigned count = 0;
+    };
+
+    std::vector<OglMesh> meshes;
+    std::vector<Animation> animations;
+    std::string path;
+    Entity eSource;
+
+    ::Model::Skeleton skeleton;
+};
+static ogl::Texture processTexture(Entity eTexture)
+{
+    if(!eTexture.has<ogl::Texture>())
+    {
+        auto &texture = eTexture.get<Texture>();
+        eTexture.emplace<ogl::Texture>(ogl::makeTexture(texture.bitmap, texture.srgb));
+    }
+    return eTexture.get<ogl::Texture>();
+}
+static OglModel &allocate(Entity eModel)
+{
+    if(!eModel.has<OglModel>())
+    {
+        assert(eModel.has<Model>());
+        Model model = eModel.get<Model>();
+        
+        OglModel oglModel{
+            .animations = model.animations,
+            .path = model.path,
+            .eSource = eModel,
+            .skeleton = model.skeleton
+        };
+    
+        for(auto const &mesh : model.meshes)
+        {
+            OglModel::OglMesh oglMesh;
+            oglMesh.mode = GL_TRIANGLES;
+            oglMesh.count = mesh.geometry.indices.size();
+    
+            oglMesh.material = {
+                .textures = {
+                    .albedo       = processTexture({&sReg, mesh.material.textures.albedo      }),
+                    .metallic     = processTexture({&sReg, mesh.material.textures.metallic    }),
+                    .roughness    = processTexture({&sReg, mesh.material.textures.roughness   }),
+                    .ambient      = processTexture({&sReg, mesh.material.textures.ambient     }),
+                    .normal       = processTexture({&sReg, mesh.material.textures.normal      }),
+                    .displacement = processTexture({&sReg, mesh.material.textures.displacement}),
+                },
+                .properties = oglMesh.material.properties
+            };
+    
+            glCreateVertexArrays(1, &oglMesh.vao.id);
+            
+            ogl::pushVertexBuffer(oglMesh.vao, ogl::makeBuffer<ogl::VBO>(mesh.geometry.positions), 3, GL_FLOAT);
+            ogl::pushVertexBuffer(oglMesh.vao, ogl::makeBuffer<ogl::VBO>(mesh.geometry.texCoords), 2, GL_FLOAT);
+            ogl::pushVertexBuffer(oglMesh.vao, ogl::makeBuffer<ogl::VBO>(mesh.geometry.normals),   3, GL_FLOAT);
+            ogl::pushVertexBuffer(oglMesh.vao, ogl::makeBuffer<ogl::VBO>(mesh.geometry.tangents),  3, GL_FLOAT);
+            ogl::pushVertexBuffer(oglMesh.vao, ogl::makeBuffer<ogl::VBO>(mesh.geometry.boneIDs),   3, GL_FLOAT);
+            ogl::pushVertexBuffer(oglMesh.vao, ogl::makeBuffer<ogl::VBO>(mesh.geometry.weights),   3, GL_FLOAT);
+            
+            oglMesh.ibo = ogl::makeBuffer<ogl::IBO>(mesh.geometry.indices);
+            glVertexArrayElementBuffer(oglMesh.vao.id, oglMesh.ibo.id);
+    
+            oglModel.meshes.emplace_back(std::move(oglMesh));
+        }
+    
+        eModel.emplace<OglModel>(oglModel);
+    }
+
+    return eModel.get<OglModel>();
+}
 
 int main(int argc, char **argv) {
     GLFWwindow* window;
     if(!init(&window)) {
-        std::cout << "failed to init!\n";
+        LOG_ERROR("Failed to init!");
         return -1;
     }
 
-    double deltatime = 0.1;
-    ControllableCamera camera{window};
-    camera.position.z = 4;
-    glfwSetWindowUserPointer(window, &camera);
-    glfwSetKeyCallback(window, key_callback);
-
-    model::Loader loader;
-    auto cube = loader.load("res/models/cube.obj");
+    Controller controller{};
+    auto &camera = controller.createCamera(sReg, {0, 3, 3}).get<Controller::Camera>();
+    TextureLoader textureLoader{sReg.getReg()};
+    
+    auto const &cube = allocate(loadModel("assets/suzanne.glb", {}, Material{
+        .textures = {
+            .albedo = textureLoader.loadFromFile("assets/wood.jpg")
+        }
+    }));
     ogl::Program shader = ogl::compileShader("shaders/basic");
     ogl::Program gridShader = ogl::compileShader("shaders/grid");
 
-    ogl::Texture texture = texture::load("res/textures/wood0/wood_planks_diff_2k.png", "diffuse");
-
+    if(!shader.id || !gridShader.id)
+    {
+        LOG_ERROR("Failed to compile shaders!");
+        return -1;
+    }
+    
     glm::vec3 rotation{0};
-
+    
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_FRAMEBUFFER_SRGB);
-
+    
+    glm::ivec2 size{0};
+    float deltatime = 0.1;
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
-        camera.update(deltatime);
-        glfwGetWindowSize(window, &camera.width, &camera.height);
+        controller.update(sReg, deltatime);
+        glfwGetWindowSize(window, &size.x, &size.y);
 
-        glViewport(0, 0, camera.width, camera.height);
+        for(auto eWindow : sReg.view<Window>())
+            eWindow.get<Window>().size = size;
+
+        glViewport(0, 0, size.x, size.y);
         glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         rotation += float(deltatime) * glm::vec3{1, 2, 3};
-        glm::mat4 modelMat = mm{}.translate(1, 1, 0).rotate(rotation).get();
+        glm::mat4 modelMat = mm{}.translate({1, 1, 0}).rotate(rotation).get();
 
         glUseProgram(shader.id);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture.id);
-        glUniformMatrix4fv(ogl::getUniform(shader, "u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
-        glUniformMatrix4fv(ogl::getUniform(shader, "u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
-        glUniformMatrix4fv(ogl::getUniform(shader, "u_modelMat"),      1, GL_FALSE, glm::value_ptr(modelMat));
+        glUniformMatrix4fv(ogl::getUniform(shader, "uViewMat"),  1, GL_FALSE, glm::value_ptr(camera.viewMat));
+        glUniformMatrix4fv(ogl::getUniform(shader, "uProjMat"),  1, GL_FALSE, glm::value_ptr(camera.projMat));
+        glUniformMatrix4fv(ogl::getUniform(shader, "uModelMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
 
-        glBindVertexArray(cube.vao.id);
-        glDrawArrays(GL_TRIANGLES, 0, cube.count);
+        for(auto const &mesh : cube.meshes)
+        {
+            glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.albedo.id);
+            glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.metallic.id);
+            glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.roughness.id);
+            glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.ambient.id);
+            glActiveTexture(GL_TEXTURE4); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.normal.id);
+            glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.displacement.id);
+
+            glBindVertexArray(mesh.vao.id);
+            glDrawElements(mesh.mode, mesh.count, GL_UNSIGNED_INT, nullptr);
+        }
         
+        LOG_VAR(camera.viewMat);
         glUseProgram(gridShader.id);
-        glUniformMatrix4fv(ogl::getUniform(gridShader, "u_viewMat"),       1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
-        glUniformMatrix4fv(ogl::getUniform(gridShader, "u_projectionMat"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix()));
+        glUniformMatrix4fv(ogl::getUniform(gridShader, "uViewMat"), 1, GL_FALSE, glm::value_ptr(camera.viewMat));
+        glUniformMatrix4fv(ogl::getUniform(gridShader, "uProjMat"), 1, GL_FALSE, glm::value_ptr(camera.projMat));
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glfwSwapBuffers(window);

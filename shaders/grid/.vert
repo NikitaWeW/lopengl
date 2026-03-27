@@ -1,7 +1,7 @@
 #version 330 core
 
-uniform mat4 u_projectionMat;
-uniform mat4 u_viewMat;
+uniform mat4 uProjMat;
+uniform mat4 uViewMat;
 
 out VS_OUT {
     vec3 fragmentPosition;
@@ -28,12 +28,12 @@ const float EPSILON = 1e-3;
 const float gridTiling = 0.1;
 
 void main() {
-    vec3 cameraPosition = -u_viewMat[3].xyz;
+    vec3 cameraPosition = inverse(uViewMat)[3].xyz;
     vec3 vertexPosition = vertices[gl_VertexID] * gridSize;
     vertexPosition += floor(cameraPosition * gridTiling) / gridTiling;
     vertexPosition.y = gridHeight;
     vs_out.fragmentPosition = vertexPosition;
     vs_out.cameraPosition = cameraPosition;
     vs_out.texCoord = texCoords[gl_VertexID];
-    gl_Position = u_projectionMat * u_viewMat * vec4(vs_out.fragmentPosition, 1);
+    gl_Position = uProjMat * uViewMat * vec4(vs_out.fragmentPosition, 1);
 }

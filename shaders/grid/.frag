@@ -1,6 +1,5 @@
 #version 330 core
 out vec4 o_color;
-in vec2 v_texCoord;
 
 uniform vec4 u_color = vec4(0.7);
 

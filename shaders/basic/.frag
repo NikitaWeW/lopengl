@@ -1,6 +1,6 @@
 #version 430
 
-out vec4 o_color;
+out vec4 oColor;
 
 in VS_OUT {
     vec2 texCoords;
@@ -8,9 +8,14 @@ in VS_OUT {
     flat mat3 TBN;
 } fs_in;
 
-layout(binding = 0) uniform sampler2D u_diffuse;
+layout(binding = 0) uniform sampler2D uAlbedo;
+layout(binding = 1) uniform sampler2D uMetallic;
+layout(binding = 2) uniform sampler2D uRoughness;
+layout(binding = 3) uniform sampler2D uAmbient;
+layout(binding = 4) uniform sampler2D uNormal;
+layout(binding = 5) uniform sampler2D uDisplacement;
 
 void main()
 {
-    o_color = texture(u_diffuse, fs_in.texCoords);
+    oColor = texture(uAlbedo, fs_in.texCoords);
 }

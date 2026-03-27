@@ -1,16 +1,9 @@
-**GOOFY CODE ALERT**
-===
-The core/ogl lib contains a horrible code that survived from the very beginning of this repo and needs to be nuked.
-
-me learning opengl
+Opengl setup
 ===
 
-This is repository with my opengl expirience. there are some bad / messy classes, but for learing purposes its ok. There are different branches to see.
+There is some boilerplate code that i branch from when i need to do something with opengl fast. Probably not up-to-date.
 
-ogl setup
-===
-
-There is some boilerplate code that i branch from when i need to do something with opengl fast.
+Right now most of the code is from [my engine](github.com/nikitawew/breakout).
 
 building
 ===

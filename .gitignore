@@ -1,7 +1,6 @@
 build
-logs
-log
-.vscode
-*.ini
-CMakeUserPresets.json
+shaders-bin
 install
+.vscode
+.cache
+CMakeUserPresets.json
