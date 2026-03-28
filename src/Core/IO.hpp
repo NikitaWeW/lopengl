@@ -31,9 +31,17 @@ struct EventListener
         GLFWwindow *window;
         glm::dvec2 offset;
     };
+    struct MouseButtonEvent
+    {
+        GLFWwindow* window;
+        int button;
+        int action;
+        int mods;
+    };
     std::queue<KeyEvent> keyEvents;
     std::queue<CursorPosEvent> cursorPosEvents;
     std::queue<ScrollEvent> scrollEvents;
+    std::queue<MouseButtonEvent> mouseButtonEvents;
 
     glm::dvec2 prevCursorPos{-1};
 };
@@ -65,4 +73,10 @@ inline void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     Registry &reg = *static_cast<Registry *>(glfwGetWindowUserPointer(window));
     for(auto e : reg.view<EventListener>())
         e.get<EventListener>().scrollEvents.emplace(window, glm::dvec2{xoffset, yoffset});
+}
+inline void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    Registry &reg = *static_cast<Registry *>(glfwGetWindowUserPointer(window));
+    for(auto e : reg.view<EventListener>())
+        e.get<EventListener>().mouseButtonEvents.emplace(window, button, action, mods);
 }

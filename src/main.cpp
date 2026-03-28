@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
             .albedo = textureLoader.loadFromFile("assets/wood.jpg")
         }
     }));
-    ogl::Program shader = ogl::compileShader("shaders/basic");
+    ogl::Program shader = ogl::compileShader("shaders/atmosphere");
     ogl::Program gridShader = ogl::compileShader("shaders/grid");
 
     if(!shader.id || !gridShader.id)
@@ -224,44 +224,64 @@ int main(int argc, char **argv) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_FRAMEBUFFER_SRGB);
+    glDisable(GL_CULL_FACE);
+
+    auto &listener = sReg.create<EventListener>().get<EventListener>();
     
     glm::ivec2 size{0};
     float deltatime = 0.1;
+    glm::vec3 sunPos(10, 3, 10);
     while (!glfwWindowShouldClose(window))
     {
         auto start = std::chrono::high_resolution_clock::now();
         controller.update(sReg, deltatime);
         glfwGetWindowSize(window, &size.x, &size.y);
 
+        while(!listener.keyEvents.empty())
+        {
+            auto event = listener.keyEvents.front();
+            listener.keyEvents.pop();
+
+            if(event.key == GLFW_KEY_R && event.action == GLFW_PRESS)
+            {
+                LOG_INFO("Recompiling \"{}\"", shader.dirpath);
+                auto newShader = ogl::compileShader(shader.dirpath);
+                if(newShader.id)
+                {
+                    shader = newShader;
+                }
+            }
+        }
+        while(!listener.mouseButtonEvents.empty())
+        {
+            auto event = listener.mouseButtonEvents.front();
+            listener.mouseButtonEvents.pop();
+
+            if(event.button == GLFW_MOUSE_BUTTON_LEFT && event.action == GLFW_PRESS)
+            {
+                glm::vec3 forward = glm::mat3(glm::inverse(camera.viewMat)) * glm::vec3{0, 0,-1};
+                sunPos = forward * 10.0f;
+                LOG_VAR(sunPos);
+            }
+        }
+
         for(auto eWindow : sReg.view<Window>())
             eWindow.get<Window>().size = size;
+
 
         glViewport(0, 0, size.x, size.y);
         glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        rotation += float(deltatime) * glm::vec3{1, 2, 3};
-        glm::mat4 modelMat = mm{}.translate({1, 1, 0}).rotate(rotation).get();
-
         glUseProgram(shader.id);
-        glUniformMatrix4fv(ogl::getUniform(shader, "uViewMat"),  1, GL_FALSE, glm::value_ptr(camera.viewMat));
-        glUniformMatrix4fv(ogl::getUniform(shader, "uProjMat"),  1, GL_FALSE, glm::value_ptr(camera.projMat));
-        glUniformMatrix4fv(ogl::getUniform(shader, "uModelMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
-
-        for(auto const &mesh : cube.meshes)
-        {
-            glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.albedo.id);
-            glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.metallic.id);
-            glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.roughness.id);
-            glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.ambient.id);
-            glActiveTexture(GL_TEXTURE4); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.normal.id);
-            glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, mesh.material.textures.displacement.id);
-
-            glBindVertexArray(mesh.vao.id);
-            glDrawElements(mesh.mode, mesh.count, GL_UNSIGNED_INT, nullptr);
-        }
+        glUniformMatrix4fv(ogl::getUniform(shader, "uViewMat"), 1, GL_FALSE, glm::value_ptr(camera.viewMat));
+        glUniformMatrix4fv(ogl::getUniform(shader, "uProjMat"), 1, GL_FALSE, glm::value_ptr(camera.projMat));
         
-        LOG_VAR(camera.viewMat);
+        glUniform3fv(ogl::getUniform(shader, "uLightPos"), 1, glm::value_ptr(sunPos));
+        glDepthFunc(GL_LEQUAL);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 14);
+        glDepthFunc(GL_LESS);
+
         glUseProgram(gridShader.id);
         glUniformMatrix4fv(ogl::getUniform(gridShader, "uViewMat"), 1, GL_FALSE, glm::value_ptr(camera.viewMat));
         glUniformMatrix4fv(ogl::getUniform(gridShader, "uProjMat"), 1, GL_FALSE, glm::value_ptr(camera.projMat));

@@ -138,6 +138,7 @@ bool init(GLFWwindow** window) {
     glfwSetKeyCallback(*window, keyCallback);
     glfwSetCursorPosCallback(*window, cursorPosCallback);
     glfwSetScrollCallback(*window, scrollCallback);
+    glfwSetMouseButtonCallback(*window, mouseButtonCallback);
 
     int version = gladLoadGL(glfwGetProcAddress);
     if (version == 0) {
